@@ -1,0 +1,1 @@
+# vibefix-broken-ai-app-diagnosis
