@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Lovable App Broke After Update - What To Do Before You Make It Worse</title>
+  <meta name="description" content="If your Lovable app broke after an update, stop prompting blindly. Use this rollback vs fix-forward checklist before you make the issue worse." />
+
+  <style>
+    body { margin: 0; font-family: Arial, sans-serif; background: #080b12; color: #f8fafc; line-height: 1.7; }
+    .container { max-width: 820px; margin: 0 auto; padding: 40px 20px; }
+    a { color: #93c5fd; }
+    h1 { font-size: 44px; line-height: 1.1; letter-spacing: -1px; }
+    h2 { margin-top: 42px; font-size: 28px; }
+    .cta { background: #111827; border: 1px solid #2563eb; padding: 24px; border-radius: 14px; margin: 36px 0; }
+    .btn { display: inline-block; background: #3b82f6; color: white; text-decoration: none; padding: 13px 18px; border-radius: 10px; font-weight: 800; margin-top: 12px; }
+    .muted { color: #cbd5e1; }
+  </style>
+</head>
+
+<body>
+  <main class="container">
+    <a href="/">Back to VibeFix</a>
+
+    <h1>Lovable App Broke After Update - What To Do Before You Make It Worse</h1>
+
+    <p class="muted">
+      If your Lovable app broke after an update or prompt, do not keep asking it to "fix everything." That is how small bugs turn into full app chaos.
+    </p>
+
+    <h2>First: stop prompting blindly</h2>
+    <p>
+      Your first goal is not to fix. Your first goal is to identify what changed between the last working version and the broken version.
+    </p>
+
+    <h2>Check the break type</h2>
+    <ul>
+      <li>Did the UI break?</li>
+      <li>Did login/signup break?</li>
+      <li>Did data stop loading?</li>
+      <li>Does it work in preview but fail in production?</li>
+      <li>Did a new feature break an old feature?</li>
+    </ul>
+
+    <h2>Find the last working state</h2>
+    <p>Write down:</p>
+    <ul>
+      <li>when it last worked</li>
+      <li>the last prompt you gave</li>
+      <li>the feature you were trying to add</li>
+      <li>any auth/database/env changes</li>
+      <li>the exact error message</li>
+    </ul>
+
+    <h2>Rollback vs fix-forward</h2>
+    <p><strong>Rollback</strong> if the app was working before one recent AI edit and multiple things broke at once.</p>
+    <p><strong>Fix forward</strong> if the issue is isolated, small, and you understand the affected page/component.</p>
+
+    <h2>Prompt to use</h2>
+    <p>Paste this into Lovable:</p>
+
+    <pre>
+Do not rewrite the app.
+
+My Lovable app broke after this change: [describe change]
+
+What was working before:
+[describe]
+
+What is broken now:
+[describe]
+
+Error:
+[paste error]
+
+First diagnose the likely root cause.
+Then tell me:
+1. what not to touch
+2. whether to rollback or fix forward
+3. the safest smallest fix
+4. how to test that the fix worked
+    </pre>
+
+    <div class="cta">
+      <h2>Still stuck?</h2>
+      <p>
+        Get VibeFix Broken App Diagnosis. I'll review what broke, identify the likely root cause, tell you whether to rollback or fix forward, and give you exact AI prompts to repair safely.
+      </p>
+      <a class="btn" href="https://vibefix.lemonsqueezy.com/checkout/buy/d0418723-ef99-495b-af66-94ea31b16caf">Get Beta Diagnosis - $79</a>
+      <p><a href="https://docs.google.com/document/d/1_akZzBbFuNFrAQ4A2mahRh89yKDkgiaAZIdl4AuZtDo/edit?usp=sharing">Or download the free 30-minute recovery checklist</a></p>
+    </div>
+
+    <p class="muted">
+      Note: VibeFix is not 24/7 emergency support, full security testing, legal/compliance review, or guaranteed bug fixing.
+    </p>
+  </main>
+</body>
+</html>

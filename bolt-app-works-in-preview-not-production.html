@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Bolt App Works in Preview But Not Production - First Checks</title>
+  <meta name="description" content="If your Bolt app works in preview but breaks in production, check environment variables, auth redirects, API URLs, build settings, and deploy behavior first." />
+
+  <style>
+    body { margin: 0; font-family: Arial, sans-serif; background: #080b12; color: #f8fafc; line-height: 1.7; }
+    .container { max-width: 820px; margin: 0 auto; padding: 40px 20px; }
+    a { color: #93c5fd; }
+    h1 { font-size: 44px; line-height: 1.1; letter-spacing: -1px; }
+    h2 { margin-top: 42px; font-size: 28px; }
+    .cta { background: #111827; border: 1px solid #2563eb; padding: 24px; border-radius: 14px; margin: 36px 0; }
+    .btn { display: inline-block; background: #3b82f6; color: white; text-decoration: none; padding: 13px 18px; border-radius: 10px; font-weight: 800; margin-top: 12px; }
+    .muted { color: #cbd5e1; }
+  </style>
+</head>
+
+<body>
+  <main class="container">
+    <a href="/">Back to VibeFix</a>
+
+    <h1>Bolt App Works in Preview But Not Production - First Checks</h1>
+
+    <p class="muted">
+      If your Bolt app works in preview but breaks after deploy, the problem is often not the UI. It may be environment variables, API URLs, auth redirects, build settings, or production-only behavior.
+    </p>
+
+    <h2>Check these first</h2>
+    <ul>
+      <li>Are environment variables set in production?</li>
+      <li>Are API URLs different between preview and production?</li>
+      <li>Are auth redirect URLs updated?</li>
+      <li>Are database permissions different?</li>
+      <li>Does the build log show warnings or failed assets?</li>
+      <li>Are browser console errors different in production?</li>
+    </ul>
+
+    <h2>Do not do this</h2>
+    <ul>
+      <li>Do not rewrite the whole app.</li>
+      <li>Do not reset your database blindly.</li>
+      <li>Do not change auth settings without knowing the redirect issue.</li>
+      <li>Do not keep prompting "fix production" without logs.</li>
+    </ul>
+
+    <h2>Prompt to use</h2>
+    <pre>
+My Bolt app works in preview but breaks in production.
+
+Do not rewrite the app.
+
+Help me diagnose production-only failure.
+
+Context:
+Preview behavior:
+Production behavior:
+Error message:
+Console error:
+Build log:
+Environment variables:
+Auth provider:
+Database provider:
+
+Give me:
+1. most likely production-only causes
+2. what not to touch
+3. safest first checks
+4. rollback vs fix-forward recommendation
+5. smallest safe fix
+    </pre>
+
+    <div class="cta">
+      <h2>Still stuck?</h2>
+      <p>
+        Get VibeFix Broken App Diagnosis. I'll review what broke and give you a rollback/fix-forward decision and exact AI repair prompts.
+      </p>
+      <a class="btn" href="https://vibefix.lemonsqueezy.com/checkout/buy/d0418723-ef99-495b-af66-94ea31b16caf">Get Beta Diagnosis - $79</a>
+      <p><a href="https://docs.google.com/document/d/1_akZzBbFuNFrAQ4A2mahRh89yKDkgiaAZIdl4AuZtDo/edit?usp=sharing">Download the free recovery checklist</a></p>
+    </div>
+
+    <p class="muted">
+      Note: VibeFix is not 24/7 emergency support, full security testing, legal/compliance review, or guaranteed bug fixing.
+    </p>
+  </main>
+</body>
+</html>

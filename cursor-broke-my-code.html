@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Cursor Broke My Code - How To Stop the Fix-Break Loop</title>
+  <meta name="description" content="Cursor fixed one issue but broke another? Use this process to stop the fix-break loop and diagnose the smallest safe repair." />
+
+  <style>
+    body { margin: 0; font-family: Arial, sans-serif; background: #080b12; color: #f8fafc; line-height: 1.7; }
+    .container { max-width: 820px; margin: 0 auto; padding: 40px 20px; }
+    a { color: #93c5fd; }
+    h1 { font-size: 44px; line-height: 1.1; letter-spacing: -1px; }
+    h2 { margin-top: 42px; font-size: 28px; }
+    .cta { background: #111827; border: 1px solid #2563eb; padding: 24px; border-radius: 14px; margin: 36px 0; }
+    .btn { display: inline-block; background: #3b82f6; color: white; text-decoration: none; padding: 13px 18px; border-radius: 10px; font-weight: 800; margin-top: 12px; }
+    .muted { color: #cbd5e1; }
+  </style>
+</head>
+
+<body>
+  <main class="container">
+    <a href="/">Back to VibeFix</a>
+
+    <h1>Cursor Broke My Code - How To Stop the Fix-Break Loop</h1>
+
+    <p class="muted">
+      Cursor can fix fast, but it can also change unrelated code if your prompt is vague. If every fix creates another bug, stop and diagnose the change boundary.
+    </p>
+
+    <h2>The real problem</h2>
+    <p>
+      You are probably asking Cursor to fix symptoms instead of isolating the failing component, route, state, API call, or config.
+    </p>
+
+    <h2>Do this before another fix prompt</h2>
+    <ul>
+      <li>Open the diff and see what files changed.</li>
+      <li>Find the last working commit or version.</li>
+      <li>List exactly what feature broke.</li>
+      <li>Do not allow full refactors.</li>
+      <li>Do not allow database/auth/env changes unless necessary.</li>
+    </ul>
+
+    <h2>Safe Cursor prompt</h2>
+    <pre>
+You are a senior debugging engineer.
+
+My app broke after a Cursor edit.
+
+Do not refactor unrelated code.
+Do not rewrite the app.
+Do not change database schema, auth rules, or environment variables unless clearly required.
+
+First:
+1. identify the smallest failing area
+2. explain likely root cause
+3. list files that should not be touched
+4. recommend rollback or fix-forward
+5. propose the smallest safe fix
+6. give me a regression checklist after the fix
+
+Context:
+[Paste what broke, last change, error, affected files]
+    </pre>
+
+    <h2>When to rollback</h2>
+    <p>
+      Rollback if the last Cursor change touched many files, broke old working flows, or introduced changes you do not understand.
+    </p>
+
+    <div class="cta">
+      <h2>Need a second diagnosis?</h2>
+      <p>
+        VibeFix reviews broken AI-built apps and gives you a root-cause diagnosis, rollback/fix-forward decision, and exact AI repair prompts.
+      </p>
+      <a class="btn" href="https://vibefix.lemonsqueezy.com/checkout/buy/d0418723-ef99-495b-af66-94ea31b16caf">Get Beta Diagnosis - $79</a>
+      <p><a href="https://docs.google.com/document/d/1_akZzBbFuNFrAQ4A2mahRh89yKDkgiaAZIdl4AuZtDo/edit?usp=sharing">Download the free recovery checklist</a></p>
+    </div>
+
+    <p class="muted">
+      Note: VibeFix is not 24/7 emergency support, full security testing, legal/compliance review, or guaranteed bug fixing.
+    </p>
+  </main>
+</body>
+</html>
