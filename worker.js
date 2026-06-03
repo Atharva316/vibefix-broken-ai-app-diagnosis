@@ -7,6 +7,7 @@ const GOOGLE_USERINFO_URL = "https://openidconnect.googleapis.com/v1/userinfo";
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
 const ANTHROPIC_MODEL = "claude-sonnet-4-20250514";
 const STATIC_ASSET_ORIGIN = "https://raw.githubusercontent.com/Atharva316/vibefix-broken-ai-app-diagnosis/main/public";
+const PAYMENT_URL = "/payment.html";
 
 export default {
   async fetch(request, env) {
@@ -18,7 +19,7 @@ export default {
       if (url.pathname === "/auth/signout") return signOut(request, env);
       if (url.pathname === "/api/me") return json(await getPublicUserState(request, env));
       if (url.pathname === "/api/ai" && request.method === "POST") return handleAi(request, env);
-      if (url.pathname === "/pricing") return redirect(env.UPGRADE_URL || env.LEMON_CHECKOUT_URL || "/");
+      if (url.pathname === "/pricing") return redirect(PAYMENT_URL);
       if (url.pathname === "/dashboard") return redirect("/dashboard/reports");
       if (url.pathname.startsWith("/dashboard")) return renderDashboardRoute(request, env);
       return serveStaticAsset(request, env);
@@ -355,7 +356,7 @@ function renderDashboardShell(user, active, content) {
 }
 
 function renderReportsPage(user, reports, env) {
-  const checkout = env.LEMON_CHECKOUT_URL || "https://vibefix.lemonsqueezy.com/checkout/buy/d0418723-ef99-495b-af66-94ea31b16caf";
+  const checkout = PAYMENT_URL;
   const list = reports.length ? reports.map((report) => `
     <article class="report-card">
       <div>
@@ -410,7 +411,7 @@ function renderAccountPage(user) {
 }
 
 function renderAiPage(user, env) {
-  const upgradeUrl = env.UPGRADE_URL || env.LEMON_CHECKOUT_URL || "/";
+  const upgradeUrl = PAYMENT_URL;
   return renderDashboardShell(user, "/dashboard/ai", `
     <section class="dashboard-header">
       <p class="section-kicker">AI Helper</p>

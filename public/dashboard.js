@@ -13,6 +13,9 @@ const copyButton = document.querySelector("#copy-prompt");
 const fileInput = document.querySelector("#screenshot");
 const uploadZone = document.querySelector("#upload-zone");
 const uploadPreview = document.querySelector("#upload-preview");
+const PAYMENT_URL = "/payment.html";
+
+normalizePaymentLinks();
 
 document.querySelectorAll(".pill-field").forEach((field) => {
   const multi = field.dataset.multi === "true";
@@ -160,10 +163,17 @@ async function generatePrompts(payload) {
 function showUpgradeGate(limit = 3) {
   outputPanel.classList.add("is-gated");
   upgradeGate.hidden = false;
+  normalizePaymentLinks();
   likelyCause.textContent = `You have used all ${limit} free prompt generations.`;
   notTouch.innerHTML = "<li>Free prompt generation is finished for this browser session.</li><li>Continue with the paid diagnosis to generate or improve more prompts.</li>";
   fixTitle.textContent = "Payment required";
   fixPrompt.textContent = "Your free VibeFix AI Helper limit is finished. Use the payment option below to continue.";
+}
+
+function normalizePaymentLinks() {
+  document.querySelectorAll('a[href*="lemonsqueezy.com"], #upgrade-gate a, .upgrade-gate a').forEach((link) => {
+    link.href = PAYMENT_URL;
+  });
 }
 
 function renderStructured(text) {

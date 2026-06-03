@@ -12,5 +12,5 @@ id = "c31f2ba7390a4b17a7b58ea4b549abd5"
 
 [vars]
 FREE_AI_LIMIT = "3"
-LEMON_CHECKOUT_URL = "https://vibefix.lemonsqueezy.com/checkout/buy/d0418723-ef99-495b-af66-94ea31b16caf"
-UPGRADE_URL = "https://vibefix.lemonsqueezy.com"
+LEMON_CHECKOUT_URL = "/payment.html"
+UPGRADE_URL = "/payment.html"
