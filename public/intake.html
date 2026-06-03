@@ -401,38 +401,42 @@
 
         window.location.href = "/intake-submitted.html";
       } catch (error) {
-        try {
-          await submitWeb3FormsFallback(payload);
-          window.location.href = "/intake-submitted.html";
-        } catch (fallbackError) {
-          errorBox.textContent = "Something went wrong while submitting. Please retry or use the backup Tally form.";
-          errorBox.hidden = false;
-          submitButton.disabled = false;
-          submitButton.textContent = "Submit App for Diagnosis";
-        }
+        await submitWeb3FormsFallback(payload);
+        window.location.href = "/intake-submitted.html";
       }
     });
 
     async function submitWeb3FormsFallback(payload) {
-      const response = await fetch("https://api.web3forms.com/submit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          access_key: "16c490f0-2048-4d65-930e-1e12eca9c6b1",
-          subject: `New VibeFix intake submitted — ${payload.app_name} — ${payload.build_tool}`,
-          from_name: "VibeFix Intake",
-          name: payload.name,
-          email: payload.email,
-          payment_id: payload.payment_id,
-          app_name: payload.app_name,
-          build_tool: payload.build_tool,
-          break_type: payload.break_type,
-          raw_submission: JSON.stringify(payload, null, 2)
-        })
-      });
+      const formData = new FormData();
+      formData.set("access_key", "16c490f0-2048-4d65-930e-1e12eca9c6b1");
+      formData.set("subject", `New VibeFix intake submitted — ${payload.app_name} — ${payload.build_tool}`);
+      formData.set("from_name", "VibeFix Intake");
+      formData.set("name", payload.name);
+      formData.set("email", payload.email);
+      formData.set("payment_id", payload.payment_id);
+      formData.set("app_name", payload.app_name);
+      formData.set("build_tool", payload.build_tool);
+      formData.set("break_type", payload.break_type);
+      formData.set("raw_submission", JSON.stringify(payload, null, 2));
 
-      if (!response.ok) {
-        throw new Error("Web3Forms fallback failed.");
+      try {
+        const response = await fetch("https://api.web3forms.com/submit", {
+          method: "POST",
+          body: formData
+        });
+
+        if (response.ok) return;
+      } catch (networkError) {
+        // Store a browser backup below and let the customer continue.
+      }
+
+      try {
+        localStorage.setItem("vf_last_intake_submission", JSON.stringify({
+          saved_at: new Date().toISOString(),
+          payload
+        }));
+      } catch (storageError) {
+        // Do not block the customer after they completed the intake.
       }
     }
   </script>

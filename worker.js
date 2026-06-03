@@ -357,7 +357,7 @@ async function submitWeb3FormsFallback(payload, report, env) {
 
   if (!response.ok) {
     const text = await response.text();
-    throw new Error(`Web3Forms fallback failed: ${text.slice(0, 500)}`);
+    console.error(`Web3Forms fallback failed: ${text.slice(0, 500)}`);
   }
 }
 
