@@ -1,0 +1,16 @@
+name = "vibefix-broken-ai-app-diagnosis"
+main = "worker.js"
+compatibility_date = "2026-06-03"
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+
+[[kv_namespaces]]
+binding = "VIBEFIX_KV"
+id = "REPLACE_WITH_PRODUCTION_KV_NAMESPACE_ID"
+
+[vars]
+FREE_AI_LIMIT = "3"
+LEMON_CHECKOUT_URL = "https://vibefix.lemonsqueezy.com/checkout/buy/d0418723-ef99-495b-af66-94ea31b16caf"
+UPGRADE_URL = "https://vibefix.lemonsqueezy.com"
