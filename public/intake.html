@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VibeFix Broken App Diagnosis Intake</title>
+  <meta name="description" content="Submit the details needed for your VibeFix Broken App Diagnosis report." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <nav class="site-nav" aria-label="Primary navigation">
+    <a class="logo" href="/" aria-label="VibeFix home">Vibe<span>Fix</span></a>
+    <div class="nav-links" aria-label="Page sections">
+      <a href="/#why">Why VibeFix</a>
+      <a href="/#diagnose">What We Diagnose</a>
+      <a href="/#pricing">Pricing</a>
+      <a href="/#faq">FAQ</a>
+    </div>
+    <div class="auth-slot">
+      <a class="nav-auth-link" href="/auth/google">Sign In</a>
+    </div>
+  </nav>
+
+  <main class="intake-page-shell">
+    <div class="container">
+      <section class="intake-hero">
+        <span class="section-kicker">Paid customer intake</span>
+        <h1>VibeFix Broken App Diagnosis Intake</h1>
+        <p class="subhead">Submit the details needed to diagnose your broken AI-built app.</p>
+        <p class="muted">This intake helps identify what changed, what broke, whether rollback or fix-forward is safer, what not to touch, and the safest AI prompts to use next.</p>
+        <p class="muted">After submitting this form, you’ll receive a written diagnosis report by email within 48 hours.</p>
+        <div class="warning-box">VibeFix is a diagnosis report for common AI-built app break patterns. It is not 24/7 emergency support, full security testing, legal/compliance review, guaranteed implementation, or full code fixing.</div>
+      </section>
+
+      <div class="intake-layout">
+        <form class="intake-form" action="https://api.web3forms.com/submit" method="POST">
+          <input type="hidden" name="access_key" value="16c490f0-2048-4d65-930e-1e12eca9c6b1" />
+          <input type="hidden" name="subject" value="New VibeFix Diagnosis Intake Submission" />
+          <input type="hidden" name="from_name" value="VibeFix Intake" />
+          <input type="hidden" name="redirect" value="https://vibefix-broken-ai-app-diagnosis.atharvam144.workers.dev/intake-submitted.html" />
+          <input type="hidden" id="source" name="source" />
+          <input type="hidden" id="razorpay_payment_id" name="razorpay_payment_id" />
+          <input type="hidden" id="razorpay_order_id" name="razorpay_order_id" />
+          <input type="hidden" id="razorpay_payment_link_id" name="razorpay_payment_link_id" />
+          <input type="hidden" id="razorpay_payment_link_reference_id" name="razorpay_payment_link_reference_id" />
+
+          <section class="intake-section">
+            <div class="intake-section-title">
+              <span class="intake-section-number">01</span>
+              <div>
+                <h2>Order verification</h2>
+                <p class="helper-text">This helps match your Razorpay payment with your diagnosis request.</p>
+              </div>
+            </div>
+            <div class="intake-grid">
+              <div class="form-field full">
+                <label for="payment_id">Razorpay Payment ID / Order ID <span class="required-mark">*</span></label>
+                <input id="payment_id" name="payment_id" type="text" required placeholder="Example: pay_xxxxx, order_xxxxx, or payment link reference ID" />
+                <p class="helper-text">Paste the Payment ID or Order ID from your Razorpay receipt. Reports are prepared only for paid submissions.</p>
+              </div>
+              <div class="form-field full">
+                <label for="payment_email">Payment email, if different from your contact email</label>
+                <input id="payment_email" name="payment_email" type="email" />
+              </div>
+            </div>
+          </section>
+
+          <section class="intake-section">
+            <div class="intake-section-title">
+              <span class="intake-section-number">02</span>
+              <h2>Your details</h2>
+            </div>
+            <div class="intake-grid">
+              <div class="form-field">
+                <label for="name">Name <span class="required-mark">*</span></label>
+                <input id="name" name="name" type="text" required />
+              </div>
+              <div class="form-field">
+                <label for="email">Email for report delivery <span class="required-mark">*</span></label>
+                <input id="email" name="email" type="email" required />
+                <p class="helper-text">Your diagnosis report will be sent to this email.</p>
+              </div>
+            </div>
+          </section>
+
+          <section class="intake-section">
+            <div class="intake-section-title">
+              <span class="intake-section-number">03</span>
+              <h2>App basics</h2>
+            </div>
+            <div class="intake-grid">
+              <div class="form-field">
+                <label for="app_name">App name <span class="required-mark">*</span></label>
+                <input id="app_name" name="app_name" type="text" required />
+              </div>
+              <div class="form-field">
+                <label for="live_app_url">Live app URL <span class="required-mark">*</span></label>
+                <input id="live_app_url" name="live_app_url" type="url" required />
+                <p class="helper-text">Paste the production/live URL if available.</p>
+              </div>
+              <div class="form-field">
+                <label for="preview_url">Preview/staging URL, if different</label>
+                <input id="preview_url" name="preview_url" type="url" />
+                <p class="helper-text">Use this if the app works in preview but breaks after deployment.</p>
+              </div>
+              <div class="form-field">
+                <label for="repo_link">GitHub/repo link, if available</label>
+                <input id="repo_link" name="repo_link" type="url" />
+                <p class="helper-text">Only share this if you are comfortable. Do not share private credentials here.</p>
+              </div>
+            </div>
+          </section>
+
+          <section class="intake-section">
+            <div class="intake-section-title">
+              <span class="intake-section-number">04</span>
+              <h2>Build tool</h2>
+            </div>
+            <div class="form-field">
+              <label for="build_tool">What did you build the app with? <span class="required-mark">*</span></label>
+              <select id="build_tool" name="build_tool" required>
+                <option value="">Select build tool</option>
+                <option>Lovable</option>
+                <option>Bolt</option>
+                <option>Cursor</option>
+                <option>Replit</option>
+                <option>v0</option>
+                <option>Claude Code</option>
+                <option>Windsurf</option>
+                <option>Other</option>
+              </select>
+            </div>
+          </section>
+
+          <section class="intake-section">
+            <div class="intake-section-title">
+              <span class="intake-section-number">05</span>
+              <div>
+                <h2>Break type</h2>
+                <p class="helper-text">Choose the closest match. The report will classify the issue more precisely.</p>
+              </div>
+            </div>
+            <div class="form-field">
+              <label for="break_type">What best describes the issue? <span class="required-mark">*</span></label>
+              <select id="break_type" name="break_type" required>
+                <option value="">Select issue type</option>
+                <option>App broke after update</option>
+                <option>UI/layout broke</option>
+                <option>Login/signup broke</option>
+                <option>Database/data not loading</option>
+                <option>App works in preview but not production</option>
+                <option>Deployment issue</option>
+                <option>Payment/checkout issue</option>
+                <option>One feature broke another feature</option>
+                <option>AI keeps fixing one thing and breaking another</option>
+                <option>Supabase/Firebase/Auth issue</option>
+                <option>Environment variable/config issue</option>
+                <option>Other</option>
+              </select>
+            </div>
+          </section>
+
+          <section class="intake-section">
+            <div class="intake-section-title">
+              <span class="intake-section-number">06</span>
+              <h2>App context</h2>
+            </div>
+            <div class="intake-grid">
+              <div class="form-field full">
+                <label for="app_context">What does your app do? <span class="required-mark">*</span></label>
+                <textarea id="app_context" name="app_context" required placeholder="Example: It is a CRM dashboard for coaches where users log in, manage leads, and track follow-ups."></textarea>
+              </div>
+              <div class="form-field full">
+                <label for="app_users">Who uses this app? <span class="required-mark">*</span></label>
+                <textarea id="app_users" name="app_users" required placeholder="Example: founders, students, clients, customers, internal team, paid users, etc."></textarea>
+              </div>
+            </div>
+          </section>
+
+          <section class="intake-section">
+            <div class="intake-section-title">
+              <span class="intake-section-number">07</span>
+              <h2>Before vs after</h2>
+            </div>
+            <div class="intake-grid">
+              <div class="form-field full">
+                <label for="working_before">What was working before? <span class="required-mark">*</span></label>
+                <textarea id="working_before" name="working_before" required></textarea>
+                <p class="helper-text">Describe the last known working state. Be specific.</p>
+              </div>
+              <div class="form-field full">
+                <label for="broken_now">What is broken now? <span class="required-mark">*</span></label>
+                <textarea id="broken_now" name="broken_now" required></textarea>
+                <p class="helper-text">Describe the current broken behavior. What does the user see? What fails?</p>
+              </div>
+              <div class="form-field full">
+                <label for="when_broke">When did it break? <span class="required-mark">*</span></label>
+                <input id="when_broke" name="when_broke" type="text" required placeholder="Example: after last deploy, after adding login, after changing Supabase rules, after one Cursor prompt, yesterday, etc." />
+              </div>
+            </div>
+          </section>
+
+          <section class="intake-section">
+            <div class="intake-section-title">
+              <span class="intake-section-number">08</span>
+              <h2>Last change before the break</h2>
+            </div>
+            <div class="intake-grid">
+              <div class="form-field full">
+                <label for="last_change">What was the last prompt, code change, deploy, update, or setting change before it broke? <span class="required-mark">*</span></label>
+                <textarea id="last_change" name="last_change" required></textarea>
+                <p class="helper-text">Paste the exact prompt if possible. If you do not remember, describe what you were trying to change.</p>
+              </div>
+              <div class="form-field full">
+                <label for="already_tried">What have you already tried? <span class="required-mark">*</span></label>
+                <textarea id="already_tried" name="already_tried" required></textarea>
+                <p class="helper-text">List every fix attempt, prompt, rollback, setting change, or redeploy you already tried.</p>
+              </div>
+            </div>
+          </section>
+
+          <section class="intake-section">
+            <div class="intake-section-title">
+              <span class="intake-section-number">09</span>
+              <h2>Error messages and evidence</h2>
+            </div>
+            <div class="intake-grid">
+              <div class="form-field full">
+                <label for="error_message">Paste the exact error message, console error, build error, or API error if you have one.</label>
+                <textarea id="error_message" name="error_message"></textarea>
+                <p class="helper-text">Exact errors are better than summaries. Paste the full message if possible.</p>
+              </div>
+              <div class="form-field full">
+                <label for="evidence_links">Links to screenshots, logs, Loom/video, or shared Drive files</label>
+                <textarea id="evidence_links" name="evidence_links"></textarea>
+                <p class="helper-text">Paste links to screenshots, console errors, deploy logs, or screen recordings. Do not paste secrets.</p>
+              </div>
+              <div class="form-field full">
+                <label for="issue_location">Where does the issue happen? <span class="required-mark">*</span></label>
+                <select id="issue_location" name="issue_location" required>
+                  <option value="">Select location</option>
+                  <option>Preview only</option>
+                  <option>Production only</option>
+                  <option>Both preview and production</option>
+                  <option>Local environment only</option>
+                  <option>Not sure</option>
+                </select>
+              </div>
+            </div>
+          </section>
+
+          <section class="intake-section">
+            <div class="intake-section-title">
+              <span class="intake-section-number">10</span>
+              <h2>Diagnosis preference</h2>
+            </div>
+            <div class="intake-grid">
+              <div class="form-field full">
+                <label for="diagnosis_priority">What should the diagnosis prioritize? <span class="required-mark">*</span></label>
+                <select id="diagnosis_priority" name="diagnosis_priority" required>
+                  <option value="">Select priority</option>
+                  <option>Rollback recommendation</option>
+                  <option>Fix-forward recommendation</option>
+                  <option>Diagnosis only before changing anything</option>
+                  <option>Safest path regardless of speed</option>
+                  <option>I am not sure</option>
+                </select>
+              </div>
+              <div class="form-field full">
+                <label for="focus_areas">Any files, components, pages, database tables, auth flows, or screenshots I should focus on?</label>
+                <textarea id="focus_areas" name="focus_areas"></textarea>
+              </div>
+              <div class="form-field full">
+                <label for="do_not_touch">Anything I should NOT touch or suggest changing?</label>
+                <textarea id="do_not_touch" name="do_not_touch" placeholder="Example: do not suggest database schema changes, do not touch auth rules, do not change payment flow, etc."></textarea>
+              </div>
+            </div>
+          </section>
+
+          <section class="intake-section">
+            <div class="intake-section-title">
+              <span class="intake-section-number">11</span>
+              <h2>Access and test login</h2>
+            </div>
+            <div class="intake-grid">
+              <div class="form-field full">
+                <label for="test_login_available">Can you provide test login credentials? <span class="required-mark">*</span></label>
+                <select id="test_login_available" name="test_login_available" required>
+                  <option value="">Select answer</option>
+                  <option>Yes</option>
+                  <option>No</option>
+                  <option>Not needed</option>
+                </select>
+              </div>
+              <div class="form-field full">
+                <label for="test_login_details">Test login details, if safe to share</label>
+                <textarea id="test_login_details" name="test_login_details"></textarea>
+                <p class="helper-text">Only share test credentials. Do not share admin passwords, production secrets, API keys, database passwords, or private tokens.</p>
+                <p class="important-note">Do not submit API keys, database passwords, private tokens, seed phrases, or admin credentials. Use test access only.</p>
+              </div>
+            </div>
+          </section>
+
+          <section class="intake-section">
+            <div class="intake-section-title">
+              <span class="intake-section-number">12</span>
+              <h2>Scope confirmation</h2>
+            </div>
+            <div class="checkbox-stack">
+              <label class="checkbox-field">
+                <input type="checkbox" name="scope_confirmation" value="yes" required />
+                <span>I understand VibeFix is a diagnosis report for common post-launch break patterns in AI-built apps. It is not 24/7 emergency support, full security testing, legal/compliance review, guaranteed implementation, or full code fixing.</span>
+              </label>
+              <label class="checkbox-field">
+                <input type="checkbox" name="missing_info_confirmation" value="yes" required />
+                <span>I understand that the report will be prepared from the information I submit. Missing logs, screenshots, repo access, or error messages may lower the confidence of the diagnosis.</span>
+              </label>
+              <label class="checkbox-field">
+                <input type="checkbox" name="payment_confirmation" value="yes" required />
+                <span>I confirm I have completed payment and included my Razorpay Payment ID / Order ID.</span>
+              </label>
+            </div>
+          </section>
+
+          <div class="form-actions">
+            <button class="btn btn-primary full-width" type="submit">Submit App for Diagnosis</button>
+            <p class="small-fallback">If this intake page does not load or submit correctly, use the backup form: <a href="https://tally.so/r/yPzAVx">https://tally.so/r/yPzAVx</a></p>
+          </div>
+        </form>
+
+        <aside class="intake-reminder">
+          <h3>Before submitting</h3>
+          <ul>
+            <li>Include your Razorpay Payment ID / Order ID.</li>
+            <li>Do not share passwords, API keys, private tokens, database secrets, or admin credentials.</li>
+            <li>Use test credentials only if needed.</li>
+          </ul>
+        </aside>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const hiddenKeys = [
+      "source",
+      "razorpay_payment_id",
+      "razorpay_order_id",
+      "razorpay_payment_link_id",
+      "razorpay_payment_link_reference_id"
+    ];
+
+    hiddenKeys.forEach((key) => {
+      const field = document.getElementById(key);
+      const value = params.get(key);
+      if (field && value) field.value = value;
+    });
+
+    const paymentValues = [
+      params.get("razorpay_payment_id"),
+      params.get("razorpay_order_id"),
+      params.get("razorpay_payment_link_reference_id"),
+      params.get("razorpay_payment_link_id")
+    ].filter(Boolean);
+
+    if (paymentValues.length) {
+      document.getElementById("payment_id").value = paymentValues.join(" / ");
+    }
+  </script>
+</body>
+</html>

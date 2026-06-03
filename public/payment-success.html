@@ -9,48 +9,6 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/styles.css" />
-  <style>
-    body {
-      min-height: 100vh;
-      background:
-        radial-gradient(circle at 76% 16%, rgba(124, 58, 237, 0.18), transparent 34%),
-        #0A0A0F;
-    }
-
-    .success-shell {
-      min-height: 100vh;
-      display: grid;
-      place-items: center;
-      padding: 120px 24px 48px;
-    }
-
-    .success-card {
-      width: min(100%, 680px);
-      background: linear-gradient(135deg, #12121A 0%, #0F0F17 100%);
-      border: 1px solid #1E1E2E;
-      border-radius: 12px;
-      box-shadow: 0 0 40px rgba(124, 58, 237, 0.15);
-      padding: 36px;
-    }
-
-    .success-card h1 {
-      margin: 18px 0 18px;
-      font-size: clamp(36px, 8vw, 56px);
-      line-height: 1.1;
-      letter-spacing: -0.02em;
-    }
-
-    .success-card p {
-      margin-bottom: 18px;
-    }
-
-    .success-note {
-      border-top: 1px solid #1E1E2E;
-      margin-top: 24px;
-      padding-top: 20px;
-      color: #94A3B8;
-    }
-  </style>
 </head>
 <body>
   <nav class="site-nav" aria-label="Primary navigation">
@@ -71,9 +29,34 @@
       <h1>Payment received — submit your app details</h1>
       <p class="muted">Thanks for purchasing VibeFix Broken App Diagnosis.</p>
       <p class="muted">Next step: submit your broken app details through the intake form so your diagnosis report can be prepared.</p>
-      <a class="btn btn-primary full-width" href="https://tally.so/r/yPzAVx">Submit App Details</a>
+      <a class="btn btn-primary full-width" id="intake-link" href="/intake.html">Submit App Details</a>
       <p class="success-note">You’ll receive a written diagnosis report by email within 48 hours after submitting the form.</p>
+      <p class="small-fallback">If payment details are not prefilled, copy your Payment ID or Order ID from your Razorpay receipt and paste it into the intake form.</p>
+      <p class="small-fallback">If the intake page does not load, use the backup form: <a href="https://tally.so/r/yPzAVx">https://tally.so/r/yPzAVx</a></p>
     </section>
   </main>
+
+  <script>
+    const forwardKeys = [
+      "razorpay_payment_id",
+      "razorpay_order_id",
+      "razorpay_payment_link_id",
+      "razorpay_payment_link_reference_id"
+    ];
+    const currentParams = new URLSearchParams(window.location.search);
+    const intakeParams = new URLSearchParams();
+    let hasPaymentParams = false;
+    forwardKeys.forEach((key) => {
+      const value = currentParams.get(key);
+      if (value) {
+        hasPaymentParams = true;
+        intakeParams.set(key, value);
+      }
+    });
+    if (hasPaymentParams) {
+      intakeParams.set("source", "razorpay_success");
+      document.querySelector("#intake-link").href = `/intake.html?${intakeParams.toString()}`;
+    }
+  </script>
 </body>
 </html>
