@@ -171,8 +171,9 @@ function showUpgradeGate(limit = 3) {
 }
 
 function normalizePaymentLinks() {
-  document.querySelectorAll("#upgrade-gate a, .upgrade-gate a").forEach((link) => {
+  document.querySelectorAll("#upgrade-gate a, .upgrade-gate a, .empty-state a.btn-primary").forEach((link) => {
     link.href = PAYMENT_URL;
+    link.textContent = "Get Beta Diagnosis — ₹7,530";
   });
 }
 
