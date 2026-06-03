@@ -6,344 +6,234 @@
 
   <title>VibeFix - Broken AI App Diagnosis</title>
   <meta name="description" content="Built your app with Lovable, Bolt, Cursor, Replit, v0, or Claude and now something broke? Get a diagnosis, rollback/fix-forward decision, and AI repair prompts." />
-<meta name="google-site-verification" content="CkViALb8o1cnVkclpZWrAPkAIDFy5N0qVnV6jzXVU4E" />
-<script type="text/javascript">
+  <meta name="google-site-verification" content="CkViALb8o1cnVkclpZWrAPkAIDFy5N0qVnV6jzXVU4E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles.css" />
+  <script type="text/javascript">
     (function(c,l,a,r,i,t,y){
         c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
         t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
         y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
     })(window, document, "clarity", "script", "x0w4s3yka6");
-</script>
-
-  <style>
-    * { box-sizing: border-box; }
-
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #080b12;
-      color: #f8fafc;
-      line-height: 1.6;
-    }
-
-    .container {
-      max-width: 1040px;
-      margin: 0 auto;
-      padding: 28px 20px;
-    }
-
-    .nav {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 60px;
-    }
-
-    .brand {
-      font-weight: 900;
-      font-size: 20px;
-    }
-
-    .nav a {
-      color: #cbd5e1;
-      text-decoration: none;
-      font-size: 14px;
-    }
-
-    .hero { padding: 42px 0 72px; }
-
-    .badge {
-      display: inline-block;
-      background: #172033;
-      border: 1px solid #334155;
-      color: #93c5fd;
-      padding: 8px 12px;
-      border-radius: 999px;
-      font-size: 14px;
-      margin-bottom: 22px;
-    }
-
-    h1 {
-      font-size: 58px;
-      line-height: 1.02;
-      letter-spacing: -2px;
-      margin: 0 0 22px;
-      max-width: 920px;
-    }
-
-    .subhead {
-      color: #cbd5e1;
-      font-size: 21px;
-      max-width: 780px;
-      margin-bottom: 30px;
-    }
-
-    .buttons {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 14px;
-      margin-top: 28px;
-    }
-
-    .btn {
-      display: inline-block;
-      padding: 14px 20px;
-      border-radius: 10px;
-      text-decoration: none;
-      font-weight: 800;
-    }
-
-    .btn-primary {
-      background: #3b82f6;
-      color: white;
-    }
-
-    .btn-secondary {
-      background: #111827;
-      border: 1px solid #334155;
-      color: white;
-    }
-
-    .section {
-      padding: 58px 0;
-      border-top: 1px solid #1e293b;
-    }
-
-    h2 {
-      font-size: 34px;
-      letter-spacing: -1px;
-      margin: 0 0 18px;
-    }
-
-    .muted {
-      color: #cbd5e1;
-      max-width: 780px;
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 18px;
-      margin-top: 28px;
-    }
-
-    .card {
-      background: #111827;
-      border: 1px solid #1f2937;
-      border-radius: 14px;
-      padding: 20px;
-    }
-
-    .card h3 {
-      margin: 0 0 8px;
-      font-size: 18px;
-    }
-
-    .card p {
-      margin: 0;
-      color: #cbd5e1;
-      font-size: 15px;
-    }
-
-    ul { color: #cbd5e1; }
-
-    .offer {
-      background: linear-gradient(135deg, #111827, #172554);
-      border: 1px solid #2563eb;
-      border-radius: 18px;
-      padding: 30px;
-      margin-top: 24px;
-    }
-
-    .price {
-      font-size: 46px;
-      font-weight: 900;
-      margin: 12px 0;
-    }
-
-    .small {
-      color: #94a3b8;
-      font-size: 14px;
-    }
-
-    .warning {
-      background: #1c1917;
-      border: 1px solid #92400e;
-      color: #fed7aa;
-      padding: 18px;
-      border-radius: 12px;
-      margin-top: 20px;
-    }
-
-    .faq-item {
-      border-top: 1px solid #1e293b;
-      padding: 20px 0;
-    }
-
-    .faq-item strong {
-      display: block;
-      margin-bottom: 6px;
-    }
-
-    .footer {
-      color: #64748b;
-      border-top: 1px solid #1e293b;
-      padding: 36px 0;
-      font-size: 14px;
-    }
-
-    @media (max-width: 800px) {
-      h1 { font-size: 42px; }
-      .grid { grid-template-columns: 1fr; }
-      .nav { margin-bottom: 34px; }
-    }
-  </style>
+  </script>
 </head>
 
 <body>
-  <div class="container">
-    <nav class="nav">
-      <div class="brand">VibeFix</div>
-      <a href="#pricing">Get diagnosis</a>
-    </nav>
+  <nav class="site-nav" aria-label="Primary navigation">
+    <a class="logo" href="/" aria-label="VibeFix home">Vibe<span>Fix</span></a>
+    <a class="nav-cta" href="#pricing">Get Diagnosis $79</a>
+  </nav>
 
-    <section class="hero">
-      <div class="badge">For broken Lovable, Bolt, Cursor, Replit, v0 & Claude-built apps</div>
-      <h1>Your AI-built app broke. Stop prompting blindly.</h1>
-      <p class="subhead">
-        VibeFix gives you a clear diagnosis, rollback/fix-forward decision, and exact AI prompts to repair common post-launch breaks safely.
-      </p>
-
-      <div class="buttons">
-        <a class="btn btn-primary" href="https://vibefix.lemonsqueezy.com/checkout/buy/d0418723-ef99-495b-af66-94ea31b16caf">Get Beta Diagnosis - $79</a>
-        <a class="btn btn-secondary" href="https://docs.google.com/document/d/1_akZzBbFuNFrAQ4A2mahRh89yKDkgiaAZIdl4AuZtDo/edit?usp=sharing">Free 30-Min Recovery Checklist</a>
-      </div>
-
-      <p class="small">Beta price for first 5 diagnosis reports. After that, price increases.</p>
-    </section>
-
-    <section class="section">
-      <h2>AI-built apps break differently.</h2>
-      <p class="muted">
-        The code may work, but you may not fully understand why. Then one prompt, update, deploy, auth change, or database change breaks the app - and every new "fix this" prompt creates another problem.
-      </p>
-
-      <div class="grid">
-        <div class="card">
-          <h3>Fix-break loops</h3>
-          <p>AI fixes one issue and breaks another feature that used to work.</p>
+  <main>
+    <section class="hero section-shell">
+      <div class="grid-overlay" aria-hidden="true"></div>
+      <div class="hero-glow" aria-hidden="true"></div>
+      <div class="container hero-content">
+        <p class="eyebrow animate-up">For broken Lovable, Bolt, Cursor, Replit, v0 & Claude-built apps</p>
+        <h1 class="animate-up delay-1">Your AI-built app broke. Stop prompting blindly.</h1>
+        <div class="hero-badge animate-up delay-2">Beta · First 5 reports · $79</div>
+        <p class="subhead animate-up delay-2">
+          VibeFix gives you a clear diagnosis, rollback/fix-forward decision, and exact AI prompts to repair common post-launch breaks safely.
+        </p>
+        <div class="hero-actions animate-up delay-3">
+          <a class="btn btn-primary" href="https://vibefix.lemonsqueezy.com/checkout/buy/d0418723-ef99-495b-af66-94ea31b16caf">Get Beta Diagnosis - $79</a>
+          <a class="btn btn-secondary" href="https://docs.google.com/document/d/1_akZzBbFuNFrAQ4A2mahRh89yKDkgiaAZIdl4AuZtDo/edit?usp=sharing">Free 30-Min Recovery Checklist</a>
         </div>
-        <div class="card">
-          <h3>Preview vs production</h3>
-          <p>Your app works in preview but fails after deploy or with real users.</p>
-        </div>
-        <div class="card">
-          <h3>Auth/data confusion</h3>
-          <p>Login, signup, Supabase/Firebase, or dashboard data suddenly stops working.</p>
-        </div>
+        <p class="caption animate-up delay-4">Beta price for first 5 diagnosis reports. After that, price increases.</p>
       </div>
     </section>
 
-    <section class="section">
-      <h2>What VibeFix diagnoses</h2>
-      <ul>
-        <li>Lovable app broke after update</li>
-        <li>Bolt app works in preview but not production</li>
-        <li>Cursor broke old code after adding a new feature</li>
-        <li>Replit deployment issue</li>
-        <li>Database/data not loading</li>
-        <li>Auth/login/signup flow broke</li>
-        <li>AI keeps changing unrelated code</li>
-        <li>You need to know whether to rollback or fix forward</li>
-      </ul>
-
-      <div class="warning">
-        VibeFix is not 24/7 emergency support, full security testing, legal/compliance review, or guaranteed implementation. It is a structured diagnosis for common AI-app break patterns.
-      </div>
-    </section>
-
-    <section class="section">
-      <h2>What you get</h2>
-
-      <div class="grid">
-        <div class="card">
-          <h3>Likely root cause</h3>
-          <p>A simple explanation of what probably broke and why.</p>
+    <section class="section-shell">
+      <div class="container">
+        <div class="section-heading reveal">
+          <span class="section-kicker">Problem</span>
+          <h2>AI-built apps break differently.</h2>
+          <p class="muted">
+            The code may work, but you may not fully understand why. Then one prompt, update, deploy, auth change, or database change breaks the app - and every new "fix this" prompt creates another problem.
+          </p>
         </div>
-        <div class="card">
-          <h3>Rollback vs fix-forward</h3>
-          <p>A clear decision on whether to revert or repair safely.</p>
-        </div>
-        <div class="card">
-          <h3>Exact AI prompts</h3>
-          <p>Prompts to paste into Cursor, Claude, Lovable, or Bolt without triggering a full rewrite.</p>
+
+        <div class="problem-grid">
+          <article class="feature-card reveal">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 2 3 7v10l9 5 9-5V7l-9-5Zm0 2.3 6.7 3.7L12 11.7 5.3 8 12 4.3Zm-7 5.4 6 3.3v6.5l-6-3.4V9.7Zm8 9.8V13l6-3.3v6.4l-6 3.4Z"/></svg>
+            <h3>Fix-break loops</h3>
+            <p>AI fixes one issue and breaks another feature that used to work.</p>
+          </article>
+          <article class="feature-card reveal">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 5h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-5l1.5 2H18v2H6v-2h1.5L9 18H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Zm0 2v9h16V7H4Z"/></svg>
+            <h3>Preview vs production</h3>
+            <p>Your app works in preview but fails after deploy or with real users.</p>
+          </article>
+          <article class="feature-card reveal">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1a5 5 0 0 1 5 5v3h1a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5Zm-3 8h6V6a3 3 0 0 0-6 0v3Zm3 4a2 2 0 0 0-1 3.73V19h2v-2.27A2 2 0 0 0 12 13Z"/></svg>
+            <h3>Auth/data confusion</h3>
+            <p>Login, signup, Supabase/Firebase, or dashboard data suddenly stops working.</p>
+          </article>
         </div>
       </div>
     </section>
 
-    <section class="section" id="pricing">
-      <h2>Beta Diagnosis Report</h2>
-
-      <div class="offer">
-        <div class="small">First 5 reports only</div>
-        <div class="price">$79</div>
-
-        <ul>
-          <li>Likely root cause</li>
-          <li>Confidence level</li>
-          <li>What not to touch</li>
-          <li>Rollback vs fix-forward recommendation</li>
-          <li>Safest first fix</li>
-          <li>Priority fix order</li>
-          <li>Exact AI repair prompts</li>
-          <li>Post-fix testing checklist</li>
-        </ul>
-
-        <div class="buttons">
-          <a class="btn btn-primary" href="https://vibefix.lemonsqueezy.com/checkout/buy/d0418723-ef99-495b-af66-94ea31b16caf">Get My Diagnosis</a>
-          <a class="btn btn-secondary" href="https://tally.so/r/yPzAVx">Submit Details After Purchase</a>
+    <section class="section-shell">
+      <div class="container split-layout">
+        <div class="section-heading reveal">
+          <span class="section-kicker">Diagnosis</span>
+          <h2>What VibeFix diagnoses</h2>
+          <p class="muted">A structured way to understand the break before another AI prompt makes the system harder to recover.</p>
         </div>
 
-        <p class="small">You submit your app details after purchase using the intake form.</p>
+        <div class="check-panel reveal">
+          <ul class="check-list">
+            <li>Lovable app broke after update</li>
+            <li>Bolt app works in preview but not production</li>
+            <li>Cursor broke old code after adding a new feature</li>
+            <li>Replit deployment issue</li>
+            <li>Database/data not loading</li>
+            <li>Auth/login/signup flow broke</li>
+            <li>AI keeps changing unrelated code</li>
+            <li>You need to know whether to rollback or fix forward</li>
+          </ul>
+          <div class="warning-box">
+            VibeFix is not 24/7 emergency support, full security testing, legal/compliance review, or guaranteed implementation. It is a structured diagnosis for common AI-app break patterns.
+          </div>
+        </div>
       </div>
     </section>
 
-    <section class="section">
-      <h2>Free broken-app guides</h2>
-      <ul>
-        <li><a href="/lovable-app-broke-after-update.html">Lovable app broke after update</a></li>
-        <li><a href="/cursor-broke-my-code.html">Cursor broke my code</a></li>
-        <li><a href="/bolt-app-works-in-preview-not-production.html">Bolt app works in preview but not production</a></li>
-      </ul>
+    <section class="section-shell">
+      <div class="container">
+        <div class="section-heading reveal">
+          <span class="section-kicker">Deliverables</span>
+          <h2>What you get</h2>
+        </div>
+
+        <div class="numbered-list">
+          <article class="numbered-item reveal">
+            <span>01</span>
+            <div>
+              <h3>Likely root cause</h3>
+              <p>A simple explanation of what probably broke and why.</p>
+            </div>
+          </article>
+          <article class="numbered-item reveal">
+            <span>02</span>
+            <div>
+              <h3>Rollback vs fix-forward</h3>
+              <p>A clear decision on whether to revert or repair safely.</p>
+            </div>
+          </article>
+          <article class="numbered-item reveal">
+            <span>03</span>
+            <div>
+              <h3>Exact AI prompts</h3>
+              <p>Prompts to paste into Cursor, Claude, Lovable, or Bolt without triggering a full rewrite.</p>
+            </div>
+          </article>
+        </div>
+      </div>
     </section>
 
-    <section class="section">
-      <h2>FAQ</h2>
+    <section class="section-shell pricing-section" id="pricing">
+      <div class="container">
+        <div class="section-heading centered reveal">
+          <span class="section-kicker">Offer</span>
+          <h2>Beta Diagnosis Report</h2>
+        </div>
 
-      <div class="faq-item">
-        <strong>Will you fix the bug for me?</strong>
-        <span class="muted">No. This beta offer is a diagnosis report, not done-for-you development. You get the likely cause, safe fix path, and AI prompts.</span>
-      </div>
-
-      <div class="faq-item">
-        <strong>Is this a security audit?</strong>
-        <span class="muted">No. I may flag obvious risks, but this is not penetration testing or compliance review.</span>
-      </div>
-
-      <div class="faq-item">
-        <strong>What do I need to submit?</strong>
-        <span class="muted">App URL, what broke, when it last worked, last prompt/change, screenshots/error messages, and test login if needed.</span>
-      </div>
-
-      <div class="faq-item">
-        <strong>What if the issue is too complex?</strong>
-        <span class="muted">The report will say that clearly and recommend escalation instead of pretending certainty.</span>
+        <article class="pricing-card reveal">
+          <div class="beta-tag">Beta</div>
+          <p class="caption">First 5 reports only</p>
+          <div class="price"><span>$</span>79</div>
+          <ul class="pricing-list">
+            <li>Likely root cause</li>
+            <li>Confidence level</li>
+            <li>What not to touch</li>
+            <li>Rollback vs fix-forward recommendation</li>
+            <li>Safest first fix</li>
+            <li>Priority fix order</li>
+            <li>Exact AI repair prompts</li>
+            <li>Post-fix testing checklist</li>
+          </ul>
+          <div class="pricing-actions">
+            <a class="btn btn-primary full-width" href="https://vibefix.lemonsqueezy.com/checkout/buy/d0418723-ef99-495b-af66-94ea31b16caf">Get My Diagnosis</a>
+            <a class="btn btn-secondary full-width" href="https://tally.so/r/yPzAVx">Submit Details After Purchase</a>
+          </div>
+          <p class="caption">You submit your app details after purchase using the intake form.</p>
+        </article>
       </div>
     </section>
 
-    <footer class="footer">
-      VibeFix - Broken AI App Diagnosis for founders building with AI coding tools.
-    </footer>
-  </div>
+    <section class="section-shell">
+      <div class="container">
+        <div class="section-heading reveal">
+          <span class="section-kicker">Resources</span>
+          <h2>Free broken-app guides</h2>
+        </div>
+        <div class="guide-grid">
+          <a class="guide-link reveal" href="/lovable-app-broke-after-update.html">Lovable app broke after update</a>
+          <a class="guide-link reveal" href="/cursor-broke-my-code.html">Cursor broke my code</a>
+          <a class="guide-link reveal" href="/bolt-app-works-in-preview-not-production.html">Bolt app works in preview but not production</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-shell">
+      <div class="container narrow">
+        <div class="section-heading centered reveal">
+          <span class="section-kicker">FAQ</span>
+          <h2>FAQ</h2>
+        </div>
+
+        <div class="faq-list reveal">
+          <div class="faq-item">
+            <button class="faq-question" type="button" aria-expanded="false">
+              <span>Will you fix the bug for me?</span>
+              <span class="faq-icon" aria-hidden="true"></span>
+            </button>
+            <div class="faq-answer">
+              <p>No. This beta offer is a diagnosis report, not done-for-you development. You get the likely cause, safe fix path, and AI prompts.</p>
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-question" type="button" aria-expanded="false">
+              <span>Is this a security audit?</span>
+              <span class="faq-icon" aria-hidden="true"></span>
+            </button>
+            <div class="faq-answer">
+              <p>No. I may flag obvious risks, but this is not penetration testing or compliance review.</p>
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-question" type="button" aria-expanded="false">
+              <span>What do I need to submit?</span>
+              <span class="faq-icon" aria-hidden="true"></span>
+            </button>
+            <div class="faq-answer">
+              <p>App URL, what broke, when it last worked, last prompt/change, screenshots/error messages, and test login if needed.</p>
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-question" type="button" aria-expanded="false">
+              <span>What if the issue is too complex?</span>
+              <span class="faq-icon" aria-hidden="true"></span>
+            </button>
+            <div class="faq-answer">
+              <p>The report will say that clearly and recommend escalation instead of pretending certainty.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    VibeFix · Not 24/7 support · Diagnosis for common AI-app break patterns
+  </footer>
+
+  <script src="/site.js"></script>
 </body>
 </html>
