@@ -36,23 +36,7 @@
       </section>
 
       <div class="intake-layout">
-        <section class="intake-section intake-access-gate" id="intake-access-gate" hidden>
-          <div class="intake-section-title">
-            <span class="intake-section-number">Pay</span>
-            <div>
-              <h2>Payment required before intake</h2>
-              <p class="helper-text">The VibeFix diagnosis intake is for paid customers. Complete payment first, then return through the payment-success page to unlock the form.</p>
-            </div>
-          </div>
-          <a class="btn btn-primary full-width" href="https://rzp.io/rzp/IJurCsfY">Get Beta Diagnosis — ₹7,530</a>
-          <p class="small-fallback">Temporary test mode is active. Use the ₹1 Razorpay test payment link while testing this flow.</p>
-        </section>
-
-        <form class="intake-form" id="intake-form" action="https://api.web3forms.com/submit" method="POST" hidden>
-          <input type="hidden" name="access_key" value="16c490f0-2048-4d65-930e-1e12eca9c6b1" />
-          <input type="hidden" name="subject" value="New VibeFix Diagnosis Intake Submission" />
-          <input type="hidden" name="from_name" value="VibeFix Intake" />
-          <input type="hidden" name="redirect" value="https://vibefix-broken-ai-app-diagnosis.atharvam144.workers.dev/intake-submitted.html" />
+        <form class="intake-form" id="intake-form">
           <input type="hidden" id="source" name="source" />
           <input type="hidden" id="razorpay_payment_id" name="razorpay_payment_id" />
           <input type="hidden" id="razorpay_order_id" name="razorpay_order_id" />
@@ -338,6 +322,7 @@
           </section>
 
           <div class="form-actions">
+            <div class="form-error" id="form-error" hidden></div>
             <button class="btn btn-primary full-width" type="submit">Submit App for Diagnosis</button>
             <p class="small-fallback">If this intake page does not load or submit correctly, use the backup form: <a href="https://tally.so/r/yPzAVx">https://tally.so/r/yPzAVx</a></p>
           </div>
@@ -368,38 +353,60 @@
     hiddenKeys.forEach((key) => {
       const field = document.getElementById(key);
       const value = params.get(key);
-      if (field && value) field.value = value;
+      if (field) field.value = value || (key === "source" ? "intake_page" : "");
     });
 
-    const paymentValues = [
+    const paymentValue = [
       params.get("razorpay_payment_id"),
+      params.get("payment_id"),
       params.get("razorpay_order_id"),
-      params.get("razorpay_payment_link_reference_id"),
-      params.get("razorpay_payment_link_id")
-    ].filter(Boolean);
+      params.get("order_id"),
+      params.get("razorpay_payment_link_id"),
+      params.get("razorpay_payment_link_reference_id")
+    ].find(Boolean);
 
-    let hasPaidHandoff = false;
-    try {
-      hasPaidHandoff = sessionStorage.getItem("vf_paid_handoff") === "true";
-    } catch (error) {
-      hasPaidHandoff = false;
-    }
+    if (paymentValue) document.getElementById("payment_id").value = paymentValue;
 
-    const hasPaymentContext = paymentValues.length > 0 || params.get("source") === "razorpay_success" || hasPaidHandoff;
-    document.getElementById("intake-form").hidden = !hasPaymentContext;
-    document.getElementById("intake-access-gate").hidden = hasPaymentContext;
+    document.getElementById("intake-form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const form = event.currentTarget;
+      const errorBox = document.getElementById("form-error");
+      const submitButton = form.querySelector('button[type="submit"]');
+      errorBox.hidden = true;
+      errorBox.textContent = "";
 
-    if (hasPaymentContext) {
+      if (!form.reportValidity()) return;
+
+      const payload = Object.fromEntries(new FormData(form).entries());
+      payload.source = params.get("source") || payload.source || "intake_page";
+      payload.razorpay_payment_id = params.get("razorpay_payment_id") || payload.razorpay_payment_id || "";
+      payload.razorpay_order_id = params.get("razorpay_order_id") || payload.razorpay_order_id || "";
+      payload.razorpay_payment_link_id = params.get("razorpay_payment_link_id") || payload.razorpay_payment_link_id || "";
+      payload.razorpay_payment_link_reference_id = params.get("razorpay_payment_link_reference_id") || payload.razorpay_payment_link_reference_id || "";
+
+      submitButton.disabled = true;
+      submitButton.textContent = "Submitting...";
+
       try {
-        sessionStorage.setItem("vf_paid_handoff", "true");
-      } catch (error) {
-        // Access is still allowed for this page load.
-      }
-    }
+        const response = await fetch("/api/generate-report", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const result = await response.json();
 
-    if (paymentValues.length) {
-      document.getElementById("payment_id").value = paymentValues.join(" / ");
-    }
+        if (!response.ok || !result.success) {
+          throw new Error(result.error || "Something went wrong while submitting. Please retry or use the backup Tally form.");
+        }
+
+        window.location.href = "/intake-submitted.html";
+      } catch (error) {
+        errorBox.textContent = error.message || "Something went wrong while submitting. Please retry or use the backup Tally form.";
+        errorBox.hidden = false;
+        submitButton.disabled = false;
+        submitButton.textContent = "Submit App for Diagnosis";
+      }
+    });
   </script>
 </body>
 </html>

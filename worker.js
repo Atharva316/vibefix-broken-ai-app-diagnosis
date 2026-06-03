@@ -6,8 +6,32 @@ const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
 const GOOGLE_USERINFO_URL = "https://openidconnect.googleapis.com/v1/userinfo";
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
 const ANTHROPIC_MODEL = "claude-sonnet-4-20250514";
+const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
+const RESEND_URL = "https://api.resend.com/emails";
 const STATIC_ASSET_ORIGIN = "https://raw.githubusercontent.com/Atharva316/vibefix-broken-ai-app-diagnosis/main/public";
-const PAYMENT_URL = "https://rzp.io/rzp/IJurCsfY";
+const PAYMENT_URL = "https://rzp.io/rzp/lJurCsFY";
+const REQUIRED_INTAKE_FIELDS = [
+  "payment_id",
+  "name",
+  "email",
+  "app_name",
+  "live_app_url",
+  "build_tool",
+  "break_type",
+  "app_context",
+  "app_users",
+  "working_before",
+  "broken_now",
+  "when_broke",
+  "last_change",
+  "already_tried",
+  "issue_location",
+  "diagnosis_priority",
+  "test_login_available",
+  "scope_confirmation",
+  "missing_info_confirmation",
+  "payment_confirmation"
+];
 
 export default {
   async fetch(request, env) {
@@ -19,6 +43,7 @@ export default {
       if (url.pathname === "/auth/signout") return signOut(request, env);
       if (url.pathname === "/api/me") return json(await getPublicUserState(request, env));
       if (url.pathname === "/api/ai" && request.method === "POST") return handleAi(request, env);
+      if (url.pathname === "/api/generate-report") return handleGenerateReport(request, env);
       if (url.pathname === "/pricing") return redirect(PAYMENT_URL);
       if (url.pathname === "/dashboard") return redirect("/dashboard/reports");
       if (url.pathname.startsWith("/dashboard")) return renderDashboardRoute(request, env);
@@ -261,6 +286,224 @@ async function handleAi(request, env) {
   });
 }
 
+async function handleGenerateReport(request, env) {
+  if (request.method !== "POST") return json({ success: false, error: "Method not allowed" }, 405);
+
+  const contentType = request.headers.get("Content-Type") || "";
+  if (!contentType.includes("application/json")) {
+    return json({ success: false, error: "Content-Type must be application/json" }, 415);
+  }
+
+  let payload;
+  try {
+    payload = await request.json();
+  } catch (error) {
+    return json({ success: false, error: "Invalid JSON body" }, 400);
+  }
+
+  for (const field of REQUIRED_INTAKE_FIELDS) {
+    if (!hasSubmittedValue(payload[field])) {
+      return json({ success: false, error: `Missing required field: ${field}` }, 400);
+    }
+  }
+
+  if (!env.GEMINI_API_KEY) return json({ success: false, error: "GEMINI_API_KEY is not configured." }, 500);
+  if (!env.RESEND_API_KEY) return json({ success: false, error: "RESEND_API_KEY is not configured." }, 500);
+  if (!env.OWNER_EMAIL) return json({ success: false, error: "OWNER_EMAIL is not configured." }, 500);
+  if (!env.FROM_EMAIL) return json({ success: false, error: "FROM_EMAIL is not configured." }, 500);
+
+  try {
+    const report = await generateGeminiReport(payload, env);
+    await emailOwnerReport(payload, report, env);
+    return json({ success: true });
+  } catch (error) {
+    console.error(error);
+    return json({ success: false, error: error.message || "Could not generate and email report draft." }, 500);
+  }
+}
+
+function hasSubmittedValue(value) {
+  if (Array.isArray(value)) return value.length > 0;
+  return value !== undefined && value !== null && String(value).trim() !== "";
+}
+
+async function generateGeminiReport(payload, env) {
+  const response = await fetch(`${GEMINI_URL}?key=${encodeURIComponent(env.GEMINI_API_KEY)}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      contents: [{
+        role: "user",
+        parts: [{ text: buildGeminiPrompt(payload) }]
+      }],
+      generationConfig: {
+        temperature: 0.25,
+        maxOutputTokens: 6000
+      }
+    })
+  });
+
+  if (!response.ok) {
+    const body = await response.text();
+    throw new Error(`Gemini report generation failed: ${body.slice(0, 500)}`);
+  }
+
+  const data = await response.json();
+  const report = data?.candidates?.[0]?.content?.parts?.map((part) => part.text || "").join("\n").trim();
+  if (!report) throw new Error("Gemini returned an empty report draft.");
+  return report;
+}
+
+async function emailOwnerReport(payload, report, env) {
+  const subject = `New VibeFix report draft — ${payload.app_name} — ${payload.build_tool}`;
+  const body = `New VibeFix intake submitted.
+
+Client:
+${payload.name} / ${payload.email}
+
+Payment ID:
+${payload.payment_id}
+
+App:
+${payload.app_name}
+
+Tool:
+${payload.build_tool}
+
+Break Type:
+${payload.break_type}
+
+Generated Report Draft:
+${report}
+
+Raw Submission:
+${JSON.stringify(payload, null, 2)}
+`;
+
+  const response = await fetch(RESEND_URL, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${env.RESEND_API_KEY}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      from: env.FROM_EMAIL,
+      to: [env.OWNER_EMAIL],
+      subject,
+      text: body
+    })
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Resend email failed: ${text.slice(0, 500)}`);
+  }
+}
+
+function buildGeminiPrompt(payload) {
+  return `You are generating a VibeFix Broken App Diagnosis Report draft.
+
+Important rules:
+- Do not claim certainty without evidence.
+- Do not suggest dangerous database, auth, payment, or security changes casually.
+- Do not tell the user to rewrite the whole app.
+- Do not promise a guaranteed fix.
+- If the issue is risky or too complex, recommend escalation to a senior developer.
+- Keep the explanation practical and easy for a non-technical founder.
+- Use the exact app/tool/error details provided.
+- If information is missing, say what is missing and lower confidence.
+- The report must feel specific to the submitted app, not generic.
+- Include "what might break next."
+- Include exact AI prompts customized to the tool, break type, app context, and error details.
+
+Client submission:
+${JSON.stringify(payload, null, 2)}
+
+Return a clean diagnosis report in Markdown with these sections:
+
+# VibeFix Broken App Diagnosis Report
+
+## Case Information
+Client Name:
+Client Email:
+Payment ID:
+App Name:
+App URL:
+Build Tool:
+Break Type:
+
+## 1. Final Diagnosis
+Write a specific 150+ word diagnosis based on the submitted details.
+
+Include:
+- likely root cause
+- confidence level
+- one-line summary
+
+## 2. What Likely Happened
+Explain before → change → after → likely chain.
+
+## 3. Evidence Used
+List what the diagnosis is based on.
+
+## 4. Missing Information / Assumptions
+List missing information.
+List assumptions.
+Explain how missing info affects confidence.
+
+## 5. What NOT To Touch
+List at least 3 things not to touch yet, with reasons.
+
+## 6. Rollback vs Fix-Forward Decision
+Choose:
+- Rollback
+- Fix forward
+- Pause and collect more evidence
+- Needs senior developer review
+
+Explain why.
+
+## 7. Safest First Fix
+Give 3 safe first steps.
+
+## 8. Priority Fix Order
+P0:
+P1:
+P2:
+P3:
+
+## 9. Exact AI Repair Prompts
+Write 3 prompts:
+1. Diagnosis prompt
+2. Safe-fix prompt
+3. Regression-test prompt
+
+Each prompt must include:
+- the actual tool used
+- the app context
+- what broke
+- last change
+- exact error message if available
+- what not to touch
+
+## 10. Test Checklist After Fix
+Create a checklist customized to the issue.
+
+## 11. What Might Break Next
+Give 3 likely next failure points.
+
+## 12. Prevention Notes
+Give 3 prevention rules.
+
+## 13. Escalation Note
+Use this exact wording:
+If this issue involves exposed private data, payment failures, database corruption, serious security risk, or user data loss, escalate to a senior developer immediately.
+
+## 14. Scope Note
+Use this exact wording:
+This report is a structured diagnosis for common post-launch break patterns in AI-built apps. It is not full security testing, legal/compliance review, 24/7 production support, or guaranteed implementation.`;
+}
+
 async function streamAnthropic({ env, tool, breakTypes, description, image, write }) {
   const content = [{
     type: "text",
@@ -370,7 +613,7 @@ function renderReportsPage(user, reports, env) {
     <div class="empty-state">
       <h3>No reports yet.</h3>
       <p>Get your first diagnosis →</p>
-      <a class="btn btn-primary" href="${escapeAttr(checkout)}">Get Beta Diagnosis — ₹7,530</a>
+      <a class="btn btn-primary" href="${escapeAttr(checkout)}">Get Beta Diagnosis — ₹1 Test</a>
     </div>
   `;
 
@@ -450,7 +693,7 @@ function renderAiPage(user, env) {
         </div>
         <div class="upgrade-gate" id="upgrade-gate" hidden>
           <p>You have used all 3 free prompt generations. Get the full VibeFix diagnosis report to continue.</p>
-          <a class="btn btn-primary" href="${escapeAttr(upgradeUrl)}">Get Beta Diagnosis — ₹7,530</a>
+          <a class="btn btn-primary" href="${escapeAttr(upgradeUrl)}">Get Beta Diagnosis — ₹1 Test</a>
         </div>
       </aside>
     </section>

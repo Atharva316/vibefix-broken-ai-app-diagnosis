@@ -13,7 +13,7 @@ const copyButton = document.querySelector("#copy-prompt");
 const fileInput = document.querySelector("#screenshot");
 const uploadZone = document.querySelector("#upload-zone");
 const uploadPreview = document.querySelector("#upload-preview");
-const PAYMENT_URL = "https://rzp.io/rzp/IJurCsfY";
+const PAYMENT_URL = "https://rzp.io/rzp/lJurCsFY";
 
 normalizePaymentLinks();
 
@@ -173,7 +173,7 @@ function showUpgradeGate(limit = 3) {
 function normalizePaymentLinks() {
   document.querySelectorAll("#upgrade-gate a, .upgrade-gate a, .empty-state a.btn-primary").forEach((link) => {
     link.href = PAYMENT_URL;
-    link.textContent = "Get Beta Diagnosis — ₹7,530";
+    link.textContent = "Get Beta Diagnosis — ₹1 Test";
   });
 }
 

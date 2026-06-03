@@ -13,6 +13,10 @@ Set these Worker secrets:
 `GOOGLE_CLIENT_ID`
 `GOOGLE_CLIENT_SECRET`
 `ANTHROPIC_API_KEY`
+`GEMINI_API_KEY`
+`RESEND_API_KEY`
+`OWNER_EMAIL`
+`FROM_EMAIL`
 
 Optional vars are in `wrangler.toml`:
 
@@ -20,17 +24,39 @@ Optional vars are in `wrangler.toml`:
 `RAZORPAY_PAYMENT_LINK`
 `UPGRADE_URL`
 
-## Current VibeFix flow
+## Current test flow
 
 1. Landing page
-2. Razorpay Payment Link
-3. `payment-success.html`
+2. ₹1 Razorpay test Payment Link
+3. `payment-success.html` if Razorpay redirect is configured
 4. `intake.html`
-5. Web3Forms email submission
-6. `intake-submitted.html`
-7. Manual/AI-assisted diagnosis report delivery
+5. `/api/generate-report`
+6. Gemini creates report draft
+7. Resend emails draft to owner
+8. `intake-submitted.html` confirmation
+9. Final report is reviewed and sent manually
 
-Razorpay handles payment. Web3Forms handles intake submission. No Razorpay API secrets are stored in frontend code. The legacy checkout provider has been removed from the active flow.
+Production link to restore after test:
+
+`https://rzp.io/rzp/bM3R4oPI`
+
+Test link currently active:
+
+`https://rzp.io/rzp/lJurCsFY`
+
+Required environment variables:
+
+`GEMINI_API_KEY`
+`RESEND_API_KEY`
+`OWNER_EMAIL`
+`FROM_EMAIL`
+
+Security notes:
+
+No Razorpay secrets in frontend.
+No Gemini key in frontend.
+No Resend key in frontend.
+Legacy checkout provider removed.
 
 Google OAuth redirect URL:
 

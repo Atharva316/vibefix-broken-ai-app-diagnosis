@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Payment Received - VibeFix</title>
-  <meta name="description" content="Payment received for VibeFix Broken App Diagnosis. Submit your broken app details through the intake form." />
+  <meta name="description" content="Payment received for VibeFix Broken App Diagnosis. Open the intake form and submit your app details." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
@@ -25,14 +25,19 @@
 
   <main class="success-shell">
     <section class="success-card">
-      <span class="section-kicker">Payment received</span>
+      <span class="section-kicker">Payment completed</span>
       <h1>Payment received — submit your app details</h1>
-      <p class="muted">Thanks for purchasing VibeFix Broken App Diagnosis.</p>
-      <p class="muted">Next step: submit your broken app details through the intake form so your diagnosis report can be prepared.</p>
-      <a class="btn btn-primary full-width" id="intake-link" href="/intake.html">Submit App Details</a>
-      <p class="success-note">You’ll receive a written diagnosis report by email within 48 hours after submitting the form.</p>
-      <p class="small-fallback">If payment details are not prefilled, copy your Payment ID or Order ID from your Razorpay receipt and paste it into the intake form.</p>
-      <p class="small-fallback">If the intake page does not load, use the backup form: <a href="https://tally.so/r/yPzAVx">https://tally.so/r/yPzAVx</a></p>
+      <p class="muted">Your Razorpay payment is complete. Now submit the app details needed to prepare your VibeFix diagnosis report.</p>
+
+      <div class="success-action-card">
+        <h2>Click on the form button</h2>
+        <p class="muted">Use the button below to open the VibeFix diagnosis intake form. This is where you’ll submit what broke, what changed, your app URL, error messages, and your Razorpay Payment ID / Order ID.</p>
+        <a class="btn btn-primary full-width" id="intake-link" href="/intake.html?source=payment_success">Open VibeFix Intake Form</a>
+      </div>
+
+      <p class="success-note">If the Payment ID is not prefilled in the form, copy it from your Razorpay receipt and paste it into the “Razorpay Payment ID / Order ID” field.</p>
+      <p class="small-fallback">Backup form: <a href="https://tally.so/r/yPzAVx">https://tally.so/r/yPzAVx</a></p>
+      <p class="small-fallback">VibeFix is a diagnosis report for common AI-app break patterns. It is not 24/7 emergency support, full security testing, legal/compliance review, guaranteed implementation, or full code fixing.</p>
     </section>
   </main>
 
@@ -41,16 +46,14 @@
       "razorpay_payment_id",
       "razorpay_order_id",
       "razorpay_payment_link_id",
-      "razorpay_payment_link_reference_id"
+      "razorpay_payment_link_reference_id",
+      "payment_id",
+      "order_id"
     ];
     const currentParams = new URLSearchParams(window.location.search);
     const intakeParams = new URLSearchParams();
     let hasPaymentParams = false;
-    try {
-      sessionStorage.setItem("vf_paid_handoff", "true");
-    } catch (error) {
-      // Continue without browser storage; query parameters still carry payment context.
-    }
+
     forwardKeys.forEach((key) => {
       const value = currentParams.get(key);
       if (value) {
@@ -58,10 +61,9 @@
         intakeParams.set(key, value);
       }
     });
-    if (hasPaymentParams) {
-      intakeParams.set("source", "razorpay_success");
-      document.querySelector("#intake-link").href = `/intake.html?${intakeParams.toString()}`;
-    }
+
+    intakeParams.set("source", hasPaymentParams ? "razorpay_success" : "payment_success");
+    document.querySelector("#intake-link").href = `/intake.html?${intakeParams.toString()}`;
   </script>
 </body>
 </html>
