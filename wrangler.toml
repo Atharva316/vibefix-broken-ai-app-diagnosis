@@ -8,7 +8,7 @@ binding = "ASSETS"
 
 [[kv_namespaces]]
 binding = "VIBEFIX_KV"
-id = "REPLACE_WITH_PRODUCTION_KV_NAMESPACE_ID"
+id = "c31f2ba7390a4b17a7b58ea4b549abd5"
 
 [vars]
 FREE_AI_LIMIT = "3"

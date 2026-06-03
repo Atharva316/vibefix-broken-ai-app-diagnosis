@@ -6,6 +6,7 @@ const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
 const GOOGLE_USERINFO_URL = "https://openidconnect.googleapis.com/v1/userinfo";
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
 const ANTHROPIC_MODEL = "claude-sonnet-4-20250514";
+const STATIC_ASSET_ORIGIN = "https://raw.githubusercontent.com/Atharva316/vibefix-broken-ai-app-diagnosis/main/public";
 
 export default {
   async fetch(request, env) {
@@ -20,13 +21,57 @@ export default {
       if (url.pathname === "/pricing") return redirect(env.UPGRADE_URL || env.LEMON_CHECKOUT_URL || "/");
       if (url.pathname === "/dashboard") return redirect("/dashboard/reports");
       if (url.pathname.startsWith("/dashboard")) return renderDashboardRoute(request, env);
-      return env.ASSETS.fetch(request);
+      return serveStaticAsset(request, env);
     } catch (error) {
       console.error(error);
       return new Response("Something went wrong.", { status: 500 });
     }
   }
 };
+
+async function serveStaticAsset(request, env) {
+  if (env.ASSETS) return env.ASSETS.fetch(request);
+  if (!env.VIBEFIX_KV) return new Response("Not found", { status: 404 });
+
+  const url = new URL(request.url);
+  const path = normalizeAssetPath(url.pathname);
+  const value = await env.VIBEFIX_KV.get(`asset:${path}`, { type: "arrayBuffer" });
+
+  if (!value) return fetchGitHubAsset(path);
+
+  return new Response(value, {
+    headers: {
+      "Content-Type": contentTypeFor(path),
+      "Cache-Control": path === "/index.html" ? "public, max-age=60" : "public, max-age=3600"
+    }
+  });
+}
+
+async function fetchGitHubAsset(path) {
+  const response = await fetch(`${STATIC_ASSET_ORIGIN}${path}`);
+  if (!response.ok) return new Response("Not found", { status: 404 });
+
+  return new Response(response.body, {
+    headers: {
+      "Content-Type": contentTypeFor(path),
+      "Cache-Control": path === "/index.html" ? "public, max-age=60" : "public, max-age=3600"
+    }
+  });
+}
+
+function normalizeAssetPath(pathname) {
+  if (!pathname || pathname === "/") return "/index.html";
+  if (!pathname.includes(".") && !pathname.endsWith("/")) return `${pathname}.html`;
+  return pathname;
+}
+
+function contentTypeFor(path) {
+  if (path.endsWith(".html")) return "text/html; charset=utf-8";
+  if (path.endsWith(".css")) return "text/css; charset=utf-8";
+  if (path.endsWith(".js")) return "application/javascript; charset=utf-8";
+  if (path.endsWith(".pdf")) return "application/pdf";
+  return "application/octet-stream";
+}
 
 async function startGoogleAuth(request, env) {
   assertEnv(env, ["GOOGLE_CLIENT_ID"]);
