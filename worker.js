@@ -74,7 +74,7 @@ function contentTypeFor(path) {
 }
 
 async function startGoogleAuth(request, env) {
-  assertEnv(env, ["GOOGLE_CLIENT_ID"]);
+  if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET) return startGuestSession(request, env);
 
   const url = new URL(request.url);
   const state = cryptoRandom();
@@ -91,6 +91,38 @@ async function startGoogleAuth(request, env) {
 
   return redirect(authUrl.toString(), {
     "Set-Cookie": cookie(STATE_COOKIE, state, { maxAge: 600 })
+  });
+}
+
+async function startGuestSession(request, env) {
+  assertKv(env);
+
+  const url = new URL(request.url);
+  const next = safeNext(url.searchParams.get("next") || "/dashboard/ai");
+  const existingUser = await getSessionUser(request, env);
+
+  if (existingUser) return redirect(next);
+
+  const guestId = `guest-${cryptoRandom().slice(0, 16)}`;
+  const sessionId = cryptoRandom();
+  const user = {
+    googleId: guestId,
+    email: "guest@vibefix.local",
+    name: "VibeFix Guest",
+    avatar: "",
+    created_at: new Date().toISOString(),
+    diagnosis_count: 0,
+    is_guest: true
+  };
+
+  await env.VIBEFIX_KV.put(`user:${guestId}`, JSON.stringify(user), { expirationTtl: SESSION_TTL_SECONDS });
+  await env.VIBEFIX_KV.put(`session:${sessionId}`, JSON.stringify({
+    userId: guestId,
+    created_at: new Date().toISOString()
+  }), { expirationTtl: SESSION_TTL_SECONDS });
+
+  return redirect(next, {
+    "Set-Cookie": cookie(COOKIE_NAME, sessionId, { maxAge: SESSION_TTL_SECONDS })
   });
 }
 
