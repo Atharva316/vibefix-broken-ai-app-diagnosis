@@ -46,6 +46,11 @@
     const currentParams = new URLSearchParams(window.location.search);
     const intakeParams = new URLSearchParams();
     let hasPaymentParams = false;
+    try {
+      sessionStorage.setItem("vf_paid_handoff", "true");
+    } catch (error) {
+      // Continue without browser storage; query parameters still carry payment context.
+    }
     forwardKeys.forEach((key) => {
       const value = currentParams.get(key);
       if (value) {

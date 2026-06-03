@@ -36,7 +36,19 @@
       </section>
 
       <div class="intake-layout">
-        <form class="intake-form" action="https://api.web3forms.com/submit" method="POST">
+        <section class="intake-section intake-access-gate" id="intake-access-gate" hidden>
+          <div class="intake-section-title">
+            <span class="intake-section-number">Pay</span>
+            <div>
+              <h2>Payment required before intake</h2>
+              <p class="helper-text">The VibeFix diagnosis intake is for paid customers. Complete payment first, then return through the payment-success page to unlock the form.</p>
+            </div>
+          </div>
+          <a class="btn btn-primary full-width" href="https://rzp.io/rzp/IJurCsfY">Get Beta Diagnosis — ₹7,530</a>
+          <p class="small-fallback">Temporary test mode is active. Use the ₹1 Razorpay test payment link while testing this flow.</p>
+        </section>
+
+        <form class="intake-form" id="intake-form" action="https://api.web3forms.com/submit" method="POST" hidden>
           <input type="hidden" name="access_key" value="16c490f0-2048-4d65-930e-1e12eca9c6b1" />
           <input type="hidden" name="subject" value="New VibeFix Diagnosis Intake Submission" />
           <input type="hidden" name="from_name" value="VibeFix Intake" />
@@ -365,6 +377,25 @@
       params.get("razorpay_payment_link_reference_id"),
       params.get("razorpay_payment_link_id")
     ].filter(Boolean);
+
+    let hasPaidHandoff = false;
+    try {
+      hasPaidHandoff = sessionStorage.getItem("vf_paid_handoff") === "true";
+    } catch (error) {
+      hasPaidHandoff = false;
+    }
+
+    const hasPaymentContext = paymentValues.length > 0 || params.get("source") === "razorpay_success" || hasPaidHandoff;
+    document.getElementById("intake-form").hidden = !hasPaymentContext;
+    document.getElementById("intake-access-gate").hidden = hasPaymentContext;
+
+    if (hasPaymentContext) {
+      try {
+        sessionStorage.setItem("vf_paid_handoff", "true");
+      } catch (error) {
+        // Access is still allowed for this page load.
+      }
+    }
 
     if (paymentValues.length) {
       document.getElementById("payment_id").value = paymentValues.join(" / ");

@@ -7,7 +7,7 @@ const GOOGLE_USERINFO_URL = "https://openidconnect.googleapis.com/v1/userinfo";
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
 const ANTHROPIC_MODEL = "claude-sonnet-4-20250514";
 const STATIC_ASSET_ORIGIN = "https://raw.githubusercontent.com/Atharva316/vibefix-broken-ai-app-diagnosis/main/public";
-const PAYMENT_URL = "https://rzp.io/rzp/bM3R4oPI";
+const PAYMENT_URL = "https://rzp.io/rzp/IJurCsfY";
 
 export default {
   async fetch(request, env) {
