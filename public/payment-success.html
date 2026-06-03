@@ -62,7 +62,7 @@
       }
     });
 
-    intakeParams.set("source", hasPaymentParams ? "razorpay_success" : "payment_success");
+    intakeParams.set("source", hasPaymentParams ? "razorpay_success" : currentParams.get("source") || "payment_success");
     document.querySelector("#intake-link").href = `/intake.html?${intakeParams.toString()}`;
   </script>
 </body>

@@ -13,7 +13,7 @@ const copyButton = document.querySelector("#copy-prompt");
 const fileInput = document.querySelector("#screenshot");
 const uploadZone = document.querySelector("#upload-zone");
 const uploadPreview = document.querySelector("#upload-preview");
-const PAYMENT_URL = "https://rzp.io/rzp/lJurCsFY";
+const PAYMENT_URL = "/payment.html";
 
 normalizePaymentLinks();
 

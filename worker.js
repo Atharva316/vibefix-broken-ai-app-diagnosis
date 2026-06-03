@@ -11,7 +11,7 @@ const RESEND_URL = "https://api.resend.com/emails";
 const WEB3FORMS_URL = "https://api.web3forms.com/submit";
 const WEB3FORMS_FALLBACK_ACCESS_KEY = "16c490f0-2048-4d65-930e-1e12eca9c6b1";
 const STATIC_ASSET_ORIGIN = "https://raw.githubusercontent.com/Atharva316/vibefix-broken-ai-app-diagnosis/main/public";
-const PAYMENT_URL = "https://rzp.io/rzp/lJurCsFY";
+const PAYMENT_URL = "/payment.html";
 const REQUIRED_INTAKE_FIELDS = [
   "payment_id",
   "name",

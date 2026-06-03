@@ -27,14 +27,15 @@ Optional vars are in `wrangler.toml`:
 ## Current test flow
 
 1. Landing page
-2. ₹1 Razorpay test Payment Link
-3. `payment-success.html` if Razorpay redirect is configured
-4. `intake.html`
-5. `/api/generate-report`
-6. Gemini creates report draft
-7. Resend emails draft to owner
-8. `intake-submitted.html` confirmation
-9. Final report is reviewed and sent manually
+2. `payment.html` safe payment handoff page
+3. ₹1 Razorpay test Payment Link
+4. `payment-success.html` if Razorpay redirect is configured, or manual fallback if the shortlink returns a blank page
+5. `intake.html`
+6. `/api/generate-report`
+7. Gemini creates report draft when configured, otherwise a local report draft is generated
+8. Resend/Web3Forms/local fallback handles submission
+9. `intake-submitted.html` confirmation
+10. Final report is reviewed and sent manually
 
 Production link to restore after test:
 
@@ -42,7 +43,7 @@ Production link to restore after test:
 
 Test link currently active:
 
-`https://rzp.io/rzp/lJurCsFY`
+`https://rzp.io/rzp/IJurCsfY`
 
 Required environment variables:
 
