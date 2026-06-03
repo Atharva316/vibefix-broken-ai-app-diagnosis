@@ -39,7 +39,7 @@ if (nav) {
   fetch("/api/me", { cache: "no-store" })
     .then((response) => response.json())
     .then((user) => {
-      const slot = document.createElement("div");
+      const slot = nav.querySelector(".auth-slot") || document.createElement("div");
       slot.className = "auth-slot";
 
       if (!user) {
@@ -56,7 +56,7 @@ if (nav) {
         `;
       }
 
-      nav.appendChild(slot);
+      if (!slot.parentElement) nav.appendChild(slot);
 
       const button = slot.querySelector(".avatar-button");
       const menu = slot.querySelector(".avatar-menu");
