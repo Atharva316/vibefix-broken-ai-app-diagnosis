@@ -7,7 +7,7 @@ const GOOGLE_USERINFO_URL = "https://openidconnect.googleapis.com/v1/userinfo";
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
 const ANTHROPIC_MODEL = "claude-sonnet-4-20250514";
 const STATIC_ASSET_ORIGIN = "https://raw.githubusercontent.com/Atharva316/vibefix-broken-ai-app-diagnosis/main/public";
-const PAYMENT_URL = "/payment.html";
+const PAYMENT_URL = "https://rzp.io/rzp/bM3R4oPl";
 
 export default {
   async fetch(request, env) {
@@ -370,7 +370,7 @@ function renderReportsPage(user, reports, env) {
     <div class="empty-state">
       <h3>No reports yet.</h3>
       <p>Get your first diagnosis →</p>
-      <a class="btn btn-primary" href="${escapeAttr(checkout)}">Get your first diagnosis</a>
+      <a class="btn btn-primary" href="${escapeAttr(checkout)}">Get Beta Diagnosis — ₹7,530</a>
     </div>
   `;
 
@@ -450,7 +450,7 @@ function renderAiPage(user, env) {
         </div>
         <div class="upgrade-gate" id="upgrade-gate" hidden>
           <p>You have used all 3 free prompt generations. Get the full VibeFix diagnosis report to continue.</p>
-          <a class="btn btn-primary" href="${escapeAttr(upgradeUrl)}">Get Diagnosis - $79</a>
+          <a class="btn btn-primary" href="${escapeAttr(upgradeUrl)}">Get Beta Diagnosis — ₹7,530</a>
         </div>
       </aside>
     </section>

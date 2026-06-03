@@ -17,7 +17,7 @@ Set these Worker secrets:
 Optional vars are in `wrangler.toml`:
 
 `FREE_AI_LIMIT`
-`LEMON_CHECKOUT_URL`
+`RAZORPAY_PAYMENT_LINK`
 `UPGRADE_URL`
 
 Google OAuth redirect URL:

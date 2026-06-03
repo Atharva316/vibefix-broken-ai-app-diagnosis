@@ -13,7 +13,7 @@ const copyButton = document.querySelector("#copy-prompt");
 const fileInput = document.querySelector("#screenshot");
 const uploadZone = document.querySelector("#upload-zone");
 const uploadPreview = document.querySelector("#upload-preview");
-const PAYMENT_URL = "/payment.html";
+const PAYMENT_URL = "https://rzp.io/rzp/bM3R4oPl";
 
 normalizePaymentLinks();
 
@@ -171,7 +171,7 @@ function showUpgradeGate(limit = 3) {
 }
 
 function normalizePaymentLinks() {
-  document.querySelectorAll('a[href*="lemonsqueezy.com"], #upgrade-gate a, .upgrade-gate a').forEach((link) => {
+  document.querySelectorAll("#upgrade-gate a, .upgrade-gate a").forEach((link) => {
     link.href = PAYMENT_URL;
   });
 }
