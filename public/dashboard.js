@@ -93,7 +93,7 @@ async function hydrateUsage() {
   const user = await response.json();
   if (!user || !usageCounter) return;
   usageCounter.textContent = `${user.remaining} of ${user.freeLimit} free uses remaining`;
-  if (user.remaining <= 0) outputPanel.classList.add("is-gated");
+  if (user.remaining <= 0) showUpgradeGate(user.freeLimit);
 }
 
 async function generatePrompts(payload) {
@@ -142,8 +142,7 @@ async function generatePrompts(payload) {
       if (event.type === "gate") {
         raw = event.data.text || "";
         renderStructured(raw);
-        outputPanel.classList.add("is-gated");
-        upgradeGate.hidden = false;
+        showUpgradeGate(event.data.limit);
         usageCounter.textContent = `0 of ${event.data.limit} free uses remaining`;
       }
 
@@ -156,6 +155,15 @@ async function generatePrompts(payload) {
   }
 
   typing.hidden = true;
+}
+
+function showUpgradeGate(limit = 3) {
+  outputPanel.classList.add("is-gated");
+  upgradeGate.hidden = false;
+  likelyCause.textContent = `You have used all ${limit} free prompt generations.`;
+  notTouch.innerHTML = "<li>Free prompt generation is finished for this browser session.</li><li>Continue with the paid diagnosis to generate or improve more prompts.</li>";
+  fixTitle.textContent = "Payment required";
+  fixPrompt.textContent = "Your free VibeFix AI Helper limit is finished. Use the payment option below to continue.";
 }
 
 function renderStructured(text) {

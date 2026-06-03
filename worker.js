@@ -448,8 +448,8 @@ function renderAiPage(user, env) {
           <pre id="fix-prompt">Your generated prompt will appear here.</pre>
         </div>
         <div class="upgrade-gate" id="upgrade-gate" hidden>
-          <p>You've used your 3 free diagnoses. Get unlimited AI fix prompts + full diagnosis reports.</p>
-          <a class="btn btn-primary" href="${escapeAttr(upgradeUrl)}">Upgrade - $19/month</a>
+          <p>You have used all 3 free prompt generations. Get the full VibeFix diagnosis report to continue.</p>
+          <a class="btn btn-primary" href="${escapeAttr(upgradeUrl)}">Get Diagnosis - $79</a>
         </div>
       </aside>
     </section>
@@ -532,7 +532,16 @@ First diagnose the smallest likely failing area. Then explain what not to touch.
 }
 
 function streamGate(limit) {
-  const sample = fallbackDiagnosis("your tool", "the selected break type", "your submitted error details");
+  const sample = `LIKELY CAUSE
+You have used all ${limit} free prompt generations.
+
+WHAT NOT TO TOUCH
+- Do not keep trying to regenerate prompts for free in this session
+- Do not rewrite the app blindly
+- Do not change auth, database, or environment settings without a diagnosis
+
+FIX PROMPT FOR PAYMENT REQUIRED
+Your free VibeFix AI Helper limit is finished. Use the payment option below to continue with the full diagnosis report.`;
   const stream = new ReadableStream({
     start(controller) {
       const write = (event, data) => controller.enqueue(new TextEncoder().encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`));
