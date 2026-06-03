@@ -8,6 +8,8 @@ const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
 const ANTHROPIC_MODEL = "claude-sonnet-4-20250514";
 const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
 const RESEND_URL = "https://api.resend.com/emails";
+const WEB3FORMS_URL = "https://api.web3forms.com/submit";
+const WEB3FORMS_FALLBACK_ACCESS_KEY = "16c490f0-2048-4d65-930e-1e12eca9c6b1";
 const STATIC_ASSET_ORIGIN = "https://raw.githubusercontent.com/Atharva316/vibefix-broken-ai-app-diagnosis/main/public";
 const PAYMENT_URL = "https://rzp.io/rzp/lJurCsFY";
 const REQUIRED_INTAKE_FIELDS = [
@@ -307,14 +309,9 @@ async function handleGenerateReport(request, env) {
     }
   }
 
-  if (!env.GEMINI_API_KEY) return json({ success: false, error: "GEMINI_API_KEY is not configured." }, 500);
-  if (!env.RESEND_API_KEY) return json({ success: false, error: "RESEND_API_KEY is not configured." }, 500);
-  if (!env.OWNER_EMAIL) return json({ success: false, error: "OWNER_EMAIL is not configured." }, 500);
-  if (!env.FROM_EMAIL) return json({ success: false, error: "FROM_EMAIL is not configured." }, 500);
-
   try {
-    const report = await generateGeminiReport(payload, env);
-    await emailOwnerReport(payload, report, env);
+    const report = env.GEMINI_API_KEY ? await generateGeminiReport(payload, env) : generateLocalReportDraft(payload);
+    await deliverOwnerReport(payload, report, env);
     return json({ success: true });
   } catch (error) {
     console.error(error);
@@ -325,6 +322,122 @@ async function handleGenerateReport(request, env) {
 function hasSubmittedValue(value) {
   if (Array.isArray(value)) return value.length > 0;
   return value !== undefined && value !== null && String(value).trim() !== "";
+}
+
+async function deliverOwnerReport(payload, report, env) {
+  if (env.RESEND_API_KEY && env.OWNER_EMAIL && env.FROM_EMAIL) {
+    await emailOwnerReport(payload, report, env);
+    return;
+  }
+
+  await submitWeb3FormsFallback(payload, report, env);
+}
+
+async function submitWeb3FormsFallback(payload, report, env) {
+  const accessKey = env.WEB3FORMS_ACCESS_KEY || WEB3FORMS_FALLBACK_ACCESS_KEY;
+  if (!accessKey) throw new Error("WEB3FORMS_ACCESS_KEY is not configured.");
+
+  const response = await fetch(WEB3FORMS_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      access_key: accessKey,
+      subject: `New VibeFix intake submitted — ${payload.app_name} — ${payload.build_tool}`,
+      from_name: "VibeFix Intake",
+      name: payload.name,
+      email: payload.email,
+      payment_id: payload.payment_id,
+      app_name: payload.app_name,
+      build_tool: payload.build_tool,
+      break_type: payload.break_type,
+      generated_report_draft: report,
+      raw_submission: JSON.stringify(payload, null, 2)
+    })
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Web3Forms fallback failed: ${text.slice(0, 500)}`);
+  }
+}
+
+function generateLocalReportDraft(payload) {
+  return `# VibeFix Broken App Diagnosis Report
+
+## Case Information
+Client Name: ${payload.name}
+Client Email: ${payload.email}
+Payment ID: ${payload.payment_id}
+App Name: ${payload.app_name}
+App URL: ${payload.live_app_url}
+Build Tool: ${payload.build_tool}
+Break Type: ${payload.break_type}
+
+## 1. Final Diagnosis
+This is a structured intake-based draft generated because Gemini is not configured on the Worker yet. Based on the submitted details, the issue appears connected to "${payload.break_type}" after this last change: ${payload.last_change}. The app context is: ${payload.app_context}. What was working before: ${payload.working_before}. What is broken now: ${payload.broken_now}. Confidence should be treated as medium or lower until logs, screenshots, repo context, and exact runtime errors are reviewed. One-line summary: the safest next move is to isolate the last change, avoid broad rewrites, and verify whether the break is limited to the affected tool/configuration area before changing auth, database, payment, or production settings.
+
+## 2. What Likely Happened
+Before: ${payload.working_before}
+Change: ${payload.last_change}
+After: ${payload.broken_now}
+Likely chain: the most recent change probably affected a focused route, component, config, integration, or deployment behavior related to ${payload.break_type}.
+
+## 3. Evidence Used
+- Build tool: ${payload.build_tool}
+- Break type: ${payload.break_type}
+- Issue location: ${payload.issue_location}
+- Error message: ${payload.error_message || "No exact error submitted."}
+- Evidence links: ${payload.evidence_links || "No evidence links submitted."}
+
+## 4. Missing Information / Assumptions
+Missing information may include full logs, screenshots, repo diff, auth/database config, or deployment logs. The diagnosis assumes the submitted last change is related to the break. Missing evidence lowers confidence.
+
+## 5. What NOT To Touch
+- Do not rewrite the whole app; that can create new regressions.
+- Do not change auth/database/payment settings unless logs point there directly.
+- Do not change production environment variables blindly.
+
+## 6. Rollback vs Fix-Forward Decision
+Decision: ${payload.diagnosis_priority}
+Reason: the safest decision depends on whether the last change is isolated and reversible.
+
+## 7. Safest First Fix
+1. Compare the last working state with the current broken state.
+2. Reproduce the issue in the smallest affected flow.
+3. Ask the AI builder for a minimal fix without refactoring unrelated files.
+
+## 8. Priority Fix Order
+P0: Preserve current working flows.
+P1: Isolate the break area.
+P2: Apply smallest safe fix.
+P3: Run regression checks.
+
+## 9. Exact AI Repair Prompts
+1. Diagnosis prompt: In ${payload.build_tool}, diagnose this ${payload.break_type} issue for this app: ${payload.app_context}. What broke: ${payload.broken_now}. Last change: ${payload.last_change}. Error: ${payload.error_message || "No exact error provided."}. Do not rewrite the app or change auth, database, payment, or env settings unless required.
+2. Safe-fix prompt: Make the smallest safe fix for the issue above. Do not refactor unrelated code. Explain what files/components/configs are touched and why.
+3. Regression-test prompt: Create a regression checklist for this app and issue. Include the original working flow, the broken flow, production/preview checks, and what not to touch.
+
+## 10. Test Checklist After Fix
+- Confirm ${payload.working_before} still works.
+- Confirm ${payload.broken_now} is fixed.
+- Test ${payload.issue_location}.
+- Check auth, data loading, deployment, and payment flows if relevant.
+
+## 11. What Might Break Next
+- Related state or routing.
+- Auth/database permissions if touched.
+- Preview vs production configuration.
+
+## 12. Prevention Notes
+- Keep prompts scoped.
+- Save last working versions before major changes.
+- Do not let AI change unrelated config.
+
+## 13. Escalation Note
+If this issue involves exposed private data, payment failures, database corruption, serious security risk, or user data loss, escalate to a senior developer immediately.
+
+## 14. Scope Note
+This report is a structured diagnosis for common post-launch break patterns in AI-built apps. It is not full security testing, legal/compliance review, 24/7 production support, or guaranteed implementation.`;
 }
 
 async function generateGeminiReport(payload, env) {
