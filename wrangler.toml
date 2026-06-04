@@ -12,5 +12,6 @@ id = "c31f2ba7390a4b17a7b58ea4b549abd5"
 
 [vars]
 FREE_AI_LIMIT = "3"
-RAZORPAY_PAYMENT_LINK = "https://rzp.io/rzp/IJurCsfY"
-UPGRADE_URL = "/payment.html"
+RAZORPAY_PAYMENT_LINK = "https://rzp.io/rzp/bM3R4oPl"
+UPGRADE_URL = "https://rzp.io/rzp/bM3R4oPl"
+SUPABASE_URL = "https://uzgcchnkodnwdnybfcbq.supabase.co"

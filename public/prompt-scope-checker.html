@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Prompt Scope Checker — VibeFix</title>
+  <meta name="description" content="Paste a Lovable, Bolt, Cursor, or Replit prompt and see what it might accidentally touch before you send it." />
+  <meta property="og:title" content="Prompt Scope Checker — VibeFix" />
+  <meta property="og:description" content="Check prompt risk and get a safer rewritten version." />
+  <meta property="og:image" content="https://vibefix-broken-ai-app-diagnosis.atharvam144.workers.dev/og-image.svg" />
+  <meta property="og:url" content="https://vibefix-broken-ai-app-diagnosis.atharvam144.workers.dev/prompt-scope-checker.html" />
+  <meta property="og:type" content="website" />
+  <link rel="stylesheet" href="/styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <nav class="site-nav"><a class="logo" href="/">Vibe<span>Fix</span></a><a class="nav-cta" href="https://rzp.io/rzp/bM3R4oPl">Get Beta Diagnosis — ₹7,530</a></nav>
+  <main class="article-page"><section class="container narrow">
+    <header class="article-hero"><a class="article-back" href="/">← Back to VibeFix</a><h1>Prompt Scope Checker</h1><p class="subhead">Paste the prompt you're about to send. VibeFix checks risk, accidental touch areas, and rewrites it safer.</p></header>
+    <form class="tool-form article-content" id="prompt-checker-form">
+      <label>Prompt to check<textarea name="prompt" rows="8" placeholder="Paste your prompt here"></textarea></label>
+      <button class="btn btn-primary" type="submit">Check Prompt Scope</button>
+    </form>
+    <section class="article-cta" id="prompt-checker-result" hidden>
+      <h2>Scope result</h2>
+      <p><strong>Risk level:</strong> <span data-risk></span></p>
+      <p><strong>What this might accidentally touch:</strong></p>
+      <ul data-areas></ul>
+      <h3>Safer rewritten prompt</h3>
+      <pre data-rewrite></pre>
+    </section>
+  </section></main>
+  <script src="/site.js"></script>
+</body>
+</html>

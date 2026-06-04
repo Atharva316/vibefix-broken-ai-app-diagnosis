@@ -8,12 +8,14 @@ const fixTitle = document.querySelector("#fix-title");
 const fixPrompt = document.querySelector("#fix-prompt");
 const typing = document.querySelector("#typing");
 const usageCounter = document.querySelector("#usage-counter");
+const foundersHelped = document.querySelector("#founders-helped");
+const confidenceBadge = document.querySelector("#confidence-badge");
 const upgradeGate = document.querySelector("#upgrade-gate");
 const copyButton = document.querySelector("#copy-prompt");
 const fileInput = document.querySelector("#screenshot");
 const uploadZone = document.querySelector("#upload-zone");
 const uploadPreview = document.querySelector("#upload-preview");
-const PAYMENT_URL = "/payment.html";
+const PAYMENT_URL = "https://rzp.io/rzp/bM3R4oPl";
 
 normalizePaymentLinks();
 
@@ -57,6 +59,7 @@ if (fileInput) {
 
 if (form) {
   hydrateUsage();
+  hydrateFoundersHelped();
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -74,6 +77,8 @@ if (form) {
       image: file ? await fileToPayload(file) : null
     };
 
+    updateConfidence(payload);
+
     if (!payload.description) {
       alert("Describe what broke first.");
       return;
@@ -81,6 +86,17 @@ if (form) {
 
     await generatePrompts(payload);
   });
+}
+
+async function hydrateFoundersHelped() {
+  if (!foundersHelped) return;
+  try {
+    const response = await fetch("/api/ai-helper-count", { cache: "no-store" });
+    const data = await response.json();
+    foundersHelped.textContent = `${Number(data.count || 0)} founders helped so far`;
+  } catch (error) {
+    foundersHelped.textContent = "0 founders helped so far";
+  }
 }
 
 if (copyButton) {
@@ -153,11 +169,22 @@ async function generatePrompts(payload) {
         raw = event.data.text || raw;
         renderStructured(raw);
         usageCounter.textContent = `${event.data.remaining} of ${event.data.limit} free uses remaining`;
+        if (event.data.confidence) confidenceBadge.textContent = `Confidence: ${event.data.confidence}`;
+        hydrateFoundersHelped();
       }
     }
   }
 
   typing.hidden = true;
+}
+
+function updateConfidence(payload) {
+  if (!confidenceBadge) return;
+  const hasError = /(error|exception|failed|denied|unauthorized|timeout|stack|console|log)/i.test(payload.description);
+  let level = "Low";
+  if (payload.image && hasError && payload.description.length > 120) level = "High";
+  else if (payload.image || hasError || payload.description.length > 80) level = "Medium";
+  confidenceBadge.textContent = `Confidence: ${level}`;
 }
 
 function showUpgradeGate(limit = 3) {
@@ -173,7 +200,7 @@ function showUpgradeGate(limit = 3) {
 function normalizePaymentLinks() {
   document.querySelectorAll("#upgrade-gate a, .upgrade-gate a, .empty-state a.btn-primary").forEach((link) => {
     link.href = PAYMENT_URL;
-    link.textContent = "Get Beta Diagnosis — ₹1 Test";
+    link.textContent = "Get Beta Diagnosis — ₹7,530";
   });
 }
 

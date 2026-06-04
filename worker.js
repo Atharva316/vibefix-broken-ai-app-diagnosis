@@ -11,7 +11,7 @@ const RESEND_URL = "https://api.resend.com/emails";
 const WEB3FORMS_URL = "https://api.web3forms.com/submit";
 const WEB3FORMS_FALLBACK_ACCESS_KEY = "16c490f0-2048-4d65-930e-1e12eca9c6b1";
 const STATIC_ASSET_ORIGIN = "https://raw.githubusercontent.com/Atharva316/vibefix-broken-ai-app-diagnosis/main/public";
-const PAYMENT_URL = "/payment.html";
+const PAYMENT_URL = "https://rzp.io/rzp/bM3R4oPl";
 const REQUIRED_INTAKE_FIELDS = [
   "payment_id",
   "name",
@@ -40,12 +40,16 @@ export default {
     const url = new URL(request.url);
 
     try {
-      if (url.pathname === "/auth/google") return startGoogleAuth(request, env);
-      if (url.pathname === "/auth/google/callback") return finishGoogleAuth(request, env);
-      if (url.pathname === "/auth/signout") return signOut(request, env);
+      if (url.pathname === "/auth/google") return redirect("/dashboard/ai");
+      if (url.pathname === "/auth/google/callback") return redirect("/dashboard/ai");
+      if (url.pathname === "/auth/signout") return redirect("/");
       if (url.pathname === "/api/me") return json(await getPublicUserState(request, env));
       if (url.pathname === "/api/ai" && request.method === "POST") return handleAi(request, env);
       if (url.pathname === "/api/generate-report") return handleGenerateReport(request, env);
+      if (url.pathname === "/api/report-counter") return handleReportCounter(env);
+      if (url.pathname === "/api/ai-helper-count") return handleAiHelperCount(env);
+      if (url.pathname === "/api/rollback-calculator" && request.method === "POST") return handleRollbackCalculator(request, env);
+      if (url.pathname === "/api/prompt-checker" && request.method === "POST") return handlePromptChecker(request, env);
       if (url.pathname === "/pricing") return redirect(PAYMENT_URL);
       if (url.pathname === "/dashboard") return redirect("/dashboard/reports");
       if (url.pathname.startsWith("/dashboard")) return renderDashboardRoute(request, env);
@@ -97,6 +101,8 @@ function contentTypeFor(path) {
   if (path.endsWith(".html")) return "text/html; charset=utf-8";
   if (path.endsWith(".css")) return "text/css; charset=utf-8";
   if (path.endsWith(".js")) return "application/javascript; charset=utf-8";
+  if (path.endsWith(".xml")) return "application/xml; charset=utf-8";
+  if (path.endsWith(".svg")) return "image/svg+xml; charset=utf-8";
   if (path.endsWith(".pdf")) return "application/pdf";
   return "application/octet-stream";
 }
@@ -251,6 +257,7 @@ async function handleAi(request, env) {
   const breakTypes = Array.isArray(payload.breakTypes) ? payload.breakTypes.map(clean).join(", ") : "Other";
   const description = clean(payload.description || "");
   const image = payload.image || null;
+  const confidenceLevel = calculateConfidence(description, image);
 
   if (!description.trim()) return json({ error: "Describe what broke before generating prompts." }, 400);
 
@@ -270,7 +277,14 @@ async function handleAi(request, env) {
         }
 
         await env.VIBEFIX_KV.put(usageKey, String(usage + 1));
-        write("done", { text: fullText, remaining: Math.max(0, freeLimit - usage - 1), limit: freeLimit });
+        await saveAiHelperSession(env, {
+          builder_tool: tool,
+          break_type: breakTypes,
+          description,
+          generated_prompt: extractFixPrompt(fullText),
+          confidence_level: confidenceLevel
+        });
+        write("done", { text: fullText, remaining: Math.max(0, freeLimit - usage - 1), limit: freeLimit, confidence: confidenceLevel });
       } catch (error) {
         write("error", { message: "The AI helper could not generate a response. Try again with the error message pasted in." });
       } finally {
@@ -317,6 +331,192 @@ async function handleGenerateReport(request, env) {
     console.error(error);
     return json({ success: false, error: error.message || "Could not generate and email report draft." }, 500);
   }
+}
+
+async function handleReportCounter(env) {
+  const rows = await supabaseSelect(env, "report_counter", "id=eq.1&select=count,last_diagnosed_at");
+  const row = rows?.[0] || { count: 0, last_diagnosed_at: null };
+  return json({
+    count: Number(row.count || 0),
+    last_diagnosed_at: row.last_diagnosed_at || null
+  });
+}
+
+async function handleAiHelperCount(env) {
+  const count = await supabaseRpcCount(env, "get_ai_helper_sessions_count");
+  return json({ count });
+}
+
+async function handleRollbackCalculator(request, env) {
+  const payload = await request.json();
+  const answers = payload.answers || {};
+  const recommendation = calculateRollbackRecommendation(answers);
+
+  await supabaseInsert(env, "rollback_calculator_sessions", {
+    answers_json: answers,
+    recommendation: recommendation.type
+  });
+
+  return json(recommendation);
+}
+
+async function handlePromptChecker(request, env) {
+  const payload = await request.json();
+  const originalPrompt = clean(payload.prompt || "");
+  if (!originalPrompt) return json({ error: "Paste a prompt before checking scope." }, 400);
+
+  const result = env.ANTHROPIC_API_KEY
+    ? await analyzePromptScopeWithAnthropic(originalPrompt, env)
+    : fallbackPromptScopeAnalysis(originalPrompt);
+
+  await supabaseInsert(env, "prompt_checker_sessions", {
+    original_prompt: originalPrompt,
+    risk_level: result.risk_level,
+    rewritten_prompt: result.rewritten_prompt
+  });
+
+  return json(result);
+}
+
+function calculateRollbackRecommendation(answers) {
+  let risk = 0;
+  if (answers.files_changed === "more than 10") risk += 3;
+  if (answers.files_changed === "3-10") risk += 1;
+  if (answers.auth_database === "yes") risk += 3;
+  if (answers.auth_database === "not sure") risk += 2;
+  if (answers.clean_version === "yes") risk -= 2;
+  if (answers.understand_change === "no") risk += 2;
+  if (answers.understand_change === "partially") risk += 1;
+  if (answers.time_spent === "over 1 hour") risk += 2;
+  if (answers.time_spent === "30-60 min") risk += 1;
+
+  if (risk >= 5) {
+    return {
+      type: "ROLLBACK",
+      explanation: "Rollback is safer because the last change likely touched too much or affected risky areas. Return to the last clean working version, then re-apply the intended change in a smaller scope. Avoid auth, database, environment, and production settings until the break boundary is clear."
+    };
+  }
+
+  if (risk <= 1) {
+    return {
+      type: "FIX FORWARD",
+      explanation: "Fix forward is reasonable because the affected area appears limited and understandable. Make the smallest targeted change, then test the old working flow and the new intended flow. Do not allow a broad refactor."
+    };
+  }
+
+  return {
+    type: "HYBRID",
+    explanation: "Use a hybrid path: preserve the current broken state for evidence, compare it against the last working version, then either rollback the risky part or fix forward only the isolated file/config. Do not keep prompting broadly while the cause is uncertain."
+  };
+}
+
+async function analyzePromptScopeWithAnthropic(prompt, env) {
+  const response = await fetch(ANTHROPIC_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": env.ANTHROPIC_API_KEY,
+      "anthropic-version": "2023-06-01"
+    },
+    body: JSON.stringify({
+      model: ANTHROPIC_MODEL,
+      max_tokens: 900,
+      stream: false,
+      system: "You analyze prompts for AI app builders. Return strict JSON only with keys risk_level, accidental_touch_areas, rewritten_prompt. Risk level must be Low, Medium, or High.",
+      messages: [{
+        role: "user",
+        content: `Analyze this prompt for accidental scope risk and rewrite it safely:\n\n${prompt}`
+      }]
+    })
+  });
+
+  if (!response.ok) return fallbackPromptScopeAnalysis(prompt);
+  const data = await response.json();
+  const text = data?.content?.map((part) => part.text || "").join("").trim() || "";
+
+  try {
+    const parsed = JSON.parse(text.replace(/^```json\s*/i, "").replace(/```$/i, ""));
+    return {
+      risk_level: clean(parsed.risk_level || "Medium"),
+      accidental_touch_areas: Array.isArray(parsed.accidental_touch_areas) ? parsed.accidental_touch_areas.map(clean) : [clean(parsed.accidental_touch_areas || "Unclear scope")],
+      rewritten_prompt: clean(parsed.rewritten_prompt || prompt)
+    };
+  } catch (error) {
+    return fallbackPromptScopeAnalysis(prompt);
+  }
+}
+
+function fallbackPromptScopeAnalysis(prompt) {
+  const broad = /\b(rewrite|refactor|entire|whole app|fix everything|all files|from scratch)\b/i.test(prompt);
+  return {
+    risk_level: broad ? "High" : "Medium",
+    accidental_touch_areas: broad
+      ? ["Unrelated components", "Auth/database configuration", "Existing working flows"]
+      : ["Nearby components", "Shared state", "Existing working flows"],
+    rewritten_prompt: `Do not rewrite the app. Do not refactor unrelated code. Do not change auth, database, payment, environment variables, or production settings unless clearly required.\n\nGoal:\n${prompt}\n\nFirst identify the smallest affected area. Then propose the smallest safe change only. List every file or setting you plan to touch before making changes. After the fix, give me a regression checklist for the old working flow and the broken flow.`
+  };
+}
+
+async function saveAiHelperSession(env, row) {
+  await supabaseInsert(env, "ai_helper_sessions", row);
+}
+
+async function supabaseSelect(env, table, query) {
+  if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) return [];
+  const response = await fetch(`${env.SUPABASE_URL.replace(/\/$/, "")}/rest/v1/${table}?${query}`, {
+    headers: supabaseHeaders(env)
+  });
+  if (!response.ok) return [];
+  return response.json();
+}
+
+async function supabaseRpcCount(env, fn) {
+  if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) return 0;
+  const response = await fetch(`${env.SUPABASE_URL.replace(/\/$/, "")}/rest/v1/rpc/${fn}`, {
+    method: "POST",
+    headers: {
+      ...supabaseHeaders(env),
+      "Content-Type": "application/json"
+    },
+    body: "{}"
+  });
+  if (!response.ok) return 0;
+  return Number(await response.json() || 0);
+}
+
+async function supabaseInsert(env, table, row) {
+  if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) return false;
+  const response = await fetch(`${env.SUPABASE_URL.replace(/\/$/, "")}/rest/v1/${table}`, {
+    method: "POST",
+    headers: {
+      ...supabaseHeaders(env),
+      "Content-Type": "application/json",
+      Prefer: "return=minimal"
+    },
+    body: JSON.stringify(row)
+  });
+  return response.ok;
+}
+
+function supabaseHeaders(env) {
+  return {
+    apikey: env.SUPABASE_ANON_KEY,
+    Authorization: `Bearer ${env.SUPABASE_ANON_KEY}`
+  };
+}
+
+function calculateConfidence(description, image) {
+  const hasError = /(error|exception|failed|denied|unauthorized|timeout|stack|console|log)/i.test(description);
+  if (image && hasError && description.length > 120) return "High";
+  if (hasError || image || description.length > 80) return "Medium";
+  return "Low";
+}
+
+function extractFixPrompt(text) {
+  const marker = "FIX PROMPT FOR";
+  const upper = text.toUpperCase();
+  const index = upper.indexOf(marker);
+  return index === -1 ? text.slice(0, 4000) : text.slice(index).slice(0, 4000);
 }
 
 function hasSubmittedValue(value) {
@@ -726,7 +926,7 @@ function renderReportsPage(user, reports, env) {
     <div class="empty-state">
       <h3>No reports yet.</h3>
       <p>Get your first diagnosis →</p>
-      <a class="btn btn-primary" href="${escapeAttr(checkout)}">Get Beta Diagnosis — ₹1 Test</a>
+      <a class="btn btn-primary" href="${escapeAttr(checkout)}">Get Beta Diagnosis — ₹7,530</a>
     </div>
   `;
 
@@ -745,7 +945,7 @@ function renderAccountPage(user) {
     <section class="dashboard-header">
       <p class="section-kicker">Account</p>
       <h1>Account</h1>
-      <p>Your Google account and VibeFix report count.</p>
+      <p>Your VibeFix report count.</p>
     </section>
     <section class="account-card">
       <img src="${escapeAttr(user.avatar)}" alt="" />
@@ -761,7 +961,7 @@ function renderAccountPage(user) {
         <label>Reports purchased</label>
         <strong>${Number(user.diagnosis_count || 0)}</strong>
       </div>
-      <a class="btn btn-secondary" href="/auth/signout">Sign out</a>
+      <a class="btn btn-secondary" href="/">Back to VibeFix</a>
     </section>
   `);
 }
@@ -773,6 +973,7 @@ function renderAiPage(user, env) {
       <p class="section-kicker">AI Helper</p>
       <h1>AI Fix Helper</h1>
       <p>Get structured fix prompts for broken AI-built apps. You get 3 free uses total.</p>
+      <p class="usage-counter" id="founders-helped">0 founders helped so far</p>
     </section>
     <section class="ai-layout">
       <form class="ai-form" id="ai-form">
@@ -790,6 +991,7 @@ function renderAiPage(user, env) {
       </form>
       <aside class="output-panel" id="output-panel">
         <div class="usage-counter" id="usage-counter">3 of 3 free uses remaining</div>
+        <div class="confidence-badge" id="confidence-badge">Confidence: Waiting</div>
         <div class="typing" id="typing" hidden>Generating fix prompts...</div>
         <div class="output-section">
           <h3>Likely cause</h3>
@@ -806,7 +1008,7 @@ function renderAiPage(user, env) {
         </div>
         <div class="upgrade-gate" id="upgrade-gate" hidden>
           <p>You have used all 3 free prompt generations. Get the full VibeFix diagnosis report to continue.</p>
-          <a class="btn btn-primary" href="${escapeAttr(upgradeUrl)}">Get Beta Diagnosis — ₹1 Test</a>
+          <a class="btn btn-primary" href="${escapeAttr(upgradeUrl)}">Get Beta Diagnosis — ₹7,530</a>
         </div>
       </aside>
     </section>
@@ -856,9 +1058,23 @@ async function getPublicUserState(request, env) {
 async function requireUser(request, env, api = false) {
   const user = await getSessionUser(request, env);
   if (user) return user;
-  if (api) return null;
-  const url = new URL(request.url);
-  return redirect(`/auth/google?next=${encodeURIComponent(url.pathname)}`);
+  const ip = request.headers.get("CF-Connecting-IP") || request.headers.get("x-forwarded-for") || "public";
+  const anonId = `anon-${await sha256Short(ip)}`;
+  return {
+    googleId: anonId,
+    email: "public@vibefix.local",
+    name: "VibeFix User",
+    avatar: "",
+    created_at: new Date().toISOString(),
+    diagnosis_count: 0,
+    is_guest: true
+  };
+}
+
+async function sha256Short(value) {
+  const data = new TextEncoder().encode(String(value));
+  const digest = await crypto.subtle.digest("SHA-256", data);
+  return [...new Uint8Array(digest)].slice(0, 8).map((byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
 async function getReports(env, userId) {
