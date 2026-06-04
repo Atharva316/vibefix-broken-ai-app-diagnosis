@@ -12,6 +12,7 @@ const WEB3FORMS_URL = "https://api.web3forms.com/submit";
 const WEB3FORMS_FALLBACK_ACCESS_KEY = "16c490f0-2048-4d65-930e-1e12eca9c6b1";
 const STATIC_ASSET_ORIGIN = "https://raw.githubusercontent.com/Atharva316/vibefix-broken-ai-app-diagnosis/main/public";
 const PAYMENT_URL = "https://rzp.io/rzp/bM3R4oPl";
+const REPORT_ID_PREFIX = "VF";
 const REQUIRED_INTAKE_FIELDS = [
   "payment_id",
   "name",
@@ -50,6 +51,7 @@ export default {
       if (url.pathname === "/api/ai-helper-count") return handleAiHelperCount(env);
       if (url.pathname === "/api/rollback-calculator" && request.method === "POST") return handleRollbackCalculator(request, env);
       if (url.pathname === "/api/prompt-checker" && request.method === "POST") return handlePromptChecker(request, env);
+      if (url.pathname.startsWith("/report/")) return renderStoredReport(request, env);
       if (url.pathname === "/pricing") return redirect(PAYMENT_URL);
       if (url.pathname === "/dashboard") return redirect("/dashboard/reports");
       if (url.pathname.startsWith("/dashboard")) return renderDashboardRoute(request, env);
@@ -324,9 +326,10 @@ async function handleGenerateReport(request, env) {
   }
 
   try {
-    const report = env.GEMINI_API_KEY ? await generateGeminiReport(payload, env) : generateLocalReportDraft(payload);
-    await deliverOwnerReport(payload, report, env);
-    return json({ success: true });
+    const report = await generateDiagnosisReport(payload, env);
+    const reportRecord = await saveGeneratedReport(request, env, payload, report);
+    await deliverOwnerReport(payload, report.renderedText, reportRecord, env);
+    return json({ success: true, reportId: reportRecord.id, reportUrl: reportRecord.reportUrl });
   } catch (error) {
     console.error(error);
     return json({ success: false, error: error.message || "Could not generate and email report draft." }, 500);
@@ -524,16 +527,16 @@ function hasSubmittedValue(value) {
   return value !== undefined && value !== null && String(value).trim() !== "";
 }
 
-async function deliverOwnerReport(payload, report, env) {
+async function deliverOwnerReport(payload, reportText, reportRecord, env) {
   if (env.RESEND_API_KEY && env.OWNER_EMAIL && env.FROM_EMAIL) {
-    await emailOwnerReport(payload, report, env);
+    await emailOwnerReport(payload, reportText, reportRecord, env);
     return;
   }
 
-  await submitWeb3FormsFallback(payload, report, env);
+  await submitWeb3FormsFallback(payload, reportText, reportRecord, env);
 }
 
-async function submitWeb3FormsFallback(payload, report, env) {
+async function submitWeb3FormsFallback(payload, reportText, reportRecord, env) {
   const accessKey = env.WEB3FORMS_ACCESS_KEY || WEB3FORMS_FALLBACK_ACCESS_KEY;
   if (!accessKey) throw new Error("WEB3FORMS_ACCESS_KEY is not configured.");
 
@@ -550,7 +553,9 @@ async function submitWeb3FormsFallback(payload, report, env) {
       app_name: payload.app_name,
       build_tool: payload.build_tool,
       break_type: payload.break_type,
-      generated_report_draft: report,
+      report_id: reportRecord.id,
+      report_url: reportRecord.reportUrl,
+      generated_report_draft: reportText,
       raw_submission: JSON.stringify(payload, null, 2)
     })
   });
@@ -667,8 +672,8 @@ async function generateGeminiReport(payload, env) {
   return report;
 }
 
-async function emailOwnerReport(payload, report, env) {
-  const subject = `New VibeFix report draft — ${payload.app_name} — ${payload.build_tool}`;
+async function emailOwnerReport(payload, reportText, reportRecord, env) {
+  const subject = `New VibeFix report draft - ${payload.app_name} - ${payload.build_tool}`;
   const body = `New VibeFix intake submitted.
 
 Client:
@@ -686,8 +691,11 @@ ${payload.build_tool}
 Break Type:
 ${payload.break_type}
 
+Stored Report:
+${reportRecord.reportUrl}
+
 Generated Report Draft:
-${report}
+${reportText}
 
 Raw Submission:
 ${JSON.stringify(payload, null, 2)}
@@ -815,6 +823,851 @@ If this issue involves exposed private data, payment failures, database corrupti
 ## 14. Scope Note
 Use this exact wording:
 This report is a structured diagnosis for common post-launch break patterns in AI-built apps. It is not full security testing, legal/compliance review, 24/7 production support, or guaranteed implementation.`;
+}
+
+async function generateDiagnosisReport(payload, env) {
+  const fallback = buildStructuredReport(payload);
+
+  if (!env.GEMINI_API_KEY) return fallback;
+
+  try {
+    const response = await fetch(`${GEMINI_URL}?key=${encodeURIComponent(env.GEMINI_API_KEY)}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{
+          role: "user",
+          parts: [{ text: buildGeminiEnrichmentPrompt(payload, fallback.model) }]
+        }],
+        generationConfig: {
+          temperature: 0.25,
+          maxOutputTokens: 4000
+        }
+      })
+    });
+
+    if (!response.ok) {
+      const body = await response.text();
+      throw new Error(`Gemini report enrichment failed: ${body.slice(0, 500)}`);
+    }
+
+    const data = await response.json();
+    const raw = data?.candidates?.[0]?.content?.parts?.map((part) => part.text || "").join("\n").trim();
+    if (!raw) throw new Error("Gemini returned an empty report enrichment.");
+
+    const enriched = JSON.parse(raw);
+    return buildStructuredReport(payload, enriched);
+  } catch (error) {
+    console.error("Gemini enrichment failed, using local report.", error);
+    return fallback;
+  }
+}
+
+function buildGeminiEnrichmentPrompt(payload, model) {
+  return `You are enriching a VibeFix Broken App Diagnosis Report draft.
+
+Important rules:
+- Do not claim certainty without evidence.
+- Do not suggest dangerous database, auth, payment, or security changes casually.
+- Do not tell the user to rewrite the whole app.
+- Do not promise a guaranteed fix.
+- Return JSON only. No markdown fences.
+
+Client submission:
+${JSON.stringify(payload, null, 2)}
+
+Base report model:
+${JSON.stringify(model, null, 2)}
+
+Return JSON with exactly these keys:
+{
+  "narrative": "150-250 word flowing paragraph for section 01",
+  "confidenceReasoning": "2-3 sentences explaining the confidence level",
+  "secondaryPossibility": "one short paragraph",
+  "verdictReasoning": "2-3 sentences on rollback vs fix forward",
+  "nextBreakPrediction": "3-4 sentences predicting what breaks next if the root cause is ignored"
+}`;
+}
+
+function buildStructuredReport(payload, overrides = {}) {
+  const now = new Date();
+  const profile = analyzeSubmission(payload);
+  const model = {
+    reportId: createReportId(now),
+    reportDate: formatReportDate(now),
+    submittedAt: formatReportTimestamp(now),
+    deliveredAt: formatReportTimestamp(now),
+    lastWorking: clean(payload.when_broke || payload.working_before || "Not specified"),
+    narrative: clean(overrides.narrative || buildNarrative(payload, profile)),
+    rootCause: profile.rootCause,
+    confidencePercent: profile.confidencePercent,
+    confidenceLabel: profile.confidenceLabel,
+    confidenceReasoning: clean(overrides.confidenceReasoning || buildConfidenceReasoning(payload, profile)),
+    secondaryPossibility: clean(overrides.secondaryPossibility || buildSecondaryPossibility(payload, profile)),
+    verdict: profile.verdict,
+    verdictReasoning: clean(overrides.verdictReasoning || buildVerdictReasoning(payload, profile)),
+    protectedAreas: profile.protectedAreas,
+    confirmationTest: profile.confirmationTest,
+    fixOrder: profile.fixOrder,
+    prompts: profile.prompts,
+    postFixChecklist: profile.postFixChecklist,
+    nextBreakPrediction: clean(overrides.nextBreakPrediction || buildNextBreakPrediction(payload, profile))
+  };
+
+  return {
+    model,
+    renderedText: renderReportText(payload, model)
+  };
+}
+
+function analyzeSubmission(payload) {
+  const breakType = clean(payload.break_type || "Other");
+  const issueLocation = clean(payload.issue_location || "Not sure");
+  const profile = getIssueProfile(breakType);
+  const confidencePercent = computeConfidence(payload);
+  const confidenceLabel = confidencePercent >= 80 ? "High confidence" : confidencePercent >= 65 ? "Medium confidence" : "Low confidence";
+  const verdict = decideVerdict(payload, confidencePercent);
+  const toolName = clean(payload.build_tool || "your AI builder");
+  const doNotTouch = clean(payload.do_not_touch || "");
+  const focusAreas = clean(payload.focus_areas || "");
+
+  const protectedAreas = [
+    {
+      name: focusAreas || profile.protectedAreas[0].name,
+      reason: focusAreas
+        ? `You explicitly asked to focus on "${focusAreas}", so adjacent areas should stay untouched until the core break is confirmed.`
+        : profile.protectedAreas[0].reason
+    },
+    profile.protectedAreas[1],
+    doNotTouch
+      ? { name: "Your explicit no-touch area", reason: `You said not to touch: ${doNotTouch}. That boundary should be respected unless logs prove it is the root cause.` }
+      : profile.protectedAreas[2]
+  ];
+
+  const prompts = [
+    `In ${toolName}, diagnose this ${breakType} issue for ${payload.app_name}. App context: ${payload.app_context}. What worked before: ${payload.working_before}. What is broken now: ${payload.broken_now}. Last change before the break: ${payload.last_change}. Exact error: ${payload.error_message || "No exact error provided"}. Focus on ${profile.focus}. Do not touch ${protectedAreas.map((item) => item.name).join(", ")}. Explain the smallest failing area first before suggesting code changes.`,
+    `In ${toolName}, make the smallest safe fix for this ${breakType} issue in ${payload.app_name}. The fix must restore: ${payload.broken_now}. Keep working behavior intact: ${payload.working_before}. Limit changes to ${profile.fixTargets}. Do not rewrite the app, do not refactor unrelated files, and do not touch ${protectedAreas.map((item) => item.name).join(", ")}. After the fix, list exactly what files, settings, or components changed and why.`,
+    `In ${toolName}, verify the fix for ${payload.app_name}. Original issue: ${payload.broken_now}. Expected working state: ${payload.working_before}. Review ${profile.fixTargets} and confirm: 1) the root-cause fix is present, 2) nothing adjacent changed accidentally, 3) ${issueLocation} still works, 4) the next regression risks are checked.`
+  ];
+
+  return {
+    rootCause: profile.rootCause(payload),
+    confidencePercent,
+    confidenceLabel,
+    verdict,
+    protectedAreas,
+    confirmationTest: profile.confirmationTest(payload),
+    fixOrder: profile.fixOrder(payload),
+    postFixChecklist: profile.postFixChecklist(payload),
+    nextRisk: profile.nextRisk(payload),
+    focus: profile.focus,
+    fixTargets: profile.fixTargets,
+    prompts
+  };
+}
+
+function getIssueProfile(breakType) {
+  const profiles = {
+    "App broke after update": {
+      focus: "the last changed component, dependency, or config touched by the update",
+      fixTargets: "the last updated component, dependency config, and the exact failing flow",
+      rootCause: (payload) => `The strongest signal is that a recent update changed behavior in a focused part of the app, and that change now conflicts with the previously working flow described as "${payload.working_before}".`,
+      protectedAreas: [
+        { name: "Previously stable user flow", reason: "That flow was working before the last update, so broad edits there would hide the actual regression." },
+        { name: "Authentication and billing settings", reason: "Those areas create larger blast radius than the reported update itself." },
+        { name: "Global environment variables", reason: "Changing env values before isolating the regression can turn one issue into several." }
+      ],
+      confirmationTest: (payload) => [
+        `Reproduce the exact broken flow described as: ${payload.broken_now}.`,
+        `Open the file or component changed most recently and compare it against the last known working behavior: ${payload.working_before}.`,
+        `Temporarily isolate or revert only that focused change in a safe environment.`,
+        `Retest the same flow. If it recovers, the diagnosis is confirmed.`
+      ],
+      fixOrder: () => [
+        { title: "Recreate the regression in the smallest possible flow", detail: "Confirm the break on one page, route, or component before touching anything else." },
+        { title: "Undo or isolate the last risky change", detail: "This reveals whether the regression came from the update itself or from a side effect." },
+        { title: "Reapply only the required change safely", detail: "Bring back the intended feature without the extra edits that widened the blast radius." },
+        { title: "Verify the restored flow end to end", detail: "Test both the broken path and the previously working path before shipping." }
+      ],
+      postFixChecklist: (payload) => [
+        `Retest the exact broken flow: ${payload.broken_now}.`,
+        "Run the same feature in an incognito session to avoid cached state masking issues.",
+        "Write down what the last change was and why it caused the regression.",
+        "Redeploy cleanly after verification instead of stacking hot fixes.",
+        "Watch the updated component for 48 hours after release."
+      ],
+      nextRisk: () => "The next likely break is another flow that depends on the same updated component or shared state, because the original issue came from a regression introduced by a recent change."
+    },
+    "UI/layout broke": {
+      focus: "the component tree, CSS, responsive wrappers, and conditional rendering around the broken layout",
+      fixTargets: "the broken component, its styles, and the smallest surrounding container hierarchy",
+      rootCause: (payload) => `The layout issue most likely comes from a recent component, style, or conditional-rendering change that altered spacing, sizing, or visibility in the user flow described as "${payload.broken_now}".`,
+      protectedAreas: [
+        { name: "Working navigation and routing", reason: "Routing changes are not the first fix for a visual regression and can create unrelated failures." },
+        { name: "Data layer and API calls", reason: "A layout break should be isolated before changing backend behavior." },
+        { name: "Authentication flow", reason: "Login logic is a high-risk area unrelated to a purely visual issue unless evidence proves otherwise." }
+      ],
+      confirmationTest: (payload) => [
+        `Open the page where the UI broke and compare it against the last working behavior: ${payload.working_before}.`,
+        "Inspect the affected component hierarchy and note any recent style or container changes.",
+        "Disable the newest style/layout change in a safe environment.",
+        "Check desktop and mobile widths to confirm whether the break is isolated or global."
+      ],
+      fixOrder: () => [
+        { title: "Identify the single broken component boundary", detail: "Fixing the exact container first prevents unnecessary redesigns." },
+        { title: "Restore spacing, width, and visibility rules", detail: "Bring back the last known working layout before touching logic." },
+        { title: "Test responsive states", detail: "Confirm the same component works on mobile and desktop before finalizing." },
+        { title: "Redeploy and visual-regression check", detail: "Verify no adjacent page sections moved unexpectedly." }
+      ],
+      postFixChecklist: () => [
+        "Compare the fixed screen with a screenshot of the intended design.",
+        "Test the component on desktop and mobile widths.",
+        "Check hover, focus, and error states after the CSS fix.",
+        "Add a note to the change log describing which wrapper or class caused the break.",
+        "Watch the same page after the next deploy for visual regressions."
+      ],
+      nextRisk: () => "If the root layout cause is ignored, the next break will usually appear in a sibling screen that reuses the same component or shared style token."
+    },
+    "Login/signup broke": {
+      focus: "auth callbacks, session handling, redirect paths, and the login form submission flow",
+      fixTargets: "auth config, redirect URLs, session handling, and the exact failing auth component",
+      rootCause: (payload) => `The failure pattern points to a mismatch between the login flow and the app's current auth/session configuration, especially around the state that changed before the break: "${payload.last_change}".`,
+      protectedAreas: [
+        { name: "User database tables", reason: "Schema changes are too risky until the auth path itself is confirmed broken." },
+        { name: "Payment flow", reason: "Billing is adjacent to account state and should stay untouched during auth diagnosis." },
+        { name: "Working public pages", reason: "Those pages help confirm the issue is auth-specific rather than app-wide." }
+      ],
+      confirmationTest: (payload) => [
+        "Attempt a fresh login in an incognito session.",
+        `Compare the expected auth outcome (${payload.working_before}) with the broken behavior (${payload.broken_now}).`,
+        "Check callback URLs, auth provider settings, and session persistence for mismatches.",
+        "Confirm whether the failure happens before login, after redirect, or after session creation."
+      ],
+      fixOrder: () => [
+        { title: "Pinpoint the auth stage that fails", detail: "Separate form validation, provider redirect, callback, and session restore before fixing." },
+        { title: "Repair callback/session configuration", detail: "This is the most common cause when login suddenly stops working after a change." },
+        { title: "Validate with a clean test account", detail: "Cached sessions can hide auth problems, so use a fresh sign-in." },
+        { title: "Retest dependent private pages", detail: "Confirm the fix works in the downstream pages that rely on auth state." }
+      ],
+      postFixChecklist: () => [
+        "Test sign-in, sign-out, and refresh behavior in a clean browser session.",
+        "Retest password reset or magic-link flow if your app uses it.",
+        "Confirm protected pages still redirect correctly after login.",
+        "Document the callback or session setting that caused the failure.",
+        "Monitor auth-related errors for the next 48 hours."
+      ],
+      nextRisk: () => "If the auth root cause is only patched at the symptom level, the next failure will likely be session persistence, protected-route access, or onboarding for new users."
+    },
+    "Database/data not loading": {
+      focus: "queries, permissions, API responses, and the loading state around the missing data",
+      fixTargets: "the exact query path, permission rule, and data-fetching component that stopped returning expected data",
+      rootCause: (payload) => `The issue most likely comes from a data-fetching path or permission rule that no longer matches the current app state, which is why the flow described as "${payload.working_before}" now fails as "${payload.broken_now}".`,
+      protectedAreas: [
+        { name: "Schema structure", reason: "Avoid schema changes until the failing query and permission path are proven." },
+        { name: "Authentication provider settings", reason: "Changing auth before confirming the data path can create false positives." },
+        { name: "Payment or subscription logic", reason: "Those systems depend on user data and should not be disturbed during diagnosis." }
+      ],
+      confirmationTest: (payload) => [
+        "Run the failing screen and capture the exact network or console error.",
+        "Check whether the data request is failing, returning empty, or being blocked.",
+        "Compare permissions or query filters against the last known working state.",
+        "Retest with a known-good record or test user."
+      ],
+      fixOrder: () => [
+        { title: "Confirm whether the failure is query, permission, or empty-state related", detail: "This prevents unnecessary database edits." },
+        { title: "Repair the smallest failing data path", detail: "Update the exact query, filter, or permission rule that blocks the data." },
+        { title: "Retest with a known-good dataset", detail: "Use a predictable record to confirm the fix." },
+        { title: "Check downstream screens", detail: "Verify any dashboard, list, or detail page using the same data still behaves correctly." }
+      ],
+      postFixChecklist: () => [
+        "Retest the same data flow with a known-good user or record.",
+        "Check loading, empty, and error states after the fix.",
+        "Verify permissions for the affected user role only after the query path is stable.",
+        "Write down which query or policy caused the issue.",
+        "Monitor dashboards or lists that reuse the same data source."
+      ],
+      nextRisk: () => "Ignoring the underlying data path issue often means the next break appears in another screen using the same query or permission rule, not just the page where the problem was first noticed."
+    },
+    "App works in preview but not production": {
+      focus: "environment-specific config, production build behavior, domains, and deployment settings",
+      fixTargets: "production environment variables, build output differences, and domain-specific settings",
+      rootCause: (payload) => `Because the app works in preview but fails in production, the strongest signal is an environment-specific mismatch rather than a universal logic bug, especially around "${payload.last_change}".`,
+      protectedAreas: [
+        { name: "Working preview configuration", reason: "It provides the cleanest baseline for comparison." },
+        { name: "Database schema", reason: "Production-only failures usually come from config or deployment differences first." },
+        { name: "Unrelated app features", reason: "Broad code changes can hide the true production-only mismatch." }
+      ],
+      confirmationTest: () => [
+        "Compare preview and production environment variables side by side.",
+        "Check production console/network errors for missing config or blocked requests.",
+        "Validate production callback URLs, domains, and API endpoints.",
+        "Confirm whether the same build artifact behaves differently only after deploy."
+      ],
+      fixOrder: () => [
+        { title: "Diff preview vs production settings", detail: "This usually reveals the mismatch faster than code rewrites." },
+        { title: "Repair only the failing production config or domain binding", detail: "Keep the working preview path as the baseline." },
+        { title: "Redeploy cleanly", detail: "A full fresh deploy confirms the corrected production environment is being used." },
+        { title: "Retest the exact production-only flow", detail: "Verify the same flow now matches preview behavior." }
+      ],
+      postFixChecklist: () => [
+        "Create a side-by-side record of preview and production env vars.",
+        "Retest with production domain, not only preview URL.",
+        "Confirm auth callbacks and API origins after redeploy.",
+        "Document the production mismatch that caused the issue.",
+        "Watch the production-only flow for two days after the fix."
+      ],
+      nextRisk: () => "If the production mismatch is only patched temporarily, the next break will likely happen on another deploy or on a feature that depends on the same environment-specific setting."
+    },
+    "Deployment issue": {
+      focus: "build pipeline, deploy config, runtime compatibility, and missing environment bindings",
+      fixTargets: "the deployment config, build output, and exact runtime requirement that fails during deploy",
+      rootCause: (payload) => `The problem appears to be in the deployment path itself rather than the feature logic, which makes the last change "${payload.last_change}" especially important to isolate.`,
+      protectedAreas: [
+        { name: "Application business logic", reason: "Deployment failures should be narrowed to build/runtime config before changing app features." },
+        { name: "Database rules", reason: "Those are high-risk and usually unrelated to the initial deploy error." },
+        { name: "Payment flow", reason: "Billing changes create unnecessary risk during deployment recovery." }
+      ],
+      confirmationTest: () => [
+        "Capture the exact build or runtime error from the deploy logs.",
+        "Confirm whether the failure happens at install, build, deploy, or runtime startup.",
+        "Compare the current deployment config against the last successful deployment.",
+        "Retry the same deployment after isolating one config change at a time."
+      ],
+      fixOrder: () => [
+        { title: "Identify the failing deployment stage", detail: "Install, build, and runtime failures require different fixes." },
+        { title: "Repair the deployment config or missing binding", detail: "Keep app logic untouched until the deploy path is stable." },
+        { title: "Run a clean redeploy", detail: "This confirms the environment accepts the corrected build." },
+        { title: "Smoke test the live app", detail: "A successful deploy still needs runtime verification." }
+      ],
+      postFixChecklist: () => [
+        "Save the exact error message that caused the deployment failure.",
+        "Document the corrected deploy setting or binding.",
+        "Run a smoke test on the live URL after deploy.",
+        "Check preview and production once more if both exist.",
+        "Monitor the next deployment for the same error pattern."
+      ],
+      nextRisk: () => "When a deployment root cause is not truly fixed, the next thing to break is usually the next release itself or a runtime binding that only shows up after the deploy succeeds."
+    },
+    "Payment/checkout issue": {
+      focus: "payment callbacks, order creation, redirect flow, and post-payment state updates",
+      fixTargets: "the exact checkout callback, payment status handling, and success-page submission flow",
+      rootCause: (payload) => `The reported symptoms point to a mismatch between payment completion and the app state that should update afterward, especially in the flow described as "${payload.broken_now}".`,
+      protectedAreas: [
+        { name: "Live payment credentials", reason: "Do not rotate or replace working billing secrets before confirming the failing callback path." },
+        { name: "Unrelated account settings", reason: "Account logic often sits near billing but should not be changed casually." },
+        { name: "Database schema", reason: "Schema changes increase billing risk before the exact checkout failure is isolated." }
+      ],
+      confirmationTest: () => [
+        "Run a test payment in the safest possible environment.",
+        "Confirm whether the payment succeeds but the post-payment state fails, or whether the payment itself fails.",
+        "Inspect redirect parameters, callback handling, and success-page logic.",
+        "Check for duplicate, missing, or stale order/payment identifiers."
+      ],
+      fixOrder: () => [
+        { title: "Confirm the exact failure point in checkout", detail: "Separate payment completion, redirect, and post-payment update behavior." },
+        { title: "Repair the callback or success-state logic", detail: "Keep billing credentials and unrelated account logic untouched unless logs require it." },
+        { title: "Retest with a controlled payment case", detail: "Use one clean flow to verify the fix before broader rollout." },
+        { title: "Audit duplicate or missed status updates", detail: "Billing bugs often hide in repeated callbacks or missing state saves." }
+      ],
+      postFixChecklist: () => [
+        "Run one fresh test payment and one cancellation flow.",
+        "Confirm the success page receives and preserves the expected payment identifiers.",
+        "Verify the paid user sees the next intended state immediately after checkout.",
+        "Document which payment callback or redirect assumption was wrong.",
+        "Watch the checkout flow closely for 48 hours."
+      ],
+      nextRisk: () => "If the root cause is ignored, the next failure is usually duplicate charges, missing paid access, or a mismatch between payment success and what the app unlocks afterward."
+    },
+    "One feature broke another feature": {
+      focus: "shared state, reused components, and recently modified files that affect multiple flows",
+      fixTargets: "the shared dependency or component that now affects both the new feature and the old one",
+      rootCause: (payload) => `The clearest signal is that a new or modified feature changed shared state or a shared component, which is why one area started failing after another was updated.`,
+      protectedAreas: [
+        { name: "Previously stable feature flow", reason: "That feature gives you the baseline for what must be preserved." },
+        { name: "Global config", reason: "Global edits create even wider regressions when the issue is already cross-feature." },
+        { name: "Auth and billing", reason: "These systems have high blast radius and should stay untouched unless they are the shared root cause." }
+      ],
+      confirmationTest: () => [
+        "Test the new feature and the broken older feature side by side.",
+        "Find the shared component, state store, or config touched by the recent change.",
+        "Temporarily isolate that shared dependency in a safe environment.",
+        "Retest both features to confirm the shared root cause."
+      ],
+      fixOrder: () => [
+        { title: "Map the shared dependency", detail: "This identifies what both features now depend on." },
+        { title: "Restore the original contract of the shared component", detail: "Fix the break without removing the intended new feature." },
+        { title: "Retest both features together", detail: "A partial fix is not enough if the second feature still regresses." },
+        { title: "Document the dependency contract", detail: "This prevents the same cross-feature break next time." }
+      ],
+      postFixChecklist: () => [
+        "Retest both the new feature and the previously working one.",
+        "Inspect shared state or props for accidental contract changes.",
+        "Write down which shared component caused the cross-feature regression.",
+        "Redeploy only after both paths pass.",
+        "Watch sibling flows that use the same component."
+      ],
+      nextRisk: () => "If the shared dependency is not cleaned up, the next break will likely surface in a third feature that reuses the same component or state pattern."
+    },
+    "AI keeps fixing one thing and breaking another": {
+      focus: "over-broad prompts, repeated refactors, and files the AI is changing outside the target area",
+      fixTargets: "prompt scope, target files, and the smallest reproducible failing area",
+      rootCause: (payload) => `The issue is likely not one bug but an unstable repair loop, where each AI-generated change touches more surface area than the original problem required.`,
+      protectedAreas: [
+        { name: "Currently working flows", reason: "Those flows are your safety baseline and should be frozen." },
+        { name: "High-risk config and secrets", reason: "AI should not be allowed to improvise around auth, billing, or env settings." },
+        { name: "Unrelated files", reason: "The repair loop gets worse when the AI edits outside the failing area." }
+      ],
+      confirmationTest: () => [
+        "List the last 2-3 AI-generated changes that were applied.",
+        "Identify whether each change touched files beyond the broken flow.",
+        "Reproduce the smallest current bug without introducing a new prompt yet.",
+        "Confirm whether the break pattern is caused by scope creep rather than one isolated defect."
+      ],
+      fixOrder: () => [
+        { title: "Freeze the working areas", detail: "Stop the repair loop from expanding further." },
+        { title: "Narrow the fix to one failing file or flow", detail: "The AI must work against a tiny target, not the entire app." },
+        { title: "Apply one minimal change", detail: "Do not stack multiple speculative prompts." },
+        { title: "Run regression tests after each prompt", detail: "This catches new damage immediately." }
+      ],
+      postFixChecklist: () => [
+        "Keep a written list of which files the next AI prompt is allowed to touch.",
+        "Retest the original bug plus one adjacent flow after every change.",
+        "Save the last working version before sending the next repair prompt.",
+        "Document which prompt caused the biggest regression.",
+        "Use smaller, file-specific prompts for the next 48 hours."
+      ],
+      nextRisk: () => "If the repair loop continues, the next break will probably be an unrelated but working part of the app that the AI touched while trying to fix the original issue."
+    },
+    "Supabase/Firebase/Auth issue": {
+      focus: "provider config, auth rules, callback URLs, and user session/permission handling",
+      fixTargets: "the exact provider setting, policy, or session path tied to the failing auth/data flow",
+      rootCause: (payload) => `The symptoms are consistent with a provider configuration or permission mismatch that no longer matches the app flow after the recent change.`,
+      protectedAreas: [
+        { name: "Production secrets", reason: "Do not rotate secrets or keys until the actual failing provider path is isolated." },
+        { name: "Database schema", reason: "Schema edits are too broad for an auth/provider diagnosis." },
+        { name: "Unrelated UI components", reason: "Visual changes should wait until the provider flow is healthy again." }
+      ],
+      confirmationTest: () => [
+        "Check provider logs or console errors for auth/policy failures.",
+        "Validate callback URLs, redirect domains, and provider configuration.",
+        "Confirm whether the failure is identity, session, or permission related.",
+        "Retest with a clean test user."
+      ],
+      fixOrder: () => [
+        { title: "Identify the failing provider stage", detail: "Separate sign-in, callback, session, and permissions." },
+        { title: "Repair the exact provider/policy mismatch", detail: "Limit the fix to the failing configuration or permission." },
+        { title: "Retest with a clean account", detail: "Confirm cached state is not masking the result." },
+        { title: "Verify downstream private pages", detail: "Ensure the fix restores the full intended flow." }
+      ],
+      postFixChecklist: () => [
+        "Retest login, redirect, and private-page access.",
+        "Verify the same user role can still access only the intended data.",
+        "Document the provider setting or policy that caused the issue.",
+        "Check for environment-specific provider differences after redeploy.",
+        "Monitor provider logs for two days."
+      ],
+      nextRisk: () => "If the provider mismatch remains, the next break will usually be session persistence, user permissions, or a downstream page that assumes auth is already healthy."
+    },
+    "Environment variable/config issue": {
+      focus: "runtime config, missing bindings, variable names, and environment-specific assumptions",
+      fixTargets: "the exact missing or mismatched variable, binding, or config flag",
+      rootCause: (payload) => `The pattern strongly suggests the app is reading configuration that is missing, renamed, or different across environments after the recent change.`,
+      protectedAreas: [
+        { name: "Working environment values", reason: "Use the last known good config as the baseline instead of improvising new settings." },
+        { name: "Database schema", reason: "Schema changes do not solve missing runtime config." },
+        { name: "Feature logic unrelated to config load", reason: "Broad code edits can hide the actual missing binding." }
+      ],
+      confirmationTest: () => [
+        "List the variables or bindings the broken flow depends on.",
+        "Compare local, preview, and production values carefully.",
+        "Confirm variable names and bindings exactly match the code path.",
+        "Retest after correcting only the suspected mismatch."
+      ],
+      fixOrder: () => [
+        { title: "Identify the exact missing or mismatched config", detail: "Do not change multiple variables at once." },
+        { title: "Correct the binding or variable name", detail: "Use the last known good environment as the reference." },
+        { title: "Redeploy cleanly", detail: "Fresh runtime state is needed to confirm the correction." },
+        { title: "Retest the affected flow", detail: "Verify the config-dependent path now behaves normally." }
+      ],
+      postFixChecklist: () => [
+        "Keep a written env-var checklist for local, preview, and production.",
+        "Retest the exact flow that depended on the missing config.",
+        "Check adjacent features using the same variable or binding.",
+        "Document the variable name or binding that was wrong.",
+        "Monitor the next deployment for config drift."
+      ],
+      nextRisk: () => "If config drift is not fixed properly, the next break usually shows up in another environment or in a second feature that depends on the same variable."
+    }
+  };
+
+  return profiles[breakType] || {
+    focus: "the smallest failing route, component, config, or integration connected to the submitted issue",
+    fixTargets: "only the smallest confirmed failing area",
+    rootCause: (payload) => `Based on the submitted details, the strongest hypothesis is that the last meaningful change "${payload.last_change}" altered a focused part of the app and introduced the current failure.`,
+    protectedAreas: [
+      { name: "Working user flow", reason: "Preserve the last known stable behavior while you isolate the break." },
+      { name: "Auth, data, and billing config", reason: "These are high-blast-radius areas unless evidence points there directly." },
+      { name: "Global app configuration", reason: "Broad config changes can create multiple new problems at once." }
+    ],
+    confirmationTest: () => [
+      "Reproduce the issue in the smallest possible flow.",
+      "Compare the failing path with the last known working state.",
+      "Check the last meaningful change in that area only.",
+      "Retest after isolating one hypothesis at a time."
+    ],
+    fixOrder: () => [
+      { title: "Reproduce the issue consistently", detail: "A stable reproduction path keeps the fix grounded." },
+      { title: "Isolate the smallest likely failing area", detail: "Avoid broad rewrites before the cause is confirmed." },
+      { title: "Apply one minimal fix", detail: "Keep the blast radius small and measurable." },
+      { title: "Retest adjacent flows", detail: "Confirm the fix did not create a second regression." }
+    ],
+    postFixChecklist: () => [
+      "Retest the original issue and one adjacent flow.",
+      "Write down the real root cause once confirmed.",
+      "Avoid stacking multiple speculative changes.",
+      "Redeploy only after a clean regression check.",
+      "Watch the affected area for the next two days."
+    ],
+    nextRisk: () => "If the root cause is ignored, the next break will usually happen in a nearby component, route, or integration that depends on the same underlying assumption."
+  };
+}
+
+function computeConfidence(payload) {
+  let score = 45;
+  if (clean(payload.error_message || "")) score += 15;
+  if (clean(payload.evidence_links || "")) score += 10;
+  if (clean(payload.repo_link || "")) score += 10;
+  if (clean(payload.preview_url || "")) score += 5;
+  if (clean(payload.focus_areas || "")) score += 5;
+  if (clean(payload.already_tried || "").length > 40) score += 5;
+  if (clean(payload.last_change || "").length > 40) score += 5;
+  return Math.max(40, Math.min(95, score));
+}
+
+function decideVerdict(payload, confidencePercent) {
+  const breakType = clean(payload.break_type || "");
+  const riskyText = `${payload.broken_now || ""} ${payload.error_message || ""}`.toLowerCase();
+  if (/(data loss|exposed|security|charge twice|double charge|leak|breach)/.test(riskyText)) return "Needs senior developer review";
+  if (confidencePercent < 60) return "Pause and collect more evidence";
+  if (breakType === "App broke after update" || breakType === "One feature broke another feature") return "Rollback";
+  return "Fix forward";
+}
+
+function buildNarrative(payload, profile) {
+  const toolNote = buildToolNote(payload.build_tool);
+  return `Here's what I found when I went through your app details. ${payload.app_name} appears to be a ${payload.app_context} used by ${payload.app_users}. The important sequence is that ${payload.working_before} was working, then ${payload.last_change} happened, and after that the app started behaving like this: ${payload.broken_now}. That pattern points most strongly to ${profile.rootCause.toLowerCase ? profile.rootCause.toLowerCase() : profile.rootCause} The issue is more likely to be concentrated in ${profile.focus} than in the whole app, which matters because broad AI rewrites would create extra regressions without proving the cause. ${toolNote} The safest interpretation is that the break is being amplified by the current environment or flow location (${payload.issue_location}), so the right move is to confirm the smallest failing area first, protect the parts that were still working, and only then apply a minimal fix. That gives you the best chance of restoring the app without causing a second wave of problems.`;
+}
+
+function buildToolNote(buildTool) {
+  const tool = clean(buildTool || "Other");
+  const notes = {
+    Lovable: "With Lovable-built apps, this kind of break often happens when a prompt changes a focused feature but also adjusts shared UI or config assumptions nearby.",
+    Bolt: "With Bolt-built apps, deploy and environment mismatches can show up quickly when a working preview flow moves into production conditions.",
+    Cursor: "With Cursor-built apps, the common failure pattern is a precise code change with a wider-than-expected blast radius in shared files.",
+    Replit: "With Replit-built apps, runtime and deployment assumptions can drift when the app moves between local, preview, and live execution paths.",
+    "Claude Code": "With Claude Code workflows, the main risk is allowing a useful fix to spill into adjacent files or settings that were not part of the original break.",
+    Windsurf: "With Windsurf-built apps, the issue is often not the first change itself but how later prompts compound around it.",
+    v0: "With v0-built apps, UI and integration changes can look isolated at first but still affect shared components and downstream flows."
+  };
+  return notes[tool] || "With AI-built apps generally, the biggest risk is fixing the visible symptom while leaving the underlying change pattern in place.";
+}
+
+function buildConfidenceReasoning(payload, profile) {
+  const evidence = [];
+  if (payload.error_message) evidence.push("an exact error message");
+  if (payload.evidence_links) evidence.push("linked evidence");
+  if (payload.last_change) evidence.push("a clear last-change description");
+  if (payload.already_tried) evidence.push("the list of attempted fixes");
+  return `This confidence level is based on ${evidence.length ? evidence.join(", ") : "the submitted symptom description"} plus the way the break lines up with the reported issue type. Confidence would increase further if you also provide logs, a repo diff, or a screen recording of the exact failure path.`;
+}
+
+function buildSecondaryPossibility(payload, profile) {
+  if (profile.confidencePercent >= 80) return "There is one clear root cause in this case with no plausible alternative explanation based on the current submission.";
+  return `A secondary possibility is that ${payload.issue_location.toLowerCase()} is introducing a config or state mismatch that makes the main issue appear worse than it is. If the confirmation test does not validate the primary diagnosis, compare environment-specific settings and shared dependencies next.`;
+}
+
+function buildVerdictReasoning(payload, profile) {
+  if (profile.verdict === "Rollback") {
+    return `Rollback is the safer first move because the break is tightly connected to a recent change and the cost of preserving the regression is higher than the cost of restoring the last known stable flow. Once stability returns, the intended change can be reapplied in a narrower way.`;
+  }
+  if (profile.verdict === "Pause and collect more evidence") {
+    return `The symptoms are real, but the current evidence is not strong enough to justify risky changes yet. Collecting one clean reproduction path, exact logs, and environment details will prevent a speculative fix from making the app less stable.`;
+  }
+  if (profile.verdict === "Needs senior developer review") {
+    return `The reported symptoms touch areas with real business or security risk, so a narrow AI-only fix would be too optimistic. Senior review is the safer path before anything high-impact is changed.`;
+  }
+  return `Fix forward is the better call because the break appears localized enough to repair without discarding other good work. The right approach is a minimal targeted fix, not a rewrite or a blind rollback.`;
+}
+
+function buildNextBreakPrediction(payload, profile) {
+  return `${profile.nextRisk} If that happens, the failure will feel like a new bug, but it will really be the same underlying problem surfacing in a second place. The long-term fix is to document the root cause, limit future AI prompts to the smallest target area, and keep a stable baseline before each new change.`;
+}
+
+function renderReportText(payload, report) {
+  const protectedAreas = report.protectedAreas.map((item, index) => `${index + 1}. ${item.name}\n${item.reason}`).join("\n\n");
+  const confirmationTest = report.confirmationTest.map((item, index) => `${index + 1}. ${item}`).join("\n");
+  const fixOrder = report.fixOrder.map((item, index) => `${index + 1}. ${item.title}\n${item.detail}`).join("\n\n");
+  const prompts = report.prompts.map((item, index) => `Prompt ${index + 1}\n${item}`).join("\n\n");
+  const postFix = report.postFixChecklist.map((item) => `- ${item}`).join("\n");
+
+  return `VibeFix
+Broken AI App Diagnosis Report
+CONFIDENTIAL
+Report Date: ${report.reportDate}
+Report ID: ${report.reportId}
+CLIENT
+${payload.email}
+APP TOOL
+${payload.build_tool}
+APP URL
+${payload.live_app_url}
+SUBMITTED
+${report.submittedAt}
+LAST WORKING
+${report.lastWorking}
+REPORT DELIVERED
+${report.deliveredAt}
+
+01  What I Found When I Looked At Your App
+${report.narrative}
+
+02  Root Cause
+PRIMARY DIAGNOSIS
+${report.rootCause}
+
+CONFIDENCE LEVEL
+${confidenceBar(report.confidencePercent)}  ${report.confidencePercent}% - ${report.confidenceLabel}
+
+${report.confidenceReasoning}
+
+SECONDARY POSSIBILITY (IF APPLICABLE)
+${report.secondaryPossibility}
+
+03  Rollback or Fix Forward?
+VERDICT: ${report.verdict.toUpperCase()}
+${report.verdictReasoning}
+
+04  What Not To Touch
+${protectedAreas}
+
+05  Run This Test First (5 minutes)
+CONFIRMATION TEST:
+${confirmationTest}
+
+06  Fix This In This Exact Order
+${fixOrder}
+
+07  Exact Prompts To Use
+${prompts}
+
+08  After You Fix It - Do These 5 Things
+${postFix}
+
+09  What Will Break Next If You Ignore The Root Cause
+${report.nextBreakPrediction}
+
+VibeFix  ·  Broken AI App Diagnosis
+vibefix-broken-ai-app-diagnosis.atharvam144.workers.dev
+This report is for the submitted app only.
+Not a security audit. Not guaranteed implementation.`;
+}
+
+async function saveGeneratedReport(request, env, payload, report) {
+  assertKv(env);
+  const user = await getSessionUser(request, env);
+  const accessToken = cryptoRandom().slice(0, 24);
+  const stored = {
+    id: report.model.reportId,
+    accessToken,
+    createdAt: new Date().toISOString(),
+    payload,
+    report: report.model
+  };
+
+  await env.VIBEFIX_KV.put(`report:${stored.id}`, JSON.stringify(stored));
+  const reportUrl = `/report/${stored.id}?token=${accessToken}`;
+
+  if (user?.googleId) {
+    const reports = await getReports(env, user.googleId);
+    reports.unshift({
+      id: stored.id,
+      app_name: payload.app_name,
+      tool: payload.build_tool,
+      break_type: payload.break_type,
+      date_submitted: formatReportDate(new Date(stored.createdAt)),
+      status: "Generated",
+      report_url: reportUrl
+    });
+    await env.VIBEFIX_KV.put(`reports:${user.googleId}`, JSON.stringify(reports));
+
+    const storedUser = await env.VIBEFIX_KV.get(`user:${user.googleId}`, "json");
+    if (storedUser) {
+      storedUser.diagnosis_count = Number(storedUser.diagnosis_count || 0) + 1;
+      await env.VIBEFIX_KV.put(`user:${user.googleId}`, JSON.stringify(storedUser));
+    }
+  }
+
+  return { ...stored, reportUrl };
+}
+
+async function renderStoredReport(request, env) {
+  assertKv(env);
+  const url = new URL(request.url);
+  const isDownload = url.pathname.endsWith("/download");
+  const reportPath = url.pathname.slice("/report/".length);
+  const reportId = decodeURIComponent(isDownload ? reportPath.slice(0, -"/download".length) : reportPath).trim();
+  const token = url.searchParams.get("token") || "";
+  const record = await env.VIBEFIX_KV.get(`report:${reportId}`, "json");
+
+  if (!record) return new Response("Report not found.", { status: 404 });
+  if (!token || token !== record.accessToken) return new Response("Invalid report link.", { status: 403 });
+
+  const page = renderStoredReportPage(record.payload, record.report, reportId, token);
+  if (isDownload) {
+    return new Response(page, {
+      headers: {
+        "Content-Type": "text/html; charset=utf-8",
+        "Content-Disposition": `attachment; filename="${safeFilename(record.payload.app_name || "vibefix-report")}-${reportId}.html"`,
+        "Cache-Control": "no-store"
+      }
+    });
+  }
+
+  return html(page);
+}
+
+function renderStoredReportPage(payload, report, reportId, token) {
+  const downloadUrl = `/report/${encodeURIComponent(reportId)}/download?token=${encodeURIComponent(token)}`;
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>${escapeHtml(payload.app_name)} Report - VibeFix</title>
+  <style>
+    :root { color-scheme: light; }
+    body { margin: 0; font-family: Georgia, "Times New Roman", serif; background: #f5f1ea; color: #161616; }
+    .report-shell { max-width: 960px; margin: 0 auto; padding: 40px 20px 72px; }
+    .report-actions { display: flex; flex-wrap: wrap; gap: 12px; margin: 0 auto 20px; max-width: 960px; padding: 0 20px; }
+    .report-action { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 18px; border-radius: 999px; border: 1px solid #161616; background: #161616; color: #fffdf8; text-decoration: none; font-family: Arial, sans-serif; font-size: 0.95rem; cursor: pointer; }
+    .report-action.secondary { background: transparent; color: #161616; }
+    .report-paper { background: #fffdf8; border: 1px solid #d8cfc2; box-shadow: 0 18px 40px rgba(66, 43, 17, 0.08); padding: 32px 28px; }
+    .topbar { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; border-top: 4px solid #161616; border-bottom: 1px solid #d8cfc2; padding: 16px 0; margin-bottom: 28px; }
+    .brand { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 18px; }
+    .brand h1 { font-size: 2rem; margin: 0; }
+    .brand p { margin: 6px 0 0; text-transform: uppercase; letter-spacing: 0.14em; font-size: 0.76rem; }
+    .meta label { display: block; font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: #6a6258; margin-bottom: 6px; }
+    .meta strong { font-size: 0.95rem; }
+    h2 { font-size: 1.25rem; margin: 30px 0 14px; padding-top: 18px; border-top: 1px solid #d8cfc2; }
+    h3 { font-size: 0.92rem; letter-spacing: 0.08em; text-transform: uppercase; margin: 18px 0 8px; }
+    p, li { line-height: 1.65; font-size: 1rem; }
+    ol, ul { padding-left: 22px; margin: 8px 0 0; }
+    .confidence { display: flex; align-items: center; gap: 12px; font-weight: 600; }
+    .box { border: 1px solid #d8cfc2; background: #faf7f1; padding: 16px 18px; margin-top: 12px; }
+    .footer { margin-top: 28px; padding-top: 18px; border-top: 1px solid #d8cfc2; font-size: 0.9rem; color: #544d45; }
+    pre { white-space: pre-wrap; word-break: break-word; font-family: "Courier New", monospace; font-size: 0.93rem; }
+    @media (max-width: 720px) { .topbar { grid-template-columns: 1fr 1fr; } .report-paper { padding: 24px 18px; } }
+    @media print { body { background: #fff; } .report-shell { padding: 0; } .report-paper { border: 0; box-shadow: none; } .report-actions { display: none; } }
+  </style>
+</head>
+<body>
+  <div class="report-actions">
+    <a class="report-action" href="${escapeAttr(downloadUrl)}" download>Download Report</a>
+    <button class="report-action secondary" type="button" onclick="window.print()">Save as PDF</button>
+  </div>
+  <main class="report-shell">
+    <article class="report-paper">
+      <div class="brand">
+        <div>
+          <h1>VibeFix<br />Broken AI App Diagnosis Report</h1>
+          <p>Confidential</p>
+        </div>
+        <div class="meta">
+          <label>Report Date</label>
+          <strong>${escapeHtml(report.reportDate)}</strong>
+          <label style="margin-top:12px;">Report ID</label>
+          <strong>${escapeHtml(report.reportId)}</strong>
+        </div>
+      </div>
+
+      <section class="topbar">
+        <div class="meta"><label>Client</label><strong>${escapeHtml(payload.email)}</strong></div>
+        <div class="meta"><label>App Tool</label><strong>${escapeHtml(payload.build_tool)}</strong></div>
+        <div class="meta"><label>App URL</label><strong>${escapeHtml(payload.live_app_url)}</strong></div>
+        <div class="meta"><label>Submitted</label><strong>${escapeHtml(report.submittedAt)}</strong></div>
+        <div class="meta"><label>Last Working</label><strong>${escapeHtml(report.lastWorking)}</strong></div>
+        <div class="meta"><label>Report Delivered</label><strong>${escapeHtml(report.deliveredAt)}</strong></div>
+      </section>
+
+      <h2>01 What I Found When I Looked At Your App</h2>
+      <p>${escapeHtml(report.narrative)}</p>
+
+      <h2>02 Root Cause</h2>
+      <h3>Primary Diagnosis</h3>
+      <p>${escapeHtml(report.rootCause)}</p>
+      <h3>Confidence Level</h3>
+      <p class="confidence">${escapeHtml(confidenceBar(report.confidencePercent))} ${escapeHtml(String(report.confidencePercent))}% - ${escapeHtml(report.confidenceLabel)}</p>
+      <p>${escapeHtml(report.confidenceReasoning)}</p>
+      <h3>Secondary Possibility (If Applicable)</h3>
+      <p>${escapeHtml(report.secondaryPossibility)}</p>
+
+      <h2>03 Rollback or Fix Forward?</h2>
+      <div class="box"><strong>Verdict: ${escapeHtml(report.verdict)}</strong><p>${escapeHtml(report.verdictReasoning)}</p></div>
+
+      <h2>04 What Not To Touch</h2>
+      <ol>
+        ${report.protectedAreas.map((item) => `<li><strong>${escapeHtml(item.name)}</strong><br />${escapeHtml(item.reason)}</li>`).join("")}
+      </ol>
+
+      <h2>05 Run This Test First (5 minutes)</h2>
+      <div class="box">
+        <strong>Confirmation Test</strong>
+        <ol>${report.confirmationTest.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ol>
+      </div>
+
+      <h2>06 Fix This In This Exact Order</h2>
+      <ol>
+        ${report.fixOrder.map((item) => `<li><strong>${escapeHtml(item.title)}</strong><br />${escapeHtml(item.detail)}</li>`).join("")}
+      </ol>
+
+      <h2>07 Exact Prompts To Use</h2>
+      ${report.prompts.map((item, index) => `<div class="box"><strong>Prompt ${index + 1}</strong><pre>${escapeHtml(item)}</pre></div>`).join("")}
+
+      <h2>08 After You Fix It - Do These 5 Things</h2>
+      <ul>${report.postFixChecklist.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
+
+      <h2>09 What Will Break Next If You Ignore The Root Cause</h2>
+      <p>${escapeHtml(report.nextBreakPrediction)}</p>
+
+      <div class="footer">
+        <p>VibeFix · Broken AI App Diagnosis<br />vibefix-broken-ai-app-diagnosis.atharvam144.workers.dev</p>
+        <p>This report is for the submitted app only.<br />Not a security audit. Not guaranteed implementation.</p>
+      </div>
+    </article>
+  </main>
+</body>
+</html>`;
+}
+
+function createReportId(date) {
+  return `${REPORT_ID_PREFIX}-${date.getUTCFullYear()}${String(date.getUTCMonth() + 1).padStart(2, "0")}${String(date.getUTCDate()).padStart(2, "0")}-${cryptoRandom().slice(0, 6).toUpperCase()}`;
+}
+
+function formatReportDate(date) {
+  return date.toISOString().slice(0, 10);
+}
+
+function formatReportTimestamp(date) {
+  return date.toISOString().replace("T", " ").slice(0, 16) + " UTC";
+}
+
+function confidenceBar(percent) {
+  const filled = Math.max(1, Math.min(10, Math.round(percent / 10)));
+  return `${"█".repeat(filled)}${"░".repeat(10 - filled)}`;
+}
+
+function safeFilename(value) {
+  return String(value).trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "vibefix-report";
 }
 
 async function streamAnthropic({ env, tool, breakTypes, description, image, write }) {
