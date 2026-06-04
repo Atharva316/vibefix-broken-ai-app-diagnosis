@@ -30,7 +30,14 @@
       <h1>Your VibeFix intake has been submitted</h1>
       <p class="muted">Your diagnosis request has been received.</p>
       <p class="muted">Your payment ID will be matched with your submission, and your app details will be reviewed.</p>
-      <p class="muted">You’ll receive your written diagnosis report by email within 48 hours.</p>
+      <p class="muted">You will receive your written diagnosis report by email within 48 hours.</p>
+
+      <div class="success-action-card" id="report-card" hidden>
+        <h3>Your generated report is ready</h3>
+        <p class="muted">Use this private link to open the report generated from your submission.</p>
+        <a class="btn btn-primary full-width" id="report-link" href="/">Open diagnosis report</a>
+        <p class="small-fallback" id="report-id-text"></p>
+      </div>
 
       <div>
         <h3>What happens next</h3>
@@ -50,5 +57,17 @@
       </div>
     </section>
   </main>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const reportUrl = params.get("report");
+    const reportId = params.get("report_id");
+
+    if (reportUrl) {
+      document.getElementById("report-card").hidden = false;
+      document.getElementById("report-link").href = reportUrl;
+      document.getElementById("report-id-text").textContent = reportId ? `Report ID: ${reportId}` : "";
+    }
+  </script>
 </body>
 </html>

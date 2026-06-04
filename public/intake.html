@@ -399,7 +399,10 @@
           throw new Error(result.error || "Something went wrong while submitting. Please retry or use the backup Tally form.");
         }
 
-        window.location.href = "/intake-submitted.html";
+        const next = new URL("/intake-submitted.html", window.location.origin);
+        if (result.reportUrl) next.searchParams.set("report", result.reportUrl);
+        if (result.reportId) next.searchParams.set("report_id", result.reportId);
+        window.location.href = next.toString();
       } catch (error) {
         await submitWeb3FormsFallback(payload);
         window.location.href = "/intake-submitted.html";
