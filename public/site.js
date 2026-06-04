@@ -307,11 +307,19 @@ async function runProcessTracker() {
     "Finalizing VibeFix Case File"
   ];
 
-  for (const stage of stages) {
-    tracker.innerHTML = `<span>${stage}</span>`;
-    await new Promise((resolve) => setTimeout(resolve, 80));
+  tracker.classList.add("is-running");
+  tracker.innerHTML = stages.map((stage) => `<span class="process-step">${escapeHtml(stage)}</span>`).join("");
+  const steps = [...tracker.querySelectorAll(".process-step")];
+
+  for (let index = 0; index < stages.length; index += 1) {
+    steps.forEach((step, stepIndex) => {
+      step.classList.toggle("done", stepIndex < index);
+      step.classList.toggle("active", stepIndex === index);
+    });
+    await new Promise((resolve) => setTimeout(resolve, 120));
   }
-  tracker.innerHTML = "<span>Second-Pass Safety Check Complete</span>";
+  tracker.classList.remove("is-running");
+  tracker.innerHTML = '<span class="process-step done">Second-Pass Safety Check Complete</span>';
 }
 
 function buildCaseFile(payload) {
@@ -526,9 +534,11 @@ function promptAutopsyWarning(payload) {
 }
 
 function renderCaseFile(payload, result) {
+  const panel = document.querySelector("#case-file");
+  panel?.classList.remove("has-results");
   setText("#case-title", result.loopDetected ? "Loop Detected: stop broad fix prompts." : "VibeFix Case File generated.");
   setText("#case-summary", result.loopDetected ? "You are probably not dealing with one isolated bug. Collect evidence and use scoped prompts only." : "Second-pass safety check complete. Use this case file before prompting again.");
-  setText("#risk-score", `${result.score}/100`);
+  animateRiskScore(result.score);
   setText("#prompt-risk", result.promptRisk);
   setText("#break-layer", result.layer);
   setText("#confidence-score", result.confidence);
@@ -537,13 +547,51 @@ function renderCaseFile(payload, result) {
   setText("#safe-first-move", result.safeFirstMove);
   setText("#safe-first-prompt", result.safePrompt);
   setText("#bad-prompt-warning", result.badPromptWarning);
-  document.querySelector("#risk-meter").style.width = `${result.score}%`;
-  document.querySelector("#risk-meter").className = result.score >= 70 ? "danger" : result.score >= 42 ? "caution" : "safe";
-  document.querySelector("#no-touch-zones").innerHTML = result.noTouchZones.map((zone) => `<span>${escapeHtml(zone)}</span>`).join("");
+  updateRiskCards(result);
+  const riskMeter = document.querySelector("#risk-meter");
+  if (riskMeter) {
+    riskMeter.style.width = `${result.score}%`;
+    riskMeter.className = result.score >= 70 ? "danger" : result.score >= 36 ? "caution" : "safe";
+  }
+  document.querySelector("#no-touch-zones").innerHTML = result.noTouchZones.map((zone) => `<span class="${zoneClass(zone)}">${escapeHtml(zone)}</span>`).join("");
   document.querySelector("#missing-evidence").innerHTML = result.missingEvidence.map((item) => `<li>${escapeHtml(item)}</li>`).join("");
   document.querySelector("#regression-checklist").innerHTML = result.checklist.map((item) => `<li>${escapeHtml(item)}</li>`).join("");
   document.querySelector("#damage-timeline").innerHTML = result.timeline.map((item) => `<li>${escapeHtml(item)}</li>`).join("");
-  document.querySelector("#case-file").scrollIntoView({ behavior: "smooth", block: "start" });
+  requestAnimationFrame(() => panel?.classList.add("has-results"));
+  panel?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function animateRiskScore(score) {
+  const target = document.querySelector("#risk-score");
+  if (!target) return;
+  const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  if (reduceMotion) {
+    target.textContent = `${score}/100`;
+    return;
+  }
+  let current = 0;
+  const step = Math.max(1, Math.ceil(score / 24));
+  const tick = () => {
+    current = Math.min(score, current + step);
+    target.textContent = `${current}/100`;
+    if (current < score) requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+
+function updateRiskCards(result) {
+  const riskClass = result.score >= 70 ? "risk-high" : result.score >= 36 ? "risk-medium" : "risk-low";
+  document.querySelectorAll(".risk-dashboard .risk-card").forEach((card) => {
+    card.classList.remove("risk-low", "risk-medium", "risk-high");
+    card.classList.add(riskClass);
+  });
+}
+
+function zoneClass(zone) {
+  const value = lower(zone);
+  if (/(api key|production data|payment|webhook|auth|database|rls|env|service|admin)/.test(value)) return "zone-critical";
+  if (/(route|session|storage|deployment|redirect|schema)/.test(value)) return "zone-warning";
+  return "zone-safe";
 }
 
 function setText(selector, value) {
@@ -624,8 +672,12 @@ function evidencePack(payload) {
 async function copyText(text, button) {
   await navigator.clipboard.writeText(text);
   const old = button.textContent;
-  button.textContent = "Copied";
-  setTimeout(() => { button.textContent = old; }, 1200);
+  button.classList.add("copied");
+  button.textContent = old.toLowerCase().includes("prompt") ? "Copied Safe Prompt" : "Copied";
+  setTimeout(() => {
+    button.textContent = old;
+    button.classList.remove("copied");
+  }, 1400);
 }
 
 function downloadText(filename, text) {
@@ -647,6 +699,8 @@ if (inlinePromptButton && inlinePromptInput && inlinePromptOutput) {
     if (!prompt) return;
     const result = promptRiskAnalysis(prompt);
     inlinePromptOutput.hidden = false;
+    inlinePromptOutput.classList.remove("risk-low", "risk-medium", "risk-high");
+    inlinePromptOutput.classList.add(`risk-${lower(result.risk_level)}`);
     inlinePromptOutput.querySelector("[data-risk-level]").textContent = result.risk_level;
     inlinePromptOutput.querySelector("[data-risky-phrase]").textContent = result.risky_phrase || "No severe phrase found";
     inlinePromptOutput.querySelector("[data-risk-reason]").textContent = result.reason;

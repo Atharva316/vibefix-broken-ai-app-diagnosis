@@ -53,17 +53,55 @@
       <div class="grid-overlay" aria-hidden="true"></div>
       <div class="hero-glow" aria-hidden="true"></div>
       <div class="container hero-content">
-        <p class="eyebrow animate-up">&#9889; SAFE PROMPTING SYSTEM</p>
-        <h1 class="animate-up delay-1">Before you ask AI to fix your app,<span>check what not to touch.</span></h1>
-        <p class="subhead animate-up delay-2">
-          VibeFix finds the likely break pattern, prompt-again risk, no-touch zones, rollback vs fix-forward direction, and the safest next prompt for broken Lovable, Bolt, Cursor, Replit, v0, Claude Code and Windsurf apps.
-        </p>
-        <div class="hero-actions animate-up delay-3">
-          <a class="btn btn-primary" href="#scanner">Run Free Safe First Move Scanner</a>
-          <a class="btn btn-secondary" href="https://rzp.io/rzp/bM3R4oPl">Get Deep Diagnosis</a>
+        <div class="hero-copy">
+          <p class="eyebrow animate-up">&#9889; SAFE PROMPTING SYSTEM</p>
+          <h1 class="animate-up delay-1">Before you ask AI to fix your app,<span>check what not to touch.</span></h1>
+          <p class="subhead animate-up delay-2">
+            VibeFix finds the likely break pattern, prompt-again risk, no-touch zones, rollback vs fix-forward direction, and the safest next prompt for broken Lovable, Bolt, Cursor, Replit, v0, Claude Code and Windsurf apps.
+          </p>
+          <div class="hero-actions animate-up delay-3">
+            <a class="btn btn-primary" href="#scanner">Run Free Safe First Move Scanner</a>
+            <a class="btn btn-secondary" href="https://rzp.io/rzp/bM3R4oPl">Get Deep Diagnosis</a>
+          </div>
+          <p class="caption animate-up delay-4">Your app doesn't need more prompts. It needs a damage map.</p>
+          <p class="caption animate-up delay-4">Built for founders who used AI to ship but now don't know what safely broke.</p>
         </div>
-        <p class="caption animate-up delay-4">Your app doesn't need more prompts. It needs a damage map.</p>
-        <p class="caption animate-up delay-4">Built for founders who used AI to ship but now don't know what safely broke.</p>
+        <div class="hero-diagnostic animate-up delay-3" aria-label="Animated VibeFix diagnostic flow">
+          <div class="diagnostic-header">
+            <span>VibeFix live case file</span>
+            <strong>Risk scan active</strong>
+          </div>
+          <div class="diagnostic-flow">
+            <article class="flow-card flow-card-1">
+              <span>Input</span>
+              <strong>Broken AI app</strong>
+              <p>Preview works. Production login loops.</p>
+            </article>
+            <i aria-hidden="true"></i>
+            <article class="flow-card flow-card-2">
+              <span>Scan</span>
+              <strong>VibeFix scan</strong>
+              <p>Checking prompt-again risk and break layer.</p>
+            </article>
+            <i aria-hidden="true"></i>
+            <article class="flow-card flow-card-3 danger">
+              <span>Fix-Risk Score</span>
+              <strong>78/100</strong>
+              <p>High risk. Do not prompt broadly.</p>
+            </article>
+            <i aria-hidden="true"></i>
+            <article class="flow-card flow-card-4">
+              <span>No-Touch Zones</span>
+              <div class="flow-chips"><b>AUTH</b><b>DATABASE</b><b>ENV</b></div>
+            </article>
+            <i aria-hidden="true"></i>
+            <article class="flow-card flow-card-5 safe">
+              <span>Output</span>
+              <strong>Safe first prompt generated</strong>
+              <p>Inspect first. Plan before code.</p>
+            </article>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -71,6 +109,19 @@
       <div class="container trust-row">
         <span>Works for apps built with</span>
         <strong>Lovable</strong><strong>Bolt</strong><strong>Cursor</strong><strong>Replit</strong><strong>v0</strong><strong>Claude Code</strong><strong>Windsurf</strong><strong>ChatGPT</strong><strong>Gemini</strong><strong>DeepSeek</strong>
+      </div>
+    </section>
+
+    <section class="section-shell product-story">
+      <div class="container">
+        <div class="story-rail" aria-label="VibeFix product flow">
+          <article class="story-card reveal"><span>01</span><h3>App broke</h3><p>A founder sees login, data, deploy, checkout, or UI break after an AI change.</p></article>
+          <article class="story-card reveal"><span>02</span><h3>Prompt temptation</h3><p>The dangerous next move is asking AI to "fix everything" without boundaries.</p></article>
+          <article class="story-card reveal"><span>03</span><h3>Risk detected</h3><p>VibeFix maps likely break layer, confidence, and prompt-again risk first.</p></article>
+          <article class="story-card reveal"><span>04</span><h3>No-touch map</h3><p>Auth, database, env, payments, and working flows are protected until evidence proves otherwise.</p></article>
+          <article class="story-card reveal"><span>05</span><h3>Safe prompt</h3><p>The output is a scoped prompt that tells AI to inspect, plan, and make the smallest safe change.</p></article>
+          <article class="story-card reveal"><span>06</span><h3>Deep Diagnosis</h3><p>If the case is high risk, the paid report gives a manually reviewed repair direction.</p></article>
+        </div>
       </div>
     </section>
 
@@ -185,18 +236,18 @@
               <p class="muted" id="case-summary">VibeFix will identify likely break layer, no-touch zones, rollback direction, and a safe first prompt.</p>
             </div>
             <div class="risk-dashboard">
-              <article class="risk-card"><span>Fix-Risk Score</span><strong id="risk-score">--</strong><div class="score-meter"><i id="risk-meter"></i></div></article>
-              <article class="risk-card"><span>Prompt-Again Risk</span><strong id="prompt-risk">--</strong></article>
-              <article class="risk-card"><span>Likely Break Layer</span><strong id="break-layer">--</strong></article>
-              <article class="risk-card"><span>Evidence Confidence</span><strong id="confidence-score">--</strong></article>
+              <article class="risk-card result-card"><span>Fix-Risk Score</span><strong id="risk-score">--</strong><div class="score-meter"><i id="risk-meter"></i></div></article>
+              <article class="risk-card result-card"><span>Prompt-Again Risk</span><strong id="prompt-risk">--</strong></article>
+              <article class="risk-card result-card"><span>Likely Break Layer</span><strong id="break-layer">--</strong></article>
+              <article class="risk-card result-card"><span>Evidence Confidence</span><strong id="confidence-score">--</strong></article>
             </div>
             <div class="case-grid">
-              <section><h3>Root Cause Hypothesis</h3><p id="root-hypothesis">Waiting for scanner input.</p></section>
-              <section><h3>No-Touch Zones</h3><div class="chip-list" id="no-touch-zones"></div></section>
-              <section><h3>Rollback vs Fix-Forward</h3><p id="rollback-direction">Waiting for scanner input.</p></section>
-              <section><h3>Safe First Move</h3><p id="safe-first-move">Waiting for scanner input.</p></section>
-              <section><h3>Missing Evidence Needed</h3><ul id="missing-evidence"></ul></section>
-              <section><h3>Regression Checklist</h3><ul id="regression-checklist"></ul></section>
+              <section class="case-section-card"><h3>Root Cause Hypothesis</h3><p id="root-hypothesis">Waiting for scanner input.</p></section>
+              <section class="case-section-card"><h3>No-Touch Zones</h3><div class="chip-list" id="no-touch-zones"></div></section>
+              <section class="case-section-card"><h3>Rollback vs Fix-Forward</h3><p id="rollback-direction">Waiting for scanner input.</p></section>
+              <section class="case-section-card"><h3>Safe First Move</h3><p id="safe-first-move">Waiting for scanner input.</p></section>
+              <section class="case-section-card"><h3>Missing Evidence Needed</h3><ul id="missing-evidence"></ul></section>
+              <section class="case-section-card"><h3>Regression Checklist</h3><ul id="regression-checklist"></ul></section>
             </div>
             <div class="timeline-card">
               <h3>Damage Timeline</h3>

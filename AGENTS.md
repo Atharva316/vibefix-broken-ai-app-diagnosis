@@ -46,6 +46,16 @@ The site is for non-technical founders and indie builders using Lovable, Bolt, C
 - Do not position VibeFix as a security audit, legal/compliance review, 24/7 support, or guaranteed bug fixing.
 - Keep the tone diagnostic, restrained, and practical.
 
+## Visual Direction
+
+- VibeFix should feel like a diagnostic lab, case file system, risk scanner, and black box recorder for broken AI-built apps.
+- Inspiration from polished product storytelling is fine, but do not copy Twilio layout, colors, assets, or brand patterns.
+- Avoid generic AI chatbot visuals, cute robot icons, childish 3D sparkles, crypto-style glow overload, and fake enterprise proof.
+- Prefer lightweight CSS transitions/keyframes and small JavaScript state changes.
+- Respect `prefers-reduced-motion`.
+- Keep mobile cards readable with no horizontal overflow.
+- Preserve strong contrast and text labels for risk states; do not rely only on color.
+
 ## Validation Checklist
 
 Before finishing changes:
