@@ -259,3 +259,475 @@ function escapeHtml(value) {
     "'": "&#39;"
   }[char]));
 }
+
+const scannerForm = document.querySelector("#safe-scanner-form");
+const scannerState = { result: null, payload: null };
+const scannerSecretWarning = document.querySelector("#scanner-secret-warning");
+
+if (scannerForm) {
+  scannerForm.addEventListener("input", () => {
+    scannerSecretWarning.hidden = !containsSecret(new FormData(scannerForm));
+  });
+
+  scannerForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const payload = Object.fromEntries(new FormData(scannerForm).entries());
+
+    if (containsSecret(new FormData(scannerForm))) {
+      scannerSecretWarning.hidden = false;
+      scannerSecretWarning.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+
+    await runProcessTracker();
+    const result = buildCaseFile(payload);
+    scannerState.result = result;
+    scannerState.payload = payload;
+    renderCaseFile(payload, result);
+
+    fetch("/api/safe-scan", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ payload, result })
+    }).catch(() => {});
+  });
+}
+
+async function runProcessTracker() {
+  const tracker = document.querySelector("#process-tracker");
+  if (!tracker) return;
+  const stages = [
+    "Reading symptom",
+    "Identifying likely break layer",
+    "Checking prompt-again risk",
+    "Detecting no-touch zones",
+    "Checking rollback vs fix-forward",
+    "Building safe first prompt",
+    "Running second-pass safety check",
+    "Finalizing VibeFix Case File"
+  ];
+
+  for (const stage of stages) {
+    tracker.innerHTML = `<span>${stage}</span>`;
+    await new Promise((resolve) => setTimeout(resolve, 80));
+  }
+  tracker.innerHTML = "<span>Second-Pass Safety Check Complete</span>";
+}
+
+function buildCaseFile(payload) {
+  const breakType = lower(payload.break_type);
+  const issueLocation = lower(payload.issue_location);
+  const timing = lower(payload.break_timing);
+  const lastPrompt = payload.last_prompt || "";
+  const error = payload.error_message || "";
+  const attempts = payload.fix_attempts || "0";
+  const unrelated = payload.unrelated_files === "yes";
+  const noRollback = payload.rollback_available === "no";
+  const sensitive = payload.sensitive_systems !== "no";
+  const realData = payload.real_data !== "no";
+  const productionUsers = payload.production_users === "yes";
+  const vaguePrompt = isDangerousPrompt(lastPrompt) || lastPrompt.trim().length < 30;
+
+  let score = 18;
+  if (issueLocation.includes("production")) score += 15;
+  if (breakType.includes("auth") || breakType.includes("payment") || breakType.includes("database") || breakType.includes("permissions")) score += 18;
+  if (breakType.includes("fix-break") || attempts.includes("3") || attempts.includes("5")) score += 18;
+  if (unrelated) score += 15;
+  if (noRollback) score += 12;
+  if (sensitive) score += 12;
+  if (realData) score += 10;
+  if (productionUsers) score += 12;
+  if (vaguePrompt) score += 10;
+  if (!error.trim()) score += 6;
+  score = Math.min(100, score);
+
+  const layer = likelyLayer(payload);
+  const promptRisk = score >= 70 ? "High" : score >= 42 ? "Medium" : "Low";
+  const confidence = evidenceConfidence(payload);
+  const noTouchZones = buildNoTouchZones(payload, layer);
+  const rollbackDirection = rollbackDecision(payload, score, layer);
+  const missingEvidence = missingEvidenceList(payload);
+  const checklist = regressionChecklist(layer);
+  const hypothesis = rootHypothesis(payload, layer);
+  const safePrompt = buildToolPrompt(payload, layer, noTouchZones, "Generic AI");
+  const badPromptWarning = promptAutopsyWarning(payload);
+
+  return {
+    score,
+    layer,
+    promptRisk,
+    confidence,
+    noTouchZones,
+    rollbackDirection,
+    missingEvidence,
+    checklist,
+    hypothesis,
+    safePrompt,
+    badPromptWarning,
+    safeFirstMove: safeFirstMove(payload, layer),
+    timeline: damageTimeline(payload),
+    loopDetected: promptRisk === "High" && (attempts.includes("3") || attempts.includes("5") || breakType.includes("fix-break")),
+    suspiciousChange: suspiciousChange(payload, layer)
+  };
+}
+
+function likelyLayer(payload) {
+  const type = lower(payload.break_type);
+  const timing = lower(payload.break_timing);
+  const location = lower(payload.issue_location);
+  if (location.includes("production") || timing.includes("deploy")) return "env config / deployment";
+  if (type.includes("auth") || type.includes("login") || type.includes("permissions")) return "auth / permissions";
+  if (type.includes("database") || type.includes("data")) return "database / RLS";
+  if (type.includes("payment") || type.includes("checkout")) return "payments / checkout";
+  if (type.includes("api") || type.includes("email") || type.includes("file upload")) return "API integration";
+  if (type.includes("routing") || type.includes("blank")) return "routing / runtime";
+  if (type.includes("ui") || type.includes("layout")) return "UI / component state";
+  if (type.includes("fix-break") || type.includes("unrelated")) return "AI over-editing / shared state";
+  if (timing.includes("env")) return "env config";
+  if (timing.includes("database")) return "database / RLS";
+  if (timing.includes("auth")) return "auth / session";
+  return "unknown";
+}
+
+function evidenceConfidence(payload) {
+  let points = 0;
+  if ((payload.error_message || "").trim()) points += 2;
+  if ((payload.last_prompt || "").trim().length > 40) points += 2;
+  if ((payload.last_working_state || "").trim()) points += 1;
+  if ((payload.current_broken_behavior || "").trim()) points += 1;
+  if ((payload.evidence_links || "").trim()) points += 1;
+  if ((payload.recent_prompts || "").trim()) points += 1;
+  if (points >= 6) return "High";
+  if (points >= 3) return "Medium";
+  return "Low";
+}
+
+function buildNoTouchZones(payload, layer) {
+  const zones = new Set(["working dashboard flows", "existing working UI components"]);
+  const type = `${lower(payload.break_type)} ${lower(payload.break_timing)} ${layer}`;
+  if (type.includes("auth") || type.includes("login") || type.includes("permissions")) {
+    ["auth system", "auth provider config", "redirect URLs", "route guards", "session handling"].forEach((item) => zones.add(item));
+  }
+  if (type.includes("database") || type.includes("data") || type.includes("rls")) {
+    ["database schema", "Supabase RLS policies", "production data", "storage buckets"].forEach((item) => zones.add(item));
+  }
+  if (type.includes("env") || type.includes("deployment") || type.includes("production")) {
+    ["environment variables", "API keys", "deployment settings"].forEach((item) => zones.add(item));
+  }
+  if (type.includes("payment") || type.includes("checkout")) {
+    ["payment/checkout", "webhooks", "product and price IDs"].forEach((item) => zones.add(item));
+  }
+  if (type.includes("api") || type.includes("email")) {
+    ["existing API integrations", "email provider config"].forEach((item) => zones.add(item));
+  }
+  if (payload.declared_no_touch) {
+    payload.declared_no_touch.split(/,|\n/).map((item) => item.trim()).filter(Boolean).forEach((item) => zones.add(item));
+  }
+  return [...zones].slice(0, 12);
+}
+
+function rollbackDecision(payload, score, layer) {
+  if (payload.rollback_available === "yes" && (score >= 70 || payload.unrelated_files === "yes" || String(payload.fix_attempts).includes("5"))) {
+    return "Rollback is safer. Return to the last working checkpoint, then re-apply the intended change with a smaller scoped prompt.";
+  }
+  if (payload.rollback_available === "no" && score >= 70) {
+    return "Pause and collect evidence before editing. No rollback plus high-risk systems means broad fix prompts are unsafe.";
+  }
+  if (score < 42) return "Fix-forward is reasonable if the affected layer is isolated and the prompt stays narrow.";
+  return "Hybrid path: compare the last working state to current state, then fix-forward only the proven failing layer.";
+}
+
+function safeFirstMove(payload, layer) {
+  if (layer.includes("env") || layer.includes("deployment")) return "Compare preview vs production environment variables, redirect URLs, build logs, and browser console errors before changing code.";
+  if (layer.includes("auth")) return "Trace the auth flow step-by-step: provider, callback, session, route guard, and data access. Do not rewrite auth.";
+  if (layer.includes("database")) return "Inspect the failed query/network response and permission/RLS errors before changing schema or policies.";
+  if (layer.includes("payments")) return "Verify checkout link, mode, product/price IDs, success page, and webhook assumptions before touching payment code.";
+  if (layer.includes("UI")) return "Compare the last working component/layout with the changed component. Do not change backend systems.";
+  return "Collect exact evidence first: last prompt, changed files, exact error, and last working state.";
+}
+
+function missingEvidenceList(payload) {
+  const missing = [];
+  if (!payload.error_message?.trim()) missing.push("Exact console/build/API error");
+  if (!payload.last_prompt?.trim()) missing.push("Exact last prompt or code/config change");
+  if (!payload.last_working_state?.trim()) missing.push("Last known working state");
+  if (!payload.evidence_links?.trim()) missing.push("Screenshot, deploy log, or shared evidence link");
+  if (!payload.recent_prompts?.trim()) missing.push("Recent prompts for prompt autopsy");
+  return missing.length ? missing : ["No major missing evidence detected from the form."];
+}
+
+function regressionChecklist(layer) {
+  if (layer.includes("auth")) return ["signup", "login", "logout", "redirect", "protected route", "session persistence", "test user access", "mobile login", "production auth callback"];
+  if (layer.includes("database")) return ["create test record", "read test record", "update test record", "delete only test data", "dashboard loads data", "RLS allows correct user", "no production schema migration without backup"];
+  if (layer.includes("deployment") || layer.includes("env")) return ["preview works", "production works", "build passes", "env vars match", "deploy logs clean", "console errors checked", "API endpoints reachable"];
+  if (layer.includes("payments")) return ["test checkout", "webhook event", "success page", "failure/cancel page", "product/price IDs", "live mode confirmed", "no real payment risk"];
+  if (layer.includes("UI")) return ["broken component renders", "previous working page still works", "mobile layout", "desktop layout", "navigation", "empty/loading/error states"];
+  if (layer.includes("API")) return ["endpoint response", "auth headers", "env URL", "CORS", "error handling", "rate limit"];
+  return ["old working flow still works", "broken flow is fixed", "no unrelated UI changes", "no auth/database/payment/env changes unless proven", "production and preview checked"];
+}
+
+function rootHypothesis(payload, layer) {
+  if (layer.includes("env")) return "Preview vs production behavior suggests a production-only configuration, environment variable, deploy, or redirect mismatch.";
+  if (layer.includes("auth")) return "The break likely sits around auth provider config, redirect URL, route guard, session persistence, RLS/user context, or environment mismatch.";
+  if (layer.includes("database")) return "The break likely involves RLS, query/table mismatch, API key/env mismatch, or user permission context rather than a pure UI failure.";
+  if (layer.includes("payments")) return "The break likely involves checkout link/mode, product IDs, redirect/success page, webhook assumptions, or payment environment config.";
+  if (layer.includes("AI over-editing")) return "Multiple fix attempts or unrelated file changes suggest a fix-break loop, not one isolated bug.";
+  return "The likely cause is not confirmed. The safest move is to collect exact evidence and avoid broad prompts.";
+}
+
+function damageTimeline(payload) {
+  return [
+    `Last working state: ${payload.last_working_state || "not provided"}`,
+    `Last prompt/change: ${payload.last_prompt || "not provided"}`,
+    `First/current symptom: ${payload.current_broken_behavior || "not provided"}`,
+    `Repair attempts: ${payload.fix_attempts || "0"} attempt(s); ${payload.already_tried || "details not provided"}`,
+    `Most suspicious change: ${suspiciousChange(payload, likelyLayer(payload))}`,
+    `Safest next investigation: ${safeFirstMove(payload, likelyLayer(payload))}`
+  ];
+}
+
+function suspiciousChange(payload, layer) {
+  return `The last ${payload.last_ai_tool || "AI"} edit touched or preceded the ${layer} boundary. This is the highest-risk change, not confirmed cause.`;
+}
+
+function buildToolPrompt(payload, layer, noTouchZones, tool) {
+  const base = `Current symptom: ${payload.current_broken_behavior || "[describe current broken behavior]"}
+Last working state: ${payload.last_working_state || "[describe last working state]"}
+Last prompt/change: ${payload.last_prompt || "[paste last prompt/change]"}
+Exact error/log: ${payload.error_message || "[paste exact error if available]"}
+Likely break layer to inspect first: ${layer}
+No-touch zones: ${noTouchZones.join(", ")}
+
+Rules:
+- Inspect first and give a plan before code changes.
+- Do not rewrite the entire app.
+- Do not edit unrelated files or working features.
+- Do not touch no-touch zones unless evidence proves they are the failing layer.
+- Ask before touching auth, database, payment, environment variables, deployment settings, admin permissions, or production data.
+- Make the smallest possible change.
+- Include a regression checklist after the fix.`;
+
+  if (tool === "Cursor") return `Act like a repo-aware debugging assistant. Inspect relevant files and diffs first.\n\n${base}\n\nGive me the minimal patch plan before applying edits.`;
+  if (tool === "Lovable") return `Do not rebuild the app or change the design system unless required.\n\n${base}\n\nFix only the broken flow and preserve existing pages/database structure.`;
+  if (tool === "Bolt") return `Use plan mode first. Check terminal/build/runtime errors before code edits.\n\n${base}\n\nKeep existing env/config unless the issue is proven there.`;
+  if (tool === "Replit") return `Check checkpoint/rollback and deploy logs first.\n\n${base}\n\nDo not overwrite working code. Explain rollback vs fix-forward before editing.`;
+  if (tool === "v0") return `Keep existing UI, routes, and component boundaries.\n\n${base}\n\nDo not regenerate the whole app. Fix only the specified component/route.`;
+  if (tool === "Claude Code") return `Use plan mode. Read relevant files before implementation.\n\n${base}\n\nDo not implement until the plan is confirmed. Keep the diff small.`;
+  if (tool === "Windsurf") return `Analyze context first and avoid sweeping edits.\n\n${base}\n\nOnly change the failing layer and protect working flows.`;
+  return `You are helping debug a broken AI-built app. ${base}`;
+}
+
+function promptAutopsyWarning(payload) {
+  const prompts = [payload.last_prompt, payload.recent_prompts].filter(Boolean).join("\n");
+  const found = dangerousPhrase(prompts);
+  if (found) return `Dangerous prompt language detected: "${found}". It is too broad and may cause unrelated edits. Ask AI to inspect first, plan before code, and preserve no-touch zones.`;
+  if (!payload.last_prompt?.trim()) return "No last prompt was provided. Without it, do not assume cause. Collect the exact prompt/change before editing.";
+  return "No severe broad rewrite phrase detected, but still use a scoped prompt with no-touch zones.";
+}
+
+function renderCaseFile(payload, result) {
+  setText("#case-title", result.loopDetected ? "Loop Detected: stop broad fix prompts." : "VibeFix Case File generated.");
+  setText("#case-summary", result.loopDetected ? "You are probably not dealing with one isolated bug. Collect evidence and use scoped prompts only." : "Second-pass safety check complete. Use this case file before prompting again.");
+  setText("#risk-score", `${result.score}/100`);
+  setText("#prompt-risk", result.promptRisk);
+  setText("#break-layer", result.layer);
+  setText("#confidence-score", result.confidence);
+  setText("#root-hypothesis", result.hypothesis);
+  setText("#rollback-direction", result.rollbackDirection);
+  setText("#safe-first-move", result.safeFirstMove);
+  setText("#safe-first-prompt", result.safePrompt);
+  setText("#bad-prompt-warning", result.badPromptWarning);
+  document.querySelector("#risk-meter").style.width = `${result.score}%`;
+  document.querySelector("#risk-meter").className = result.score >= 70 ? "danger" : result.score >= 42 ? "caution" : "safe";
+  document.querySelector("#no-touch-zones").innerHTML = result.noTouchZones.map((zone) => `<span>${escapeHtml(zone)}</span>`).join("");
+  document.querySelector("#missing-evidence").innerHTML = result.missingEvidence.map((item) => `<li>${escapeHtml(item)}</li>`).join("");
+  document.querySelector("#regression-checklist").innerHTML = result.checklist.map((item) => `<li>${escapeHtml(item)}</li>`).join("");
+  document.querySelector("#damage-timeline").innerHTML = result.timeline.map((item) => `<li>${escapeHtml(item)}</li>`).join("");
+  document.querySelector("#case-file").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function setText(selector, value) {
+  const el = document.querySelector(selector);
+  if (el) el.textContent = value;
+}
+
+document.querySelectorAll("[data-copy-target]").forEach((button) => {
+  button.addEventListener("click", async () => {
+    const target = document.querySelector(`#${button.dataset.copyTarget}`);
+    if (!target) return;
+    await copyText(target.textContent, button);
+  });
+});
+
+document.querySelectorAll("[data-export-tool]").forEach((button) => {
+  button.addEventListener("click", async () => {
+    if (!scannerState.result || !scannerState.payload) return;
+    const tool = button.dataset.exportTool;
+    const prompt = buildToolPrompt(scannerState.payload, scannerState.result.layer, scannerState.result.noTouchZones, tool);
+    await copyText(prompt, button);
+  });
+});
+
+document.querySelector("#download-case-file")?.addEventListener("click", () => {
+  if (!scannerState.result || !scannerState.payload) return;
+  downloadText("vibefix-case-file.md", caseFileMarkdown(scannerState.payload, scannerState.result));
+});
+
+document.querySelector("#download-checklist")?.addEventListener("click", () => {
+  if (!scannerState.result) return;
+  downloadText("vibefix-debug-checklist.md", scannerState.result.checklist.map((item) => `- [ ] ${item}`).join("\n"));
+});
+
+document.querySelector("#copy-evidence-pack")?.addEventListener("click", async (event) => {
+  if (!scannerState.payload) return;
+  await copyText(evidencePack(scannerState.payload), event.currentTarget);
+});
+
+function caseFileMarkdown(payload, result) {
+  return `# VibeFix Case File
+
+## Case Summary
+Built with: ${payload.builder}
+Current symptom: ${payload.current_broken_behavior || "Not provided"}
+Last working state: ${payload.last_working_state || "Not provided"}
+Last change: ${payload.last_prompt || "Not provided"}
+
+## Risk
+Fix-Risk Score: ${result.score}/100
+Prompt-Again Risk: ${result.promptRisk}
+Likely Break Layer: ${result.layer}
+Evidence Confidence: ${result.confidence}
+
+## Root Cause Hypothesis
+${result.hypothesis}
+
+## No-Touch Map
+${result.noTouchZones.map((zone) => `- ${zone}`).join("\n")}
+
+## Rollback vs Fix-Forward
+${result.rollbackDirection}
+
+## Safe First Prompt
+${result.safePrompt}
+
+## Evidence Needed
+${result.missingEvidence.map((item) => `- ${item}`).join("\n")}
+
+## Regression Checklist
+${result.checklist.map((item) => `- [ ] ${item}`).join("\n")}`;
+}
+
+function evidencePack(payload) {
+  return `Last working state:\n${payload.last_working_state || ""}\n\nCurrent broken behavior:\n${payload.current_broken_behavior || ""}\n\nLast prompt/change:\n${payload.last_prompt || ""}\n\nExact error/log:\n${payload.error_message || ""}\n\nAlready tried:\n${payload.already_tried || ""}\n\nEvidence links:\n${payload.evidence_links || ""}`;
+}
+
+async function copyText(text, button) {
+  await navigator.clipboard.writeText(text);
+  const old = button.textContent;
+  button.textContent = "Copied";
+  setTimeout(() => { button.textContent = old; }, 1200);
+}
+
+function downloadText(filename, text) {
+  const blob = new Blob([text], { type: "text/markdown" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
+
+const inlinePromptButton = document.querySelector("#inline-prompt-risk-button");
+const inlinePromptInput = document.querySelector("#inline-prompt-risk-input");
+const inlinePromptOutput = document.querySelector("#inline-prompt-risk-output");
+
+if (inlinePromptButton && inlinePromptInput && inlinePromptOutput) {
+  inlinePromptButton.addEventListener("click", () => {
+    const prompt = inlinePromptInput.value.trim();
+    if (!prompt) return;
+    const result = promptRiskAnalysis(prompt);
+    inlinePromptOutput.hidden = false;
+    inlinePromptOutput.querySelector("[data-risk-level]").textContent = result.risk_level;
+    inlinePromptOutput.querySelector("[data-risky-phrase]").textContent = result.risky_phrase || "No severe phrase found";
+    inlinePromptOutput.querySelector("[data-risk-reason]").textContent = result.reason;
+    inlinePromptOutput.querySelector("[data-risk-areas]").innerHTML = result.accidental_touch_areas.map((area) => `<span>${escapeHtml(area)}</span>`).join("");
+    inlinePromptOutput.querySelector("[data-safe-rewrite]").textContent = result.rewritten_prompt;
+    fetch("/api/prompt-checker", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt })
+    }).catch(() => {});
+  });
+}
+
+function promptRiskAnalysis(prompt) {
+  const phrase = dangerousPhrase(prompt);
+  const risk = phrase ? "High" : prompt.length < 25 ? "Medium" : "Low";
+  const areas = phrase
+    ? ["auth flow", "database policies", "environment variables", "working UI flows", "payment/checkout"]
+    : ["nearby component", "shared state", "current route"];
+  return {
+    risk_level: risk,
+    risky_phrase: phrase,
+    reason: phrase ? "This prompt is too broad. It asks AI to act before inspecting evidence and may trigger unrelated rewrites." : "This prompt is less broad, but it should still include no-touch zones and a plan-before-code instruction.",
+    accidental_touch_areas: areas,
+    rewritten_prompt: `The issue is: [describe exact symptom]. Do not rewrite the app, refactor unrelated files, or touch auth, database, payment, environment variables, deployment settings, or working features unless evidence proves they are the failing layer. First inspect the relevant flow and give me a minimal fix plan before changing code. Preserve existing behavior. Make the smallest possible change and give a regression checklist.`
+  };
+}
+
+function dangerousPhrase(text = "") {
+  const phrases = [
+    "fix everything", "fix all errors", "rewrite", "rebuild", "start over", "make it work", "clean the code", "refactor everything", "do whatever needed", "change database", "change auth", "update all files", "remove old code", "simplify entire app", "make production work", "solve this", "fix login", "fix dashboard", "fix backend", "fix deployment", "try anything", "full rewrite", "from scratch"
+  ];
+  const found = phrases.find((phrase) => lower(text).includes(phrase));
+  return found || "";
+}
+
+function isDangerousPrompt(text) {
+  return Boolean(dangerousPhrase(text));
+}
+
+const changeHistoryForm = document.querySelector("#change-history-form");
+const changeHistoryOutput = document.querySelector("#change-history-output");
+if (changeHistoryForm && changeHistoryOutput) {
+  changeHistoryForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const data = Object.fromEntries(new FormData(changeHistoryForm).entries());
+    const prompts = (data.recent_prompts || "").split(/\n+/).filter(Boolean);
+    const risky = prompts.find((prompt) => dangerousPhrase(prompt)) || data.recent_prompts || "No prompt supplied";
+    const level = data.unrelated === "yes" || data.appeared_after === "yes" ? "High" : "Medium";
+    changeHistoryOutput.hidden = false;
+    changeHistoryOutput.innerHTML = `
+      <h3>Most Suspicious Change</h3>
+      <p>${escapeHtml(data.last_tool || "The last AI")} touched ${escapeHtml(data.last_area || "an unknown area")}. This is the highest-risk change, not confirmed cause.</p>
+      <h3>Change Risk Level</h3><p>${level}</p>
+      <h3>Most Risky Prompt</h3><p>${escapeHtml(risky)}</p>
+      <h3>Suggested first investigation</h3><p>Compare the last working state to the first symptom after this change. Check rollback/checkpoint before another edit.</p>
+    `;
+  });
+}
+
+const preventiveForm = document.querySelector("#preventive-form");
+const preventiveOutput = document.querySelector("#preventive-output");
+if (preventiveForm && preventiveOutput) {
+  preventiveForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const data = Object.fromEntries(new FormData(preventiveForm).entries());
+    const sensitive = (data.sensitive || "auth, database, payments, API, admin, env").split(",").map((item) => item.trim()).filter(Boolean);
+    preventiveOutput.hidden = false;
+    preventiveOutput.innerHTML = `
+      <h3>Likely fragile areas</h3><div class="chip-list">${sensitive.map((item) => `<span>${escapeHtml(item)}</span>`).join("")}</div>
+      <h3>Safest build order</h3><ol class="submitted-steps"><li>Save checkpoint before the feature.</li><li>Build the smallest visible version first.</li><li>Do not touch sensitive systems unless required.</li><li>Test old flows before deploy.</li></ol>
+      <h3>Safe feature prompt</h3><pre>In ${escapeHtml(data.builder || "my AI builder")}, add this feature: ${escapeHtml(data.feature || "[feature]")}. Do not rewrite the app. Do not touch ${escapeHtml(sensitive.join(", "))} unless required. First give a plan, then make the smallest safe change. Preserve existing working flows and give me a regression checklist before deploy.</pre>
+    `;
+  });
+}
+
+function containsSecret(formData) {
+  const joined = [...formData.values()].join("\n");
+  return /(api[_-]?key|service[_-]?role|secret|password|token|bearer|sk-[a-z0-9]|private key|seed phrase)/i.test(joined);
+}
+
+function lower(value) {
+  return String(value || "").toLowerCase();
+}

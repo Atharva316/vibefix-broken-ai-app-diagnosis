@@ -51,6 +51,7 @@ export default {
       if (url.pathname === "/api/ai-helper-count") return handleAiHelperCount(env);
       if (url.pathname === "/api/rollback-calculator" && request.method === "POST") return handleRollbackCalculator(request, env);
       if (url.pathname === "/api/prompt-checker" && request.method === "POST") return handlePromptChecker(request, env);
+      if (url.pathname === "/api/safe-scan" && request.method === "POST") return handleSafeScan(request, env);
       if (url.pathname.startsWith("/report/")) return renderStoredReport(request, env);
       if (url.pathname === "/pricing") return redirect(PAYMENT_URL);
       if (url.pathname === "/dashboard") return redirect("/dashboard/reports");
@@ -325,10 +326,14 @@ async function handleGenerateReport(request, env) {
     }
   }
 
+  const redactedPayload = redactSecretsDeep(payload);
+
   try {
-    const report = await generateDiagnosisReport(payload, env);
-    const reportRecord = await saveGeneratedReport(request, env, payload, report);
-    await deliverOwnerReport(payload, report.renderedText, reportRecord, env);
+    const report = await generateDiagnosisReport(redactedPayload, env);
+    const reportRecord = await saveGeneratedReport(request, env, redactedPayload, report);
+    await saveIntakeSubmission(env, redactedPayload, reportRecord);
+    await saveCaseFile(env, redactedPayload, report.model);
+    await deliverOwnerReport(redactedPayload, report.renderedText, reportRecord, env);
     return json({ success: true, reportId: reportRecord.id, reportUrl: reportRecord.reportUrl });
   } catch (error) {
     console.error(error);
@@ -365,7 +370,7 @@ async function handleRollbackCalculator(request, env) {
 
 async function handlePromptChecker(request, env) {
   const payload = await request.json();
-  const originalPrompt = clean(payload.prompt || "");
+  const originalPrompt = clean(redactSecrets(payload.prompt || ""));
   if (!originalPrompt) return json({ error: "Paste a prompt before checking scope." }, 400);
 
   const result = env.ANTHROPIC_API_KEY
@@ -378,7 +383,89 @@ async function handlePromptChecker(request, env) {
     rewritten_prompt: result.rewritten_prompt
   });
 
+  await supabaseInsert(env, "vibefix_prompt_checks", {
+    prompt_text: originalPrompt,
+    risk_level: result.risk_level,
+    risky_phrases: Array.isArray(result.accidental_touch_areas) ? result.accidental_touch_areas : [],
+    safe_rewrite: result.rewritten_prompt,
+    raw_payload: redactSecretsDeep({ payload, result })
+  });
+
   return json(result);
+}
+
+async function handleSafeScan(request, env) {
+  let body;
+  try {
+    body = await request.json();
+  } catch (error) {
+    return json({ success: false, error: "Invalid JSON body" }, 400);
+  }
+
+  const payload = redactSecretsDeep(body.payload || {});
+  const result = redactSecretsDeep(body.result || {});
+  const stored = await supabaseInsert(env, "vibefix_scans", {
+    builder: clean(payload.builder || payload.build_tool || ""),
+    break_type: clean(payload.break_type || ""),
+    issue_location: clean(payload.issue_location || ""),
+    break_timing: clean(payload.break_timing || ""),
+    last_working_state: clean(payload.last_working_state || ""),
+    current_broken_behavior: clean(payload.current_broken_behavior || ""),
+    last_prompt: clean(payload.last_prompt || ""),
+    last_ai_tool: clean(payload.last_ai_tool || ""),
+    original_ai_tool: clean(payload.original_ai_tool || ""),
+    fix_attempts: clean(payload.fix_attempts || ""),
+    rollback_available: clean(payload.rollback_available || ""),
+    error_message: clean(payload.error_message || ""),
+    risk_score: Number(result.score || 0),
+    prompt_again_risk: clean(result.promptRisk || ""),
+    likely_break_layer: clean(result.layer || ""),
+    confidence_score: clean(result.confidence || ""),
+    no_touch_zones: Array.isArray(result.noTouchZones) ? result.noTouchZones.map(clean) : [],
+    safe_first_prompt: clean(result.safePrompt || ""),
+    missing_evidence: Array.isArray(result.missingEvidence) ? result.missingEvidence.map(clean) : [],
+    raw_payload: { payload, result }
+  });
+
+  return json({ success: true, stored });
+}
+
+async function saveIntakeSubmission(env, payload, reportRecord) {
+  await supabaseInsert(env, "vibefix_intakes", {
+    razorpay_payment_id: clean(payload.payment_id || payload.razorpay_payment_id || payload.razorpay_order_id || ""),
+    name: clean(payload.name || ""),
+    email: clean(payload.email || ""),
+    app_name: clean(payload.app_name || ""),
+    live_url: clean(payload.live_app_url || ""),
+    preview_url: clean(payload.preview_url || ""),
+    repo_url: clean(payload.repo_link || ""),
+    builder: clean(payload.build_tool || payload.original_builder || ""),
+    break_type: clean(payload.break_type || ""),
+    last_working_state: clean(payload.working_before || payload.last_working_state || ""),
+    current_broken_behavior: clean(payload.broken_now || payload.current_broken_behavior || ""),
+    last_prompt: clean(payload.last_change || payload.last_prompt || ""),
+    recent_prompts: splitLines(payload.recent_prompts),
+    last_ai_tool: clean(payload.last_ai_tool || ""),
+    original_ai_tool: clean(payload.original_builder || payload.original_ai_tool || ""),
+    fix_attempts: clean(payload.fix_attempt_count || payload.fix_attempts || ""),
+    error_message: clean(payload.error_message || ""),
+    evidence_links: clean(payload.evidence_links || ""),
+    issue_location: clean(payload.issue_location || ""),
+    rollback_available: clean(payload.rollback_available || ""),
+    no_touch_areas: clean(payload.do_not_touch || payload.no_touch_areas || ""),
+    test_login_available: clean(payload.test_login_available || ""),
+    raw_payload: { ...payload, report_id: reportRecord?.id || "", report_url: reportRecord?.reportUrl || "" }
+  });
+}
+
+async function saveCaseFile(env, payload, reportModel) {
+  await supabaseInsert(env, "vibefix_case_files", {
+    case_type: "deep_diagnosis",
+    risk_score: Number(reportModel?.confidencePercent || 0),
+    likely_break_layer: clean(payload.break_type || ""),
+    payload,
+    result: reportModel || {}
+  });
 }
 
 function calculateRollbackRecommendation(answers) {
@@ -489,16 +576,21 @@ async function supabaseRpcCount(env, fn) {
 
 async function supabaseInsert(env, table, row) {
   if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) return false;
-  const response = await fetch(`${env.SUPABASE_URL.replace(/\/$/, "")}/rest/v1/${table}`, {
-    method: "POST",
-    headers: {
-      ...supabaseHeaders(env),
-      "Content-Type": "application/json",
-      Prefer: "return=minimal"
-    },
-    body: JSON.stringify(row)
-  });
-  return response.ok;
+  try {
+    const response = await fetch(`${env.SUPABASE_URL.replace(/\/$/, "")}/rest/v1/${table}`, {
+      method: "POST",
+      headers: {
+        ...supabaseHeaders(env),
+        "Content-Type": "application/json",
+        Prefer: "return=minimal"
+      },
+      body: JSON.stringify(row)
+    });
+    return response.ok;
+  } catch (error) {
+    console.error(`Supabase insert failed for ${table}.`);
+    return false;
+  }
 }
 
 function supabaseHeaders(env) {
@@ -525,6 +617,32 @@ function extractFixPrompt(text) {
 function hasSubmittedValue(value) {
   if (Array.isArray(value)) return value.length > 0;
   return value !== undefined && value !== null && String(value).trim() !== "";
+}
+
+function splitLines(value) {
+  return String(value || "")
+    .split(/\n+/)
+    .map((line) => clean(line))
+    .filter(Boolean)
+    .slice(0, 8);
+}
+
+function redactSecretsDeep(value) {
+  if (Array.isArray(value)) return value.map(redactSecretsDeep);
+  if (value && typeof value === "object") {
+    return Object.fromEntries(Object.entries(value).map(([key, entry]) => [key, redactSecretsDeep(entry)]));
+  }
+  if (typeof value === "string") return redactSecrets(value);
+  return value;
+}
+
+function redactSecrets(value) {
+  return String(value)
+    .replace(/(api[_-]?key|service[_-]?role|secret|password|token|bearer)\s*[:=]\s*["']?[^"'\s,;]+/gi, "$1=[REDACTED]")
+    .replace(/\bsk-[a-zA-Z0-9_-]{12,}\b/g, "[REDACTED_OPENAI_KEY]")
+    .replace(/-----BEGIN [^-]+PRIVATE KEY-----[\s\S]*?-----END [^-]+PRIVATE KEY-----/g, "[REDACTED_PRIVATE_KEY]")
+    .replace(/\bBearer\s+[a-zA-Z0-9._-]{12,}\b/gi, "Bearer [REDACTED]")
+    .replace(/\b(seed phrase|private token|database password|service role key)\b\s*[:=]?\s*[^,\n]+/gi, "$1 [REDACTED]");
 }
 
 async function deliverOwnerReport(payload, reportText, reportRecord, env) {

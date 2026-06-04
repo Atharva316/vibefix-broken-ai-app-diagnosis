@@ -1,6 +1,20 @@
 # VibeFix
 
-Cloudflare Worker app for VibeFix: public marketing pages, SEO guides, AI Helper, custom intake, and report submission flow.
+VibeFix is a Safe Prompting System for broken AI-built apps.
+
+Main positioning:
+
+Before you ask AI to fix your app, check what not to touch.
+
+The site combines a free Safe First Move Scanner, Prompt Risk Checker, AI Change History, Fix-Break Loop Detector, VibeFix Case File preview, and paid Deep Diagnosis flow.
+
+## Stack
+
+- Cloudflare Worker: `worker.js`
+- Static assets: `public/`
+- Deployment config: `wrangler.toml`
+- Supabase schema: `supabase-setup.sql`
+- No frontend framework
 
 ## Required Cloudflare setup
 
@@ -24,36 +38,52 @@ Optional vars are in `wrangler.toml`:
 `RAZORPAY_PAYMENT_LINK`
 `UPGRADE_URL`
 
-## Current production flow
+## Current VibeFix flow
 
 1. Landing page
-2. Razorpay Payment Link for ₹7,530
-3. `payment-success.html` if Razorpay redirect is configured
-4. `intake.html`
-5. `/api/generate-report`
-6. Gemini creates report draft when configured, otherwise a local report draft is generated
-7. Resend/Web3Forms/local fallback handles submission
-8. `intake-submitted.html` confirmation
-9. Final report is reviewed and sent manually
+2. Free Safe First Move Scanner and Prompt Risk Checker
+3. Razorpay Payment Link
+4. `payment-success.html`
+5. `intake.html`
+6. `/api/generate-report`
+7. Web3Forms/Resend owner notification
+8. `intake-submitted.html`
+9. Manual/AI-assisted diagnosis report delivery
 
 Production Razorpay link:
 
 `https://rzp.io/rzp/bM3R4oPl`
 
-Security notes:
+Backup intake link:
 
-No Razorpay secrets in frontend.
-No Gemini key in frontend.
-No Resend key in frontend.
-No Supabase service role key in frontend.
-Supabase frontend/API access uses the anon key only.
+`https://tally.so/r/yPzAVx`
+
+## Security notes
+
+- Razorpay handles payment through a hosted payment link.
+- No Razorpay API secrets are stored in the frontend.
+- No Gemini key is stored in the frontend.
+- No Resend key is stored in the frontend.
+- No Supabase service role key is stored in the frontend.
+- Supabase access uses the anon key only with RLS insert policies.
+- Private intake/scanner records must not have public select policies.
+- Secret-like submitted text is redacted before storage/email/report generation.
 
 ## Supabase tables
 
-`report_counter`
-`ai_helper_sessions`
-`rollback_calculator_sessions`
-`prompt_checker_sessions`
+Core existing tables:
+
+- `report_counter`
+- `ai_helper_sessions`
+- `rollback_calculator_sessions`
+- `prompt_checker_sessions`
+
+Product data tables:
+
+- `vibefix_scans`
+- `vibefix_prompt_checks`
+- `vibefix_intakes`
+- `vibefix_case_files`
 
 Use `supabase-setup.sql` to create the required tables, RLS policies, and PostgREST grants.
 
@@ -61,4 +91,16 @@ Use `supabase-setup.sql` to create the required tables, RLS policies, and PostgR
 
 `usage:{anonymousUserId}` stores AI helper free-use count.
 
-`reports:{userId}` stores manual report cards as a JSON array if dashboard reports are used later.
+`report:{reportId}` stores generated report access records.
+
+`reports:{userId}` stores report cards if dashboard reports are used later.
+
+## Validation
+
+Run:
+
+`node --check worker.js`
+
+`node --check public/site.js`
+
+`npx wrangler deploy --dry-run`
