@@ -66,6 +66,200 @@ if (nav) {
   }
 }
 
+initGsapAnimations();
+initCounters();
+initBreakChecker();
+initPanicModal();
+
+function initGsapAnimations() {
+  const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  if (!window.gsap || reduceMotion) return;
+  const { gsap } = window;
+  if (window.ScrollTrigger) gsap.registerPlugin(window.ScrollTrigger);
+
+  gsap.from(".site-nav", { y: -20, opacity: 0, duration: 0.5, ease: "power2.out" });
+  gsap.from(".hero-badge", { y: 20, opacity: 0, duration: 0.4, delay: 0.2, ease: "power2.out" });
+  gsap.from(".hero h1", { y: 30, opacity: 0, duration: 0.6, delay: 0.3, ease: "power2.out" });
+  gsap.from(".hero .subhead", { y: 20, opacity: 0, duration: 0.5, delay: 0.5, ease: "power2.out" });
+  gsap.from(".hero .hero-actions", { y: 20, opacity: 0, duration: 0.4, delay: 0.7, ease: "power2.out" });
+  gsap.from(".hero .caption", { opacity: 0, duration: 0.5, delay: 0.9, stagger: 0.08, ease: "power2.out" });
+
+  if (window.ScrollTrigger) {
+    gsap.utils.toArray(".section-heading").forEach((heading) => {
+      gsap.from(heading, {
+        y: 40,
+        opacity: 0,
+        duration: 0.6,
+        ease: "power2.out",
+        scrollTrigger: { trigger: heading, start: "top 85%" }
+      });
+    });
+
+    gsap.utils.toArray(".problem-grid").forEach((grid) => {
+      gsap.from(grid.querySelectorAll(".feature-card"), {
+        y: 50,
+        opacity: 0,
+        duration: 0.5,
+        stagger: 0.15,
+        ease: "power2.out",
+        scrollTrigger: { trigger: grid, start: "top 85%" }
+      });
+    });
+
+    gsap.from("#deliverables .risk-card", {
+      x: -30,
+      opacity: 0,
+      duration: 0.5,
+      stagger: 0.2,
+      ease: "power2.out",
+      scrollTrigger: { trigger: "#deliverables", start: "top 85%" }
+    });
+
+    gsap.from("#pricing .pricing-card", {
+      scale: 0.95,
+      opacity: 0,
+      duration: 0.6,
+      stagger: 0.12,
+      ease: "back.out(1.2)",
+      scrollTrigger: { trigger: "#pricing", start: "top 85%" }
+    });
+  }
+
+  document.querySelectorAll(".btn, button").forEach((button) => {
+    button.addEventListener("mouseenter", () => {
+      gsap.to(button, {
+        scale: 1.03,
+        duration: 0.2,
+        boxShadow: button.classList.contains("btn-primary") ? "0 0 20px rgba(124,58,237,0.4)" : undefined
+      });
+    });
+    button.addEventListener("mouseleave", () => {
+      gsap.to(button, { scale: 1, duration: 0.2, boxShadow: "" });
+    });
+  });
+}
+
+if (nav) {
+  const updateNavScroll = () => nav.classList.toggle("scrolled", window.scrollY > 60);
+  updateNavScroll();
+  window.addEventListener("scroll", updateNavScroll, { passive: true });
+}
+
+function animateNumber(element, end, suffix = "", duration = 2000) {
+  if (!element) return;
+  const start = performance.now();
+  const tick = (now) => {
+    const progress = Math.min(1, (now - start) / duration);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    element.textContent = `${Math.round(end * eased)}${suffix}`;
+    if (progress < 1) requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+
+function initCounters() {
+  animateNumber(document.querySelector("#diagnosed-count"), 7, "", 2000);
+  const stats = document.querySelectorAll("[data-count-to]");
+  if (!stats.length) return;
+  const run = () => stats.forEach((stat) => animateNumber(stat, Number(stat.dataset.countTo || 0), stat.dataset.suffix || "", 1400));
+  if (!("IntersectionObserver" in window)) {
+    run();
+    return;
+  }
+  const observer = new IntersectionObserver((entries) => {
+    if (entries.some((entry) => entry.isIntersecting)) {
+      run();
+      observer.disconnect();
+    }
+  }, { threshold: 0.35 });
+  observer.observe(document.querySelector(".break-counter"));
+}
+
+function initBreakChecker() {
+  const input = document.querySelector("#error-input");
+  const button = document.querySelector("#check-btn");
+  const result = document.querySelector("#checker-result");
+  if (!input || !button || !result) return;
+
+  const check = () => {
+    const value = input.value.toLowerCase();
+    let type = "unknown";
+    let content = "";
+
+    if (value.includes("rls") || value.includes("row level security") || value.includes("supabase") || value.includes("policy")) {
+      type = "common";
+      content = `<span class="match-icon">✓ Common pattern</span><strong>Supabase RLS conflict</strong><p>Seen in 34% of all diagnoses. Usually triggered by adding a new user role or feature without updating Row Level Security policies. Auth still works but data becomes invisible to the user.</p>`;
+    } else if (value.includes("env") || value.includes("environment") || value.includes("process.env") || (value.includes("undefined") && value.includes("variable"))) {
+      type = "common";
+      content = `<span class="match-icon">✓ Common pattern</span><strong>Environment variable mismatch</strong><p>Works in preview, breaks in production. Your local environment exists, but the same variables are not set in deployment config.</p>`;
+    } else if (value.includes("cors")) {
+      type = "common";
+      content = `<span class="match-icon">✓ Common pattern</span><strong>CORS configuration error</strong><p>Your production frontend URL does not match the allowed origins in your backend or API config. Usually a small fix once identified.</p>`;
+    } else if (value.includes("auth") || value.includes("login") || value.includes("signup") || value.includes("authentication") || value.includes("session") || value.includes("jwt") || value.includes("token")) {
+      type = "common";
+      content = `<span class="match-icon">✓ Common pattern</span><strong>Auth flow break</strong><p>One of the top diagnosed issues. Usually caused by a schema change, new user role, session handling change, or redirect mismatch.</p>`;
+    } else if (value.includes("stripe") || value.includes("payment") || value.includes("webhook") || value.includes("checkout")) {
+      type = "common";
+      content = `<span class="match-icon">✓ Common pattern</span><strong>Stripe/payment integration break</strong><p>Most often a webhook URL mismatch after deployment, missing event handler, or payment mode/config mismatch.</p>`;
+    } else if (value.includes("preview") || value.includes("production") || value.includes("deploy") || value.includes("vercel") || value.includes("netlify")) {
+      type = "common";
+      content = `<span class="match-icon">✓ Common pattern</span><strong>Preview vs production split</strong><p>Works in preview but breaks live. Usually caused by missing production env vars or hardcoded localhost URLs.</p>`;
+    } else if (value.includes("database") || value.includes("db") || value.includes("query") || value.includes("fetch") || value.includes("loading") || value.includes("null")) {
+      type = "common";
+      content = `<span class="match-icon">✓ Common pattern</span><strong>Database/data loading break</strong><p>Data stops loading after a schema change, new table, updated query, RLS issue, or column rename the frontend did not follow.</p>`;
+    } else if (value === "" || value.length < 5) {
+      type = "empty";
+      content = `<span class="match-icon unknown">→</span><strong>Type your error message above</strong><p>Paste the exact error text. The more specific you are, the better the match.</p>`;
+    } else {
+      type = "unknown";
+      content = `<span class="match-icon warning">⚠ Not in common patterns</span><strong>This looks complex or unique</strong><p>We have not seen this exact pattern enough times for a confident instant answer. A full diagnosis is useful when the break pattern is unclear.</p>`;
+    }
+
+    const cta = type === "empty" ? "" : `<div class="checker-cta"><span>Want exact fix prompts for your specific app?</span><a href="#pricing" class="checker-link">Get the full diagnosis →</a></div>`;
+    result.hidden = false;
+    result.className = `checker-result ${type}`;
+    result.innerHTML = content + cta;
+    result.style.opacity = "0";
+    result.style.transform = "translateY(10px)";
+    setTimeout(() => {
+      result.style.transition = "all 0.3s ease";
+      result.style.opacity = "1";
+      result.style.transform = "translateY(0)";
+    }, 10);
+  };
+
+  button.addEventListener("click", check);
+  input.addEventListener("keypress", (event) => {
+    if (event.key === "Enter") button.click();
+  });
+}
+
+function initPanicModal() {
+  const button = document.querySelector("#panic-btn");
+  const modal = document.querySelector("#panic-modal");
+  const close = document.querySelector("#panic-close");
+  if (!button || !modal || !close) return;
+  const closeModal = () => {
+    modal.style.opacity = "0";
+    setTimeout(() => { modal.hidden = true; }, 200);
+  };
+  button.addEventListener("click", () => {
+    modal.hidden = false;
+    modal.style.opacity = "0";
+    setTimeout(() => {
+      modal.style.transition = "opacity 0.2s ease";
+      modal.style.opacity = "1";
+    }, 10);
+  });
+  close.addEventListener("click", closeModal);
+  modal.addEventListener("click", (event) => {
+    if (event.target.id === "panic-modal") closeModal();
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !modal.hidden) closeModal();
+  });
+}
+
 const quizState = {
   builder: "Lovable",
   break: "auth",

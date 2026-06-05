@@ -68,5 +68,5 @@ Before finishing changes:
 - `/payment-success.html` links to `/intake.html`.
 - Razorpay CTAs use the production link unless explicitly in test mode.
 - Tally remains backup only.
-- No Lemon Squeezy references remain.
+- Old checkout provider references remain removed.
 - No committed secrets are present.

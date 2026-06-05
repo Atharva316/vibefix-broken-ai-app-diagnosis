@@ -44,7 +44,6 @@
       <a href="#case-file">Case File</a>
       <a href="#pricing">Pricing</a>
       <a href="#faq">FAQ</a>
-      <a href="/intake.html">Intake</a>
     </div>
   </nav>
 
@@ -52,12 +51,13 @@
     <section class="hero section-shell">
       <div class="grid-overlay" aria-hidden="true"></div>
       <div class="hero-glow" aria-hidden="true"></div>
+      <div class="hero-orb" aria-hidden="true"></div>
       <div class="container hero-content">
         <div class="hero-copy">
-          <p class="eyebrow animate-up">&#9889; SAFE PROMPTING SYSTEM</p>
-          <h1 class="animate-up delay-1">Before you ask AI to fix your app,<span>check what not to touch.</span></h1>
+          <p class="eyebrow hero-badge animate-up">&#9889; BETA DIAGNOSIS AVAILABLE</p>
+          <h1 class="animate-up delay-1">Your AI-built app broke. <span>Stop prompting blindly.</span></h1>
           <p class="subhead animate-up delay-2">
-            VibeFix finds the likely break pattern, prompt-again risk, no-touch zones, rollback vs fix-forward direction, and the safest next prompt for broken Lovable, Bolt, Cursor, Replit, v0, Claude Code and Windsurf apps.
+            In 48 hours, you'll know exactly what broke, what not to touch, and the exact prompts to fix it - without triggering a full rewrite.
           </p>
           <div class="hero-actions animate-up delay-3">
             <a class="btn btn-primary" href="#scanner">Run Free Safe First Move Scanner</a>
@@ -103,6 +103,55 @@
           </div>
         </div>
       </div>
+    </section>
+
+    <section class="social-proof">
+      <div class="proof-counter">
+        <span class="counter-number" id="diagnosed-count">0</span>
+        <span class="counter-label">AI apps diagnosed</span>
+        <span class="proof-divider">Â·</span>
+        <span class="counter-number">₹7,530</span>
+        <span class="counter-label">per diagnosis report</span>
+        <span class="proof-divider">Â·</span>
+        <span class="counter-number">48h</span>
+        <span class="counter-label">delivery</span>
+      </div>
+      <p class="proof-subtitle">For apps built with:</p>
+      <div class="tool-logos">
+        <span class="tool-tag">Lovable</span>
+        <span class="tool-tag">Bolt</span>
+        <span class="tool-tag">Cursor</span>
+        <span class="tool-tag">Replit</span>
+        <span class="tool-tag">v0</span>
+        <span class="tool-tag">Claude Code</span>
+        <span class="tool-tag">Windsurf</span>
+      </div>
+    </section>
+
+    <section class="break-counter">
+      <div class="break-counter-card">
+        <div class="break-counter-header">
+          <span class="break-counter-badge">LIVE</span>
+          <h3>This week in vibe coding breaks</h3>
+          <p>Updated as diagnoses come in. Week 1 baseline shown.</p>
+        </div>
+        <div class="break-stats-grid">
+          <div class="break-stat"><span class="break-stat-number" data-count-to="7">0</span><span class="break-stat-label">Apps diagnosed</span></div>
+          <div class="break-stat"><span class="break-stat-number" data-count-to="34" data-suffix="%">0%</span><span class="break-stat-label">Most common<br>Supabase RLS conflict</span></div>
+          <div class="break-stat"><span class="break-stat-number" data-count-to="12" data-suffix="%">0%</span><span class="break-stat-label">Most dangerous<br>Exposed API keys</span></div>
+          <div class="break-stat"><span class="break-stat-number">48h</span><span class="break-stat-label">Average fix time<br>after diagnosis</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="break-checker">
+      <h2>Is your error message common?</h2>
+      <p>Paste it below. See if we've diagnosed it before.</p>
+      <div class="checker-input-row">
+        <input type="text" id="error-input" placeholder="e.g. TypeError: Cannot read properties of undefined..." />
+        <button id="check-btn" type="button">Check It</button>
+      </div>
+      <div id="checker-result" class="checker-result" hidden></div>
     </section>
 
     <section class="section-compact">
@@ -449,19 +498,22 @@
           <article class="pricing-card reveal">
             <div class="beta-tag">Coming next</div>
             <p class="caption">Prompt review beta</p>
-            <div class="price">₹999 <small>to ₹1,499</small></div>
+            <div class="price">₹999 <small>to 1499</small></div>
             <ul class="pricing-list">
               <li>Prompt autopsy</li>
               <li>Safe prompt review</li>
               <li>No-touch zones added manually</li>
               <li>For one risky prompt before sending</li>
             </ul>
-            <a class="btn btn-secondary full-width" href="/intake.html">Request Prompt Review</a>
+            <a class="btn btn-secondary full-width" href="#pricing">Request Prompt Review</a>
           </article>
           <article class="pricing-card reveal">
             <div class="beta-tag">Main</div>
             <p class="caption">Deep Diagnosis</p>
-            <div class="price">₹7,530 <small>beta</small></div>
+            <div class="price-display">
+              <span class="price-amount">₹7,530</span>
+              <span class="price-label">beta pricing · increases after launch</span>
+            </div>
             <ul class="pricing-list">
               <li>Likely root cause</li>
               <li>Confidence score</li>
@@ -587,6 +639,30 @@
     VibeFix · Safe Prompting System · Not 24/7 support · Diagnosis for common AI-app break patterns
   </footer>
 
+  <div id="panic-btn">App Down?</div>
+  <div id="panic-modal" class="panic-overlay" hidden>
+    <div class="panic-card">
+      <button id="panic-close" type="button" aria-label="Close panic options">×</button>
+      <h3>App down right now?</h3>
+      <p>Skip the 48-hour queue. Priority diagnosis in 12 hours.</p>
+      <div class="panic-options">
+        <div class="panic-option priority">
+          <span class="panic-badge">PRIORITY</span>
+          <div class="panic-price">INR 14,900</div>
+          <div class="panic-time">12-hour delivery</div>
+          <a href="#pricing" class="panic-cta-btn priority-btn">Get Priority Diagnosis</a>
+        </div>
+        <div class="panic-option standard">
+          <div class="panic-price">₹7,530</div>
+          <div class="panic-time">48-hour standard</div>
+          <a href="#pricing" class="panic-cta-btn standard-btn">Standard Diagnosis</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
   <script src="/site.js"></script>
 </body>
 </html>

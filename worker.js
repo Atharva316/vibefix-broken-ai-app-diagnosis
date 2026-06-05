@@ -1848,6 +1848,17 @@ async function streamAnthropic({ env, tool, breakTypes, description, image, writ
 }
 
 function renderDashboardShell(user, active, content) {
+  const isGuest = user.is_guest || user.email === "public@vibefix.local" || user.email === "guest@vibefix.local";
+  const displayName = isGuest ? "Guest" : user.name;
+  const displayEmail = isGuest ? `<a href="/auth/google">Sign in for full access</a>` : `<span>${escapeHtml(user.email)}</span>`;
+  const avatarMarkup = isGuest
+    ? `<div class="user-avatar-placeholder">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          <circle cx="10" cy="7" r="4" fill="#7C3AED"/>
+          <path d="M2 17c0-4.4 3.6-8 8-8s8 3.6 8 8" stroke="#7C3AED" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </div>`
+    : `<img src="${escapeAttr(user.avatar)}" alt="" />`;
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1869,10 +1880,10 @@ function renderDashboardShell(user, active, content) {
       ${dashLink("/dashboard/account", "Account", active)}
     </nav>
     <div class="sidebar-user">
-      <img src="${escapeAttr(user.avatar)}" alt="" />
+      ${avatarMarkup}
       <div>
-        <strong>${escapeHtml(user.name)}</strong>
-        <span>${escapeHtml(user.email)}</span>
+        <strong>${escapeHtml(displayName)}</strong>
+        ${displayEmail}
       </div>
     </div>
   </aside>
