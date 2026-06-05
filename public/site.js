@@ -64,12 +64,60 @@ if (nav) {
       });
     });
   }
+
+  hydrateAuthSlot(nav);
 }
 
 initGsapAnimations();
 initCounters();
 initBreakChecker();
 initPanicModal();
+
+async function hydrateAuthSlot(navElement) {
+  const slot = navElement.querySelector(".auth-slot");
+  if (!slot) return;
+
+  try {
+    const response = await fetch("/api/me", { cache: "no-store" });
+    const user = response.ok ? await response.json() : null;
+
+    if (!user) {
+      slot.innerHTML = `<a class="nav-auth-link" href="/auth/google">Sign In</a>`;
+      return;
+    }
+
+    const avatar = user.avatar
+      ? `<img src="${escapeHtml(user.avatar)}" alt="" />`
+      : `<div class="user-avatar-placeholder" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <circle cx="10" cy="7" r="4" fill="#7C3AED"/>
+            <path d="M2 17c0-4.4 3.6-8 8-8s8 3.6 8 8" stroke="#7C3AED" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </div>`;
+
+    slot.innerHTML = `
+      <button class="avatar-button" type="button" aria-expanded="false" aria-label="Open account menu">
+        ${avatar}
+      </button>
+      <div class="avatar-menu" hidden>
+        <a href="/dashboard/ai">Dashboard</a>
+        <a href="/auth/signout">Sign out</a>
+      </div>
+    `;
+
+    const button = slot.querySelector(".avatar-button");
+    const accountMenu = slot.querySelector(".avatar-menu");
+    if (button && accountMenu) {
+      button.addEventListener("click", () => {
+        const expanded = button.getAttribute("aria-expanded") === "true";
+        button.setAttribute("aria-expanded", String(!expanded));
+        accountMenu.hidden = expanded;
+      });
+    }
+  } catch (error) {
+    slot.innerHTML = `<a class="nav-auth-link" href="/auth/google">Sign In</a>`;
+  }
+}
 
 function initGsapAnimations() {
   const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
@@ -172,7 +220,8 @@ function initCounters() {
       observer.disconnect();
     }
   }, { threshold: 0.35 });
-  observer.observe(document.querySelector(".break-counter"));
+  const counterSection = document.querySelector(".break-counter");
+  if (counterSection) observer.observe(counterSection);
 }
 
 function initBreakChecker() {
@@ -747,10 +796,10 @@ function renderCaseFile(payload, result) {
     riskMeter.style.width = `${result.score}%`;
     riskMeter.className = result.score >= 70 ? "danger" : result.score >= 36 ? "caution" : "safe";
   }
-  document.querySelector("#no-touch-zones").innerHTML = result.noTouchZones.map((zone) => `<span class="${zoneClass(zone)}">${escapeHtml(zone)}</span>`).join("");
-  document.querySelector("#missing-evidence").innerHTML = result.missingEvidence.map((item) => `<li>${escapeHtml(item)}</li>`).join("");
-  document.querySelector("#regression-checklist").innerHTML = result.checklist.map((item) => `<li>${escapeHtml(item)}</li>`).join("");
-  document.querySelector("#damage-timeline").innerHTML = result.timeline.map((item) => `<li>${escapeHtml(item)}</li>`).join("");
+  setHtml("#no-touch-zones", result.noTouchZones.map((zone) => `<span class="${zoneClass(zone)}">${escapeHtml(zone)}</span>`).join(""));
+  setHtml("#missing-evidence", result.missingEvidence.map((item) => `<li>${escapeHtml(item)}</li>`).join(""));
+  setHtml("#regression-checklist", result.checklist.map((item) => `<li>${escapeHtml(item)}</li>`).join(""));
+  setHtml("#damage-timeline", result.timeline.map((item) => `<li>${escapeHtml(item)}</li>`).join(""));
   requestAnimationFrame(() => panel?.classList.add("has-results"));
   panel?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
@@ -793,17 +842,22 @@ function setText(selector, value) {
   if (el) el.textContent = value;
 }
 
+function setHtml(selector, value) {
+  const el = document.querySelector(selector);
+  if (el) el.innerHTML = value;
+}
+
 document.querySelectorAll("[data-copy-target]").forEach((button) => {
   button.addEventListener("click", async () => {
     const target = document.querySelector(`#${button.dataset.copyTarget}`);
-    if (!target) return;
+    if (!target) return setButtonStatus(button, "Run scanner first");
     await copyText(target.textContent, button);
   });
 });
 
 document.querySelectorAll("[data-export-tool]").forEach((button) => {
   button.addEventListener("click", async () => {
-    if (!scannerState.result || !scannerState.payload) return;
+    if (!scannerState.result || !scannerState.payload) return setButtonStatus(button, "Run scanner first");
     const tool = button.dataset.exportTool;
     const prompt = buildToolPrompt(scannerState.payload, scannerState.result.layer, scannerState.result.noTouchZones, tool);
     await copyText(prompt, button);
@@ -811,17 +865,17 @@ document.querySelectorAll("[data-export-tool]").forEach((button) => {
 });
 
 document.querySelector("#download-case-file")?.addEventListener("click", () => {
-  if (!scannerState.result || !scannerState.payload) return;
+  if (!scannerState.result || !scannerState.payload) return setButtonStatus(document.querySelector("#download-case-file"), "Run scanner first");
   downloadText("vibefix-case-file.md", caseFileMarkdown(scannerState.payload, scannerState.result));
 });
 
 document.querySelector("#download-checklist")?.addEventListener("click", () => {
-  if (!scannerState.result) return;
+  if (!scannerState.result) return setButtonStatus(document.querySelector("#download-checklist"), "Run scanner first");
   downloadText("vibefix-debug-checklist.md", scannerState.result.checklist.map((item) => `- [ ] ${item}`).join("\n"));
 });
 
 document.querySelector("#copy-evidence-pack")?.addEventListener("click", async (event) => {
-  if (!scannerState.payload) return;
+  if (!scannerState.payload) return setButtonStatus(event.currentTarget, "Run scanner first");
   await copyText(evidencePack(scannerState.payload), event.currentTarget);
 });
 
@@ -864,7 +918,11 @@ function evidencePack(payload) {
 }
 
 async function copyText(text, button) {
-  await navigator.clipboard.writeText(text);
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch (error) {
+    return setButtonStatus(button, "Copy unavailable");
+  }
   const old = button.textContent;
   button.classList.add("copied");
   button.textContent = old.toLowerCase().includes("prompt") ? "Copied Safe Prompt" : "Copied";
@@ -872,6 +930,17 @@ async function copyText(text, button) {
     button.textContent = old;
     button.classList.remove("copied");
   }, 1400);
+}
+
+function setButtonStatus(button, message) {
+  if (!button) return;
+  const old = button.textContent;
+  button.textContent = message;
+  button.classList.add("copied");
+  setTimeout(() => {
+    button.textContent = old;
+    button.classList.remove("copied");
+  }, 1600);
 }
 
 function downloadText(filename, text) {

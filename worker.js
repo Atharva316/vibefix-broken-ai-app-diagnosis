@@ -41,9 +41,9 @@ export default {
     const url = new URL(request.url);
 
     try {
-      if (url.pathname === "/auth/google") return redirect("/dashboard/ai");
-      if (url.pathname === "/auth/google/callback") return redirect("/dashboard/ai");
-      if (url.pathname === "/auth/signout") return redirect("/");
+      if (url.pathname === "/auth/google") return startGoogleAuth(request, env);
+      if (url.pathname === "/auth/google/callback") return finishGoogleAuth(request, env);
+      if (url.pathname === "/auth/signout") return signOut(request, env);
       if (url.pathname === "/api/me") return json(await getPublicUserState(request, env));
       if (url.pathname === "/api/ai" && request.method === "POST") return handleAi(request, env);
       if (url.pathname === "/api/generate-report") return handleGenerateReport(request, env);
@@ -2040,23 +2040,9 @@ async function getPublicUserState(request, env) {
 async function requireUser(request, env, api = false) {
   const user = await getSessionUser(request, env);
   if (user) return user;
-  const ip = request.headers.get("CF-Connecting-IP") || request.headers.get("x-forwarded-for") || "public";
-  const anonId = `anon-${await sha256Short(ip)}`;
-  return {
-    googleId: anonId,
-    email: "public@vibefix.local",
-    name: "VibeFix User",
-    avatar: "",
-    created_at: new Date().toISOString(),
-    diagnosis_count: 0,
-    is_guest: true
-  };
-}
-
-async function sha256Short(value) {
-  const data = new TextEncoder().encode(String(value));
-  const digest = await crypto.subtle.digest("SHA-256", data);
-  return [...new Uint8Array(digest)].slice(0, 8).map((byte) => byte.toString(16).padStart(2, "0")).join("");
+  if (api) return null;
+  const url = new URL(request.url);
+  return redirect(`/auth/google?next=${encodeURIComponent(url.pathname)}`);
 }
 
 async function getReports(env, userId) {
