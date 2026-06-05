@@ -801,7 +801,7 @@ function renderCaseFile(payload, result) {
   setHtml("#regression-checklist", result.checklist.map((item) => `<li>${escapeHtml(item)}</li>`).join(""));
   setHtml("#damage-timeline", result.timeline.map((item) => `<li>${escapeHtml(item)}</li>`).join(""));
   requestAnimationFrame(() => panel?.classList.add("has-results"));
-  panel?.scrollIntoView({ behavior: "smooth", block: "start" });
+  panel?.scrollIntoView?.({ behavior: "smooth", block: "start" });
 }
 
 function animateRiskScore(score) {
