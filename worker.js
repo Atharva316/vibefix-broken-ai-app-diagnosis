@@ -6,6 +6,7 @@ const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
 const GOOGLE_USERINFO_URL = "https://openidconnect.googleapis.com/v1/userinfo";
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
 const ANTHROPIC_MODEL = "claude-sonnet-4-20250514";
+const ANTHROPIC_DIAGNOSE_MODEL = "claude-haiku-4-5-20251001";
 const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
 const RESEND_URL = "https://api.resend.com/emails";
 const WEB3FORMS_URL = "https://api.web3forms.com/submit";
@@ -42,10 +43,13 @@ export default {
 
     try {
       if (url.pathname === "/auth/google") return startGoogleAuth(request, env);
+      if (url.pathname === "/auth/callback") return finishSupabaseAuth(request, env);
       if (url.pathname === "/auth/google/callback") return finishGoogleAuth(request, env);
+      if (url.pathname === "/auth/session" && request.method === "POST") return finishBrowserSupabaseSession(request, env);
       if (url.pathname === "/auth/signout") return signOut(request, env);
       if (url.pathname === "/api/me") return json(await getPublicUserState(request, env));
       if (url.pathname === "/api/ai" && request.method === "POST") return handleAi(request, env);
+      if (url.pathname === "/api/diagnose" && request.method === "POST") return handleDiagnose(request, env);
       if (url.pathname === "/api/generate-report") return handleGenerateReport(request, env);
       if (url.pathname === "/api/report-counter") return handleReportCounter(env);
       if (url.pathname === "/api/ai-helper-count") return handleAiHelperCount(env);
@@ -111,6 +115,7 @@ function contentTypeFor(path) {
 }
 
 async function startGoogleAuth(request, env) {
+  if (env.SUPABASE_URL && env.SUPABASE_ANON_KEY) return startSupabaseGoogleAuth(request, env);
   if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET) return startGuestSession(request, env);
 
   const url = new URL(request.url);
@@ -129,6 +134,18 @@ async function startGoogleAuth(request, env) {
   return redirect(authUrl.toString(), {
     "Set-Cookie": cookie(STATE_COOKIE, state, { maxAge: 600 })
   });
+}
+
+function startSupabaseGoogleAuth(request, env) {
+  const url = new URL(request.url);
+  const next = safeNext(url.searchParams.get("next") || "/dashboard/ai");
+  const redirectTo = `${url.origin}/auth/callback?next=${encodeURIComponent(next)}`;
+  const authUrl = new URL(`${env.SUPABASE_URL}/auth/v1/authorize`);
+
+  authUrl.searchParams.set("provider", "google");
+  authUrl.searchParams.set("redirect_to", redirectTo);
+
+  return redirect(authUrl.toString());
 }
 
 async function startGuestSession(request, env) {
@@ -155,6 +172,117 @@ async function startGuestSession(request, env) {
   await env.VIBEFIX_KV.put(`user:${guestId}`, JSON.stringify(user), { expirationTtl: SESSION_TTL_SECONDS });
   await env.VIBEFIX_KV.put(`session:${sessionId}`, JSON.stringify({
     userId: guestId,
+    created_at: new Date().toISOString()
+  }), { expirationTtl: SESSION_TTL_SECONDS });
+
+  return redirect(next, {
+    "Set-Cookie": cookie(COOKIE_NAME, sessionId, { maxAge: SESSION_TTL_SECONDS })
+  });
+}
+
+async function finishSupabaseAuth(request, env) {
+  if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) return startGuestSession(request, env);
+
+  const url = new URL(request.url);
+  const next = safeNext(url.searchParams.get("next") || "/dashboard/ai");
+  const code = url.searchParams.get("code");
+
+  if (!code) {
+    return html(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Finishing sign in</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <main class="payment-shell">
+    <section class="payment-card">
+      <span class="section-kicker">Sign in</span>
+      <h1>Finishing sign in...</h1>
+      <p class="muted">If this page does not continue automatically, use the button below.</p>
+      <a class="btn btn-primary full-width" href="/auth/google?next=${escapeAttr(next)}">Try Sign In Again</a>
+    </section>
+  </main>
+  <script>
+    (async () => {
+      const params = new URLSearchParams(window.location.hash.slice(1));
+      const access_token = params.get("access_token");
+      const refresh_token = params.get("refresh_token");
+      if (!access_token) return;
+      const response = await fetch("/auth/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ access_token, refresh_token, next: ${JSON.stringify(next)} })
+      });
+      const data = await response.json().catch(() => ({}));
+      window.location.href = data.next || ${JSON.stringify(next)};
+    })();
+  </script>
+</body>
+</html>`);
+  }
+
+  try {
+    const tokenResponse = await fetch(`${env.SUPABASE_URL}/auth/v1/token?grant_type=authorization_code`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": env.SUPABASE_ANON_KEY
+      },
+      body: JSON.stringify({ code })
+    });
+
+    const token = await tokenResponse.json();
+    if (token?.access_token) return createSupabaseSessionResponse(token, next, env);
+  } catch (error) {
+    console.error("Supabase code exchange failed", error);
+  }
+
+  return startGuestSession(new Request(`${url.origin}/auth/google?next=${encodeURIComponent(next)}`, request), env);
+}
+
+async function finishBrowserSupabaseSession(request, env) {
+  if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) return json({ error: "Supabase auth is not configured" }, 500);
+  const payload = await request.json();
+  if (!payload.access_token) return json({ error: "Missing access token" }, 400);
+  const next = safeNext(payload.next || "/dashboard/ai");
+  const response = await createSupabaseSessionResponse(payload, next, env);
+  const setCookie = response.headers.get("Set-Cookie");
+  return json({ next }, 200, setCookie ? { "Set-Cookie": setCookie } : {});
+}
+
+async function createSupabaseSessionResponse(token, next, env) {
+  assertKv(env);
+  const profileResponse = await fetch(`${env.SUPABASE_URL}/auth/v1/user`, {
+    headers: {
+      "apikey": env.SUPABASE_ANON_KEY,
+      "Authorization": `Bearer ${token.access_token}`
+    }
+  });
+
+  if (!profileResponse.ok) throw new Error("Could not read Supabase user");
+  const profile = await profileResponse.json();
+  const metadata = profile.user_metadata || {};
+  const userId = profile.id || profile.sub || profile.email;
+  const userKey = `user:${userId}`;
+  const existing = await env.VIBEFIX_KV.get(userKey, "json");
+  const user = {
+    googleId: userId,
+    email: profile.email || "",
+    name: metadata.full_name || metadata.name || profile.email || "User",
+    avatar: metadata.avatar_url || metadata.picture || "",
+    created_at: existing?.created_at || new Date().toISOString(),
+    diagnosis_count: existing?.diagnosis_count || 0,
+    provider: "supabase"
+  };
+
+  await env.VIBEFIX_KV.put(userKey, JSON.stringify(user));
+
+  const sessionId = cryptoRandom();
+  await env.VIBEFIX_KV.put(`session:${sessionId}`, JSON.stringify({
+    userId,
     created_at: new Date().toISOString()
   }), { expirationTtl: SESSION_TTL_SECONDS });
 
@@ -392,6 +520,117 @@ async function handlePromptChecker(request, env) {
   });
 
   return json(result);
+}
+
+async function handleDiagnose(request, env) {
+  const user = await requireUser(request, env, true);
+  if (!user) return json({ error: "Unauthorized" }, 401);
+  assertKv(env);
+
+  const payload = await request.json();
+  const tool = clean(payload.tool || "Other");
+  const breakType = clean(payload.breakType || payload.breakTypes || "Other");
+  const description = clean(payload.description || "");
+  const freeLimit = Number(env.FREE_AI_LIMIT || 3);
+  const usageKey = `usage:${user.googleId}`;
+  const usage = Number(await env.VIBEFIX_KV.get(usageKey) || "0");
+
+  if (!description.trim()) return json({ error: "Describe what broke before generating prompts." }, 400);
+
+  if (usage >= freeLimit) {
+    return json({
+      gated: true,
+      limit: freeLimit,
+      remaining: 0,
+      result: `LIKELY CAUSE:
+You have used all ${freeLimit} free prompt generations.
+
+WHAT NOT TO TOUCH:
+- Do not keep trying to regenerate prompts for free in this session.
+- Do not rewrite the app blindly.
+- Do not change auth, database, payment, or environment settings without a diagnosis.
+
+PASTE THIS INTO YOUR TOOL:
+Your free VibeFix AI Helper limit is finished. Use the payment option below to continue with the full diagnosis report.
+
+CONFIDENCE: High
+REASON: The free usage limit for this session has been reached.`
+    });
+  }
+
+  const prompt = `You are a senior developer debugging AI-built apps (Lovable, Bolt, Cursor, Replit, v0).
+
+Tool: ${tool}
+Break type: ${breakType}
+Description: ${description}
+
+Reply in this exact format:
+
+LIKELY CAUSE:
+[plain English explanation]
+
+WHAT NOT TO TOUCH:
+- [item]
+- [item]
+- [item]
+
+PASTE THIS INTO YOUR TOOL:
+[exact fix prompt they can paste]
+
+CONFIDENCE: [High/Medium/Low]
+REASON: [one sentence]`;
+
+  if (!env.ANTHROPIC_API_KEY) {
+    const result = fallbackDiagnoseResponse(tool, breakType, description);
+    await env.VIBEFIX_KV.put(usageKey, String(usage + 1));
+    await saveAiHelperSession(env, {
+      builder_tool: tool,
+      break_type: breakType,
+      description,
+      generated_prompt: extractFixPrompt(result),
+      confidence_level: calculateConfidence(description, null)
+    });
+    return json({ result, fallback: true, remaining: Math.max(0, freeLimit - usage - 1), limit: freeLimit });
+  }
+
+  const response = await fetch(ANTHROPIC_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": env.ANTHROPIC_API_KEY,
+      "anthropic-version": "2023-06-01"
+    },
+    body: JSON.stringify({
+      model: ANTHROPIC_DIAGNOSE_MODEL,
+      max_tokens: 1000,
+      messages: [{ role: "user", content: prompt }]
+    })
+  });
+
+  if (!response.ok) {
+    const result = fallbackDiagnoseResponse(tool, breakType, description);
+    await env.VIBEFIX_KV.put(usageKey, String(usage + 1));
+    await saveAiHelperSession(env, {
+      builder_tool: tool,
+      break_type: breakType,
+      description,
+      generated_prompt: extractFixPrompt(result),
+      confidence_level: calculateConfidence(description, null)
+    });
+    return json({ result, fallback: true, remaining: Math.max(0, freeLimit - usage - 1), limit: freeLimit });
+  }
+
+  const data = await response.json();
+  const result = data.content?.[0]?.text || fallbackDiagnoseResponse(tool, breakType, description);
+  await env.VIBEFIX_KV.put(usageKey, String(usage + 1));
+  await saveAiHelperSession(env, {
+    builder_tool: tool,
+    break_type: breakType,
+    description,
+    generated_prompt: extractFixPrompt(result),
+    confidence_level: calculateConfidence(description, null)
+  });
+  return json({ result, remaining: Math.max(0, freeLimit - usage - 1), limit: freeLimit });
 }
 
 async function handleSafeScan(request, env) {
@@ -2072,6 +2311,23 @@ ${breakTypes}
 First diagnose the smallest likely failing area. Then explain what not to touch. Make the smallest safe fix only, and give me a regression checklist to confirm the fix worked.`;
 }
 
+function fallbackDiagnoseResponse(tool, breakType, description) {
+  return `LIKELY CAUSE:
+The break is likely tied to the last change around ${breakType}. Based on your description, ${tool} probably changed a focused feature but also affected nearby state, routing, auth, data loading, or deployment behavior.
+
+WHAT NOT TO TOUCH:
+- Do not rewrite the whole app.
+- Do not change auth, database, payment, or environment settings without direct evidence.
+- Do not refactor unrelated components.
+- Do not delete working flows while testing the fix.
+
+PASTE THIS INTO YOUR TOOL:
+Do not rewrite the app. My ${tool} app broke with this issue: ${description}. Break type: ${breakType}. First identify the smallest failing area and likely root cause. Tell me what not to touch. Then propose the smallest safe fix only and give me a regression checklist.
+
+CONFIDENCE: Medium
+REASON: This is based on the submitted break type and description, but confidence improves with exact errors, logs, screenshots, and changed files.`;
+}
+
 function streamGate(limit) {
   const sample = `LIKELY CAUSE
 You have used all ${limit} free prompt generations.
@@ -2106,10 +2362,10 @@ function assertKv(env) {
   if (!env.VIBEFIX_KV) throw new Error("Missing VIBEFIX_KV binding");
 }
 
-function json(data, status = 200) {
+function json(data, status = 200, extraHeaders = {}) {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { "Content-Type": "application/json", "Cache-Control": "no-store" }
+    headers: { "Content-Type": "application/json", "Cache-Control": "no-store", ...extraHeaders }
   });
 }
 

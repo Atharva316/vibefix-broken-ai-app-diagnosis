@@ -86,34 +86,12 @@ async function hydrateAuthSlot(navElement) {
       return;
     }
 
-    const avatar = user.avatar
-      ? `<img src="${escapeHtml(user.avatar)}" alt="" />`
-      : `<div class="user-avatar-placeholder" aria-hidden="true">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-            <circle cx="10" cy="7" r="4" fill="#7C3AED"/>
-            <path d="M2 17c0-4.4 3.6-8 8-8s8 3.6 8 8" stroke="#7C3AED" stroke-width="1.5" stroke-linecap="round"/>
-          </svg>
-        </div>`;
+    const firstName = String(user.name || user.email || "User").split(/\s|@/)[0] || "User";
 
     slot.innerHTML = `
-      <button class="avatar-button" type="button" aria-expanded="false" aria-label="Open account menu">
-        ${avatar}
-      </button>
-      <div class="avatar-menu" hidden>
-        <a href="/dashboard/ai">Dashboard</a>
-        <a href="/auth/signout">Sign out</a>
-      </div>
+      <a class="nav-user" href="/dashboard/ai">Hi, ${escapeHtml(firstName)}</a>
+      <a class="nav-signout" href="/auth/signout">Sign Out</a>
     `;
-
-    const button = slot.querySelector(".avatar-button");
-    const accountMenu = slot.querySelector(".avatar-menu");
-    if (button && accountMenu) {
-      button.addEventListener("click", () => {
-        const expanded = button.getAttribute("aria-expanded") === "true";
-        button.setAttribute("aria-expanded", String(!expanded));
-        accountMenu.hidden = expanded;
-      });
-    }
   } catch (error) {
     slot.innerHTML = `<a class="nav-auth-link" href="/auth/google">Sign In</a>`;
   }

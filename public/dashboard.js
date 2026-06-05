@@ -36,20 +36,20 @@ document.querySelectorAll(".pill-field").forEach((field) => {
 
 if (fileInput) {
   ["dragenter", "dragover"].forEach((eventName) => {
-    uploadZone.addEventListener(eventName, (event) => {
+    uploadZone?.addEventListener(eventName, (event) => {
       event.preventDefault();
       uploadZone.classList.add("is-dragging");
     });
   });
 
   ["dragleave", "drop"].forEach((eventName) => {
-    uploadZone.addEventListener(eventName, (event) => {
+    uploadZone?.addEventListener(eventName, (event) => {
       event.preventDefault();
       uploadZone.classList.remove("is-dragging");
     });
   });
 
-  uploadZone.addEventListener("drop", (event) => {
+  uploadZone?.addEventListener("drop", (event) => {
     fileInput.files = event.dataTransfer.files;
     previewImage();
   });
@@ -100,10 +100,9 @@ async function hydrateFoundersHelped() {
 }
 
 if (copyButton) {
+  copyButton.dataset.copyBound = "true";
   copyButton.addEventListener("click", async () => {
-    await navigator.clipboard.writeText(fixPrompt.textContent);
-    copyButton.textContent = "Copied";
-    setTimeout(() => { copyButton.textContent = "Copy"; }, 1200);
+    await copyText(fixPrompt?.textContent || "", copyButton);
   });
 }
 
@@ -116,66 +115,42 @@ async function hydrateUsage() {
 }
 
 async function generatePrompts(payload) {
-  typing.hidden = false;
-  upgradeGate.hidden = true;
-  outputPanel.classList.remove("is-gated");
-  likelyCause.textContent = "";
-  notTouch.innerHTML = "<li>Generating...</li>";
-  fixPrompt.textContent = "";
-  fixTitle.textContent = `Paste this into ${payload.tool}`;
+  if (typing) typing.hidden = false;
+  if (upgradeGate) upgradeGate.hidden = true;
+  outputPanel?.classList.remove("is-gated");
+  if (likelyCause) likelyCause.textContent = "";
+  if (notTouch) notTouch.innerHTML = "<li>Generating...</li>";
+  if (fixPrompt) fixPrompt.textContent = "";
+  if (fixTitle) fixTitle.textContent = `Paste this into ${payload.tool}`;
 
-  const response = await fetch("/api/ai", {
+  const response = await fetch("/api/diagnose", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
+    body: JSON.stringify({
+      tool: payload.tool,
+      breakType: payload.breakTypes.join(", ") || "Other",
+      description: payload.description
+    })
   });
 
-  if (!response.ok || !response.body) {
-    typing.hidden = true;
-    likelyCause.textContent = "The AI helper could not start. Sign in again and retry.";
+  if (!response.ok) {
+    if (typing) typing.hidden = true;
+    if (likelyCause) likelyCause.textContent = "The AI helper could not start. Sign in again and retry.";
     return;
   }
 
-  const reader = response.body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = "";
-  let raw = "";
-
-  while (true) {
-    const { value, done } = await reader.read();
-    if (done) break;
-
-    buffer += decoder.decode(value, { stream: true });
-    const events = buffer.split("\n\n");
-    buffer = events.pop() || "";
-
-    for (const eventText of events) {
-      const event = parseEvent(eventText);
-      if (!event) continue;
-
-      if (event.type === "token") {
-        raw += event.data.text || "";
-        renderStructured(raw);
-      }
-
-      if (event.type === "gate") {
-        raw = event.data.text || "";
-        renderStructured(raw);
-        showUpgradeGate(event.data.limit);
-        usageCounter.textContent = `0 of ${event.data.limit} free uses remaining`;
-      }
-
-      if (event.type === "done") {
-        raw = event.data.text || raw;
-        renderStructured(raw);
-        usageCounter.textContent = `${event.data.remaining} of ${event.data.limit} free uses remaining`;
-        if (event.data.confidence) confidenceBadge.textContent = `Confidence: ${event.data.confidence}`;
-        hydrateFoundersHelped();
-      }
-    }
+  const data = await response.json();
+  const raw = data.result || "Could not generate diagnosis.";
+  renderStructured(raw);
+  if (data.gated) showUpgradeGate(data.limit);
+  else if (usageCounter && Number.isFinite(Number(data.remaining)) && Number.isFinite(Number(data.limit))) {
+    usageCounter.textContent = `${data.remaining} of ${data.limit} free uses remaining`;
   }
-
-  typing.hidden = true;
+  const confidence = section(raw, "CONFIDENCE", "REASON").replace(/[\[\]]/g, "").trim();
+  if (confidence && confidenceBadge) confidenceBadge.textContent = `Confidence: ${confidence}`;
+  hydrateFoundersHelped();
+  hydrateUsage();
+  if (typing) typing.hidden = true;
 }
 
 function updateConfidence(payload) {
@@ -188,13 +163,13 @@ function updateConfidence(payload) {
 }
 
 function showUpgradeGate(limit = 3) {
-  outputPanel.classList.add("is-gated");
-  upgradeGate.hidden = false;
+  outputPanel?.classList.add("is-gated");
+  if (upgradeGate) upgradeGate.hidden = false;
   normalizePaymentLinks();
-  likelyCause.textContent = `You have used all ${limit} free prompt generations.`;
-  notTouch.innerHTML = "<li>Free prompt generation is finished for this browser session.</li><li>Continue with the paid diagnosis to generate or improve more prompts.</li>";
-  fixTitle.textContent = "Payment required";
-  fixPrompt.textContent = "Your free VibeFix AI Helper limit is finished. Use the payment option below to continue.";
+  if (likelyCause) likelyCause.textContent = `You have used all ${limit} free prompt generations.`;
+  if (notTouch) notTouch.innerHTML = "<li>Free prompt generation is finished for this browser session.</li><li>Continue with the paid diagnosis to generate or improve more prompts.</li>";
+  if (fixTitle) fixTitle.textContent = "Payment required";
+  if (fixPrompt) fixPrompt.textContent = "Your free VibeFix AI Helper limit is finished. Use the payment option below to continue.";
 }
 
 function normalizePaymentLinks() {
@@ -206,12 +181,14 @@ function normalizePaymentLinks() {
 
 function renderStructured(text) {
   const likely = section(text, "LIKELY CAUSE", "WHAT NOT TO TOUCH");
-  const avoid = section(text, "WHAT NOT TO TOUCH", "FIX PROMPT FOR");
-  const prompt = section(text, "FIX PROMPT FOR", null);
+  const avoid = section(text, "WHAT NOT TO TOUCH", text.toUpperCase().includes("PASTE THIS INTO YOUR TOOL") ? "PASTE THIS INTO YOUR TOOL" : "FIX PROMPT FOR");
+  const prompt = text.toUpperCase().includes("PASTE THIS INTO YOUR TOOL")
+    ? section(text, "PASTE THIS INTO YOUR TOOL", "CONFIDENCE")
+    : section(text, "FIX PROMPT FOR", null);
 
-  likelyCause.textContent = likely || "Reading your details...";
-  notTouch.innerHTML = toList(avoid || "Do not rewrite the whole app.");
-  fixPrompt.textContent = prompt || text || "Preparing prompt...";
+  if (likelyCause) likelyCause.textContent = likely || "Reading your details...";
+  if (notTouch) notTouch.innerHTML = toList(avoid || "Do not rewrite the whole app.");
+  if (fixPrompt) fixPrompt.textContent = prompt || text || "Preparing prompt...";
 }
 
 function section(text, start, end) {
@@ -236,12 +213,14 @@ function parseEvent(eventText) {
 }
 
 function selectedValues(field) {
+  if (!field) return [];
   return [...field.querySelectorAll(".select-pill.is-selected")].map((pill) => pill.dataset.value);
 }
 
 function previewImage() {
   const file = fileInput.files[0];
   if (!file) return;
+  if (!uploadPreview) return;
   uploadPreview.src = URL.createObjectURL(file);
   uploadPreview.hidden = false;
 }
@@ -267,4 +246,33 @@ function escapeHtml(value) {
     '"': "&quot;",
     "'": "&#39;"
   }[char]));
+}
+
+document.querySelectorAll(".copy-btn, [data-copy]").forEach((btn) => {
+  if (btn.dataset.copyBound === "true") return;
+  btn.dataset.copyBound = "true";
+  btn.addEventListener("click", async () => {
+    const target = btn.dataset.copy
+      ? document.querySelector(btn.dataset.copy)
+      : btn.previousElementSibling;
+    const text = target?.textContent || target?.value || fixPrompt?.textContent || "";
+    await copyText(text, btn);
+  });
+});
+
+async function copyText(text, btn) {
+  if (!btn) return;
+  const original = btn.textContent;
+  if (!text.trim()) {
+    btn.textContent = "Nothing to copy";
+    setTimeout(() => { btn.textContent = original; }, 1600);
+    return;
+  }
+  try {
+    await navigator.clipboard.writeText(text);
+    btn.textContent = "Copied!";
+  } catch (error) {
+    btn.textContent = "Copy unavailable";
+  }
+  setTimeout(() => { btn.textContent = original; }, 1600);
 }
