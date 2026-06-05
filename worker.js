@@ -115,7 +115,7 @@ function contentTypeFor(path) {
 }
 
 async function startGoogleAuth(request, env) {
-  if (env.SUPABASE_URL && env.SUPABASE_ANON_KEY) return startSupabaseGoogleAuth(request, env);
+  if (env.SUPABASE_URL) return startSupabaseGoogleAuth(request, env);
   if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET) return startGuestSession(request, env);
 
   const url = new URL(request.url);
