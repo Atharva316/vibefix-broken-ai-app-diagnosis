@@ -245,7 +245,12 @@ async function finishSupabaseAuth(request, env) {
 
 async function finishBrowserSupabaseSession(request, env) {
   if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) return json({ error: "Supabase auth is not configured" }, 500);
-  const payload = await request.json();
+  let payload;
+  try {
+    payload = await request.json();
+  } catch (error) {
+    return json({ error: "Invalid JSON body" }, 400);
+  }
   if (!payload.access_token) return json({ error: "Missing access token" }, 400);
   const next = safeNext(payload.next || "/dashboard/ai");
   const response = await createSupabaseSessionResponse(payload, next, env);
@@ -497,7 +502,12 @@ async function handleRollbackCalculator(request, env) {
 }
 
 async function handlePromptChecker(request, env) {
-  const payload = await request.json();
+  let payload;
+  try {
+    payload = await request.json();
+  } catch (error) {
+    return json({ error: "Invalid JSON body" }, 400);
+  }
   const originalPrompt = clean(redactSecrets(payload.prompt || ""));
   if (!originalPrompt) return json({ error: "Paste a prompt before checking scope." }, 400);
 
@@ -527,7 +537,12 @@ async function handleDiagnose(request, env) {
   if (!user) return json({ error: "Unauthorized" }, 401);
   assertKv(env);
 
-  const payload = await request.json();
+  let payload;
+  try {
+    payload = await request.json();
+  } catch (error) {
+    return json({ error: "Invalid JSON body" }, 400);
+  }
   const tool = clean(payload.tool || "Other");
   const breakType = clean(payload.breakType || payload.breakTypes || "Other");
   const description = clean(payload.description || "");
