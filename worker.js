@@ -1,5 +1,6 @@
 const COOKIE_NAME = "vf_session";
 const STATE_COOKIE = "vf_oauth_state";
+const PKCE_COOKIE = "vf_pkce_verifier";
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 14;
 const GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
 const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
@@ -136,16 +137,27 @@ async function startGoogleAuth(request, env) {
   });
 }
 
-function startSupabaseGoogleAuth(request, env) {
+async function startSupabaseGoogleAuth(request, env) {
   const url = new URL(request.url);
   const next = safeNext(url.searchParams.get("next") || "/dashboard/ai");
-  const redirectTo = `${url.origin}/auth/callback?next=${encodeURIComponent(next)}`;
+  const state = cryptoRandom();
+  const codeVerifier = pkceVerifier();
+  const codeChallenge = await pkceChallenge(codeVerifier);
+  const redirectTo = `${url.origin}/auth/callback?next=${encodeURIComponent(next)}&oauth_state=${state}`;
   const authUrl = new URL(`${env.SUPABASE_URL}/auth/v1/authorize`);
 
   authUrl.searchParams.set("provider", "google");
   authUrl.searchParams.set("redirect_to", redirectTo);
+  authUrl.searchParams.set("response_type", "code");
+  authUrl.searchParams.set("code_challenge", codeChallenge);
+  authUrl.searchParams.set("code_challenge_method", "S256");
 
-  return redirect(authUrl.toString());
+  return redirect(authUrl.toString(), {
+    "Set-Cookie": [
+      cookie(STATE_COOKIE, state, { maxAge: 600 }),
+      cookie(PKCE_COOKIE, codeVerifier, { maxAge: 600 })
+    ]
+  });
 }
 
 async function startGuestSession(request, env) {
@@ -184,9 +196,12 @@ async function finishSupabaseAuth(request, env) {
   const url = new URL(request.url);
   const next = safeNext(url.searchParams.get("next") || "/dashboard/ai");
   const code = url.searchParams.get("code");
+  const oauthState = url.searchParams.get("oauth_state");
+  const expectedState = getCookie(request, STATE_COOKIE);
+  const codeVerifier = getCookie(request, PKCE_COOKIE);
 
   if (!isSupabaseAuthConfigured(env)) {
-    return startGuestSession(new Request(`${url.origin}/auth/guest?next=${encodeURIComponent(next)}`, request), env);
+    return authErrorPage(next, "Supabase auth is not configured for this deployment.");
   }
 
   if (!code) {
@@ -226,23 +241,38 @@ async function finishSupabaseAuth(request, env) {
 </html>`);
   }
 
+  if (!oauthState || !expectedState || oauthState !== expectedState) {
+    return authErrorPage(next, "Sign-in session expired. Please try signing in again.");
+  }
+
+  if (!codeVerifier) {
+    return authErrorPage(next, "Sign-in verifier is missing. Please start Google sign-in again.");
+  }
+
   try {
-    const tokenResponse = await fetch(`${env.SUPABASE_URL}/auth/v1/token?grant_type=authorization_code`, {
+    const tokenResponse = await fetch(`${env.SUPABASE_URL}/auth/v1/token?grant_type=pkce`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "apikey": env.SUPABASE_ANON_KEY
       },
-      body: JSON.stringify({ code })
+      body: JSON.stringify({ auth_code: code, code_verifier: codeVerifier })
     });
 
     const token = await tokenResponse.json();
-    if (token?.access_token) return createSupabaseSessionResponse(token, next, env);
+    if (token?.access_token) {
+      const response = await createSupabaseSessionResponse(token, next, env);
+      response.headers.append("Set-Cookie", cookie(STATE_COOKIE, "", { maxAge: 0 }));
+      response.headers.append("Set-Cookie", cookie(PKCE_COOKIE, "", { maxAge: 0 }));
+      return response;
+    }
+
+    console.error("Supabase code exchange failed", token);
   } catch (error) {
     console.error("Supabase code exchange failed", error);
   }
 
-  return startGuestSession(new Request(`${url.origin}/auth/guest?next=${encodeURIComponent(next)}`, request), env);
+  return authErrorPage(next, "Google sign-in could not be completed. Please try again.");
 }
 
 async function finishBrowserSupabaseSession(request, env) {
@@ -255,9 +285,14 @@ async function finishBrowserSupabaseSession(request, env) {
   }
   if (!payload.access_token) return json({ error: "Missing access token" }, 400);
   const next = safeNext(payload.next || "/dashboard/ai");
-  const response = await createSupabaseSessionResponse(payload, next, env);
-  const setCookie = response.headers.get("Set-Cookie");
-  return json({ next }, 200, setCookie ? { "Set-Cookie": setCookie } : {});
+  try {
+    const response = await createSupabaseSessionResponse(payload, next, env);
+    const setCookie = response.headers.get("Set-Cookie");
+    return json({ next }, 200, setCookie ? { "Set-Cookie": setCookie } : {});
+  } catch (error) {
+    console.error("Supabase browser session failed", error);
+    return json({ error: "Could not create session" }, 401);
+  }
 }
 
 async function createSupabaseSessionResponse(token, next, env) {
@@ -300,6 +335,29 @@ async function createSupabaseSessionResponse(token, next, env) {
 
 function isSupabaseAuthConfigured(env) {
   return Boolean(env.SUPABASE_URL && env.SUPABASE_ANON_KEY);
+}
+
+function authErrorPage(next, message) {
+  return html(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign in failed</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <main class="payment-shell">
+    <section class="payment-card">
+      <span class="section-kicker">Sign in</span>
+      <h1>Sign in could not be completed</h1>
+      <p class="muted">${escapeHtml(message)}</p>
+      <a class="btn btn-primary full-width" href="/auth/google?next=${escapeAttr(next)}">Try Google Sign In Again</a>
+      <a class="btn btn-secondary full-width" href="/">Back to VibeFix</a>
+    </section>
+  </main>
+</body>
+</html>`);
 }
 
 async function finishGoogleAuth(request, env) {
@@ -2631,6 +2689,26 @@ function cryptoRandom() {
   const bytes = new Uint8Array(32);
   crypto.getRandomValues(bytes);
   return [...bytes].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function pkceVerifier() {
+  const bytes = new Uint8Array(64);
+  crypto.getRandomValues(bytes);
+  return base64UrlEncode(bytes);
+}
+
+async function pkceChallenge(verifier) {
+  const data = new TextEncoder().encode(verifier);
+  const digest = await crypto.subtle.digest("SHA-256", data);
+  return base64UrlEncode(new Uint8Array(digest));
+}
+
+function base64UrlEncode(bytes) {
+  let binary = "";
+  bytes.forEach((byte) => {
+    binary += String.fromCharCode(byte);
+  });
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
 function safeNext(next) {
