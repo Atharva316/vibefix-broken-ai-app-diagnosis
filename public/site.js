@@ -342,8 +342,6 @@ function initCounters() {
       observer.disconnect();
     }
   }, { threshold: 0.35 });
-  const counterSection = document.querySelector(".break-counter");
-  if (counterSection) observer.observe(counterSection);
 }
 
 function initLiveMetrics() {
@@ -351,7 +349,7 @@ function initLiveMetrics() {
 }
 
 function initSectionFocus() {
-  const sections = [...document.querySelectorAll(".section-shell, .break-counter, .break-checker, .social-proof")];
+  const sections = [...document.querySelectorAll(".section-shell, .break-checker, .social-proof")];
   if (!sections.length || !("IntersectionObserver" in window)) return;
 
   const observer = new IntersectionObserver((entries) => {
