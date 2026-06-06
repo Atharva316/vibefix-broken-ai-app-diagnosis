@@ -16,6 +16,8 @@ const fileInput = document.querySelector("#screenshot");
 const uploadZone = document.querySelector("#upload-zone");
 const uploadPreview = document.querySelector("#upload-preview");
 const PAYMENT_URL = "https://rzp.io/rzp/bM3R4oPl";
+const PROMPT_HISTORY_KEY = "vibefix_prompt_history";
+const PROMPT_ATTEMPT_KEY = "vibefix_prompt_attempt_count";
 
 normalizePaymentLinks();
 
@@ -115,6 +117,9 @@ async function hydrateUsage() {
 }
 
 async function generatePrompts(payload) {
+  const promptHistory = readPromptHistory();
+  const attemptCount = nextPromptAttemptCount();
+
   if (typing) typing.hidden = false;
   if (upgradeGate) upgradeGate.hidden = true;
   outputPanel?.classList.remove("is-gated");
@@ -128,8 +133,12 @@ async function generatePrompts(payload) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       tool: payload.tool,
-      breakType: payload.breakTypes.join(", ") || "Other",
-      description: payload.description
+      breakType: payload.breakTypes[0] || "Other",
+      breakTypes: payload.breakTypes,
+      description: payload.description,
+      attemptCount,
+      lastGeneratedPrompt: promptHistory[0] || "",
+      recentGeneratedPrompts: promptHistory
     })
   });
 
@@ -141,6 +150,7 @@ async function generatePrompts(payload) {
 
   const data = await response.json();
   const raw = data.result || "Could not generate diagnosis.";
+  if (!data.gated && raw.trim()) storePromptHistory(raw);
   renderStructured(raw);
   if (data.gated) showUpgradeGate(data.limit);
   else if (usageCounter && Number.isFinite(Number(data.remaining)) && Number.isFinite(Number(data.limit))) {
@@ -151,6 +161,28 @@ async function generatePrompts(payload) {
   hydrateFoundersHelped();
   hydrateUsage();
   if (typing) typing.hidden = true;
+}
+
+function readPromptHistory() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(PROMPT_HISTORY_KEY) || "[]");
+    return Array.isArray(parsed) ? parsed.filter(Boolean).slice(0, 5) : [];
+  } catch (error) {
+    return [];
+  }
+}
+
+function storePromptHistory(prompt) {
+  const history = readPromptHistory().filter((item) => item !== prompt);
+  history.unshift(prompt);
+  localStorage.setItem(PROMPT_HISTORY_KEY, JSON.stringify(history.slice(0, 5)));
+}
+
+function nextPromptAttemptCount() {
+  const current = Number(localStorage.getItem(PROMPT_ATTEMPT_KEY) || "0");
+  const next = Number.isFinite(current) ? current + 1 : 1;
+  localStorage.setItem(PROMPT_ATTEMPT_KEY, String(next));
+  return next;
 }
 
 function updateConfidence(payload) {

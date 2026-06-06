@@ -573,70 +573,14 @@ REASON: The free usage limit for this session has been reached.`
     });
   }
 
-  const prompt = `You are a senior developer debugging AI-built apps (Lovable, Bolt, Cursor, Replit, v0).
-
-Tool: ${tool}
-Break type: ${breakType}
-Description: ${description}
-
-Reply in this exact format:
-
-LIKELY CAUSE:
-[plain English explanation]
-
-WHAT NOT TO TOUCH:
-- [item]
-- [item]
-- [item]
-
-PASTE THIS INTO YOUR TOOL:
-[exact fix prompt they can paste]
-
-CONFIDENCE: [High/Medium/Low]
-REASON: [one sentence]`;
-
-  if (!env.ANTHROPIC_API_KEY) {
-    const result = fallbackDiagnoseResponse(tool, breakType, description);
-    await env.VIBEFIX_KV.put(usageKey, String(usage + 1));
-    await saveAiHelperSession(env, {
-      builder_tool: tool,
-      break_type: breakType,
-      description,
-      generated_prompt: extractFixPrompt(result),
-      confidence_level: calculateConfidence(description, null)
-    });
-    return json({ result, fallback: true, remaining: Math.max(0, freeLimit - usage - 1), limit: freeLimit });
-  }
-
-  const response = await fetch(ANTHROPIC_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": env.ANTHROPIC_API_KEY,
-      "anthropic-version": "2023-06-01"
-    },
-    body: JSON.stringify({
-      model: ANTHROPIC_DIAGNOSE_MODEL,
-      max_tokens: 1000,
-      messages: [{ role: "user", content: prompt }]
-    })
+  const result = buildDiagnosisResult(tool, breakType, description, {
+    attemptCount: Number(payload.attemptCount || 1),
+    lastGeneratedPrompt: clean(payload.lastGeneratedPrompt || ""),
+    recentGeneratedPrompts: Array.isArray(payload.recentGeneratedPrompts)
+      ? payload.recentGeneratedPrompts.map((item) => clean(item)).slice(0, 5)
+      : []
   });
 
-  if (!response.ok) {
-    const result = fallbackDiagnoseResponse(tool, breakType, description);
-    await env.VIBEFIX_KV.put(usageKey, String(usage + 1));
-    await saveAiHelperSession(env, {
-      builder_tool: tool,
-      break_type: breakType,
-      description,
-      generated_prompt: extractFixPrompt(result),
-      confidence_level: calculateConfidence(description, null)
-    });
-    return json({ result, fallback: true, remaining: Math.max(0, freeLimit - usage - 1), limit: freeLimit });
-  }
-
-  const data = await response.json();
-  const result = data.content?.[0]?.text || fallbackDiagnoseResponse(tool, breakType, description);
   await env.VIBEFIX_KV.put(usageKey, String(usage + 1));
   await saveAiHelperSession(env, {
     builder_tool: tool,
@@ -2326,21 +2270,285 @@ ${breakTypes}
 First diagnose the smallest likely failing area. Then explain what not to touch. Make the smallest safe fix only, and give me a regression checklist to confirm the fix worked.`;
 }
 
-function fallbackDiagnoseResponse(tool, breakType, description) {
+function buildDiagnosisResult(tool, breakType, description, context = {}) {
+  const normalizedTool = normalizePromptKey(tool);
+  const normalizedBreak = normalizePromptKey(breakType);
+  const toolProfile = toolProfiles[normalizedTool] || toolProfiles.other;
+  const breakProfile = breakProfiles[normalizedBreak] || breakProfiles.other;
+  const prompt = buildDiagnosisPrompt(tool, breakType, description, context);
+  const isVague = description.trim().length < 35;
+  const confidence = isVague ? "Medium" : "High";
+
   return `LIKELY CAUSE:
-The break is likely tied to the last change around ${breakType}. Based on your description, ${tool} probably changed a focused feature but also affected nearby state, routing, auth, data loading, or deployment behavior.
+${breakProfile.likely(toolProfile.label, description)}
 
 WHAT NOT TO TOUCH:
-- Do not rewrite the whole app.
-- Do not change auth, database, payment, or environment settings without direct evidence.
-- Do not refactor unrelated components.
-- Do not delete working flows while testing the fix.
+${[
+    "Do not rewrite the whole app.",
+    "Do not refactor unrelated files.",
+    "Do not change UI unless the selected break type requires UI.",
+    ...breakProfile.noTouch
+  ].map((item) => `- ${item}`).join("\n")}
 
 PASTE THIS INTO YOUR TOOL:
-Do not rewrite the app. My ${tool} app broke with this issue: ${description}. Break type: ${breakType}. First identify the smallest failing area and likely root cause. Tell me what not to touch. Then propose the smallest safe fix only and give me a regression checklist.
+${prompt}
 
-CONFIDENCE: Medium
-REASON: This is based on the submitted break type and description, but confidence improves with exact errors, logs, screenshots, and changed files.`;
+CONFIDENCE: ${confidence}
+REASON: This prompt is generated from the selected tool, selected break type, user description, and current attempt style.`;
+}
+
+function buildDiagnosisPrompt(tool, breakType, description, context = {}) {
+  const toolProfile = toolProfiles[normalizePromptKey(tool)] || toolProfiles.other;
+  const breakProfile = breakProfiles[normalizePromptKey(breakType)] || breakProfiles.other;
+  let style = chooseAttemptStyle(description, context.attemptCount || 1);
+  if (breakProfile === breakProfiles.fixBreakLoop) style = attemptStyles.forensic;
+  let prompt = composePrompt(toolProfile, breakProfile, tool, breakType, description, style);
+
+  const recent = [context.lastGeneratedPrompt, ...(context.recentGeneratedPrompts || [])].filter(Boolean);
+  if (recent.some((previous) => promptSimilarity(prompt, previous) > 0.82)) {
+    style = style.id === "first" ? attemptStyles.escalation : attemptStyles.forensic;
+    prompt = composePrompt(toolProfile, breakProfile, tool, breakType, description, style);
+  }
+
+  if (recent.some((previous) => promptSimilarity(prompt, previous) > 0.82)) {
+    prompt = `${prompt}
+
+Escalation note:
+This is a new recovery attempt. Do not repeat the previous fix. Explain why the earlier attempt likely failed before making any change.`;
+  }
+
+  return prompt;
+}
+
+function composePrompt(toolProfile, breakProfile, tool, breakType, description, style) {
+  const diagnosticSteps = [...style.diagnosticPrefix, ...toolProfile.inspect, ...breakProfile.diagnostics];
+  const fixInstructions = [...style.fixPrefix, ...breakProfile.fixes, ...toolProfile.fixRules];
+  const validation = [...breakProfile.validation, ...toolProfile.validation];
+  const vagueNote = description.trim().length < 35
+    ? "\n\nMissing evidence note:\nThe issue description is vague. Before editing, inspect logs, console errors, failing requests, recent diffs, and exact files/routes connected to this break. If evidence is missing, ask for it instead of guessing."
+    : "";
+
+  return `${toolProfile.heading}
+${style.opening}
+
+Mode: ${toolProfile.mode}
+Task: ${breakProfile.task}
+
+Context:
+- User selected tool: ${tool}
+- Break type: ${breakType}
+- What broke: ${description}
+
+Hard constraints:
+- Do not rewrite the whole app.
+- Do not refactor unrelated files.
+- Do not change UI unless the selected break type requires UI.
+- Make the smallest safe fix.
+- Explain the likely root cause before editing.
+- After fixing, give a regression checklist.
+
+Diagnostic steps:
+${numbered(diagnosticSteps)}
+
+Fix instructions:
+${numbered(fixInstructions)}
+
+Validation:
+${validation.map((item) => `- ${item}`).join("\n")}
+
+Expected response:
+- Root cause found
+- Files inspected
+- Files changed
+- Exact fix made
+- How to test
+- What not to touch next${vagueNote}`;
+}
+
+const attemptStyles = {
+  first: {
+    id: "first",
+    opening: "First-pass focused diagnosis. Diagnose the selected failure path before editing.",
+    diagnosticPrefix: ["Reproduce the exact failing flow once before changing code.", "Identify the smallest area that can explain the symptom."],
+    fixPrefix: ["Make one focused patch only.", "If the root cause is unclear, stop and ask for the missing log/error instead of guessing."]
+  },
+  escalation: {
+    id: "escalation",
+    opening: "Previous prompt or fix did not work. Stop patching blindly and isolate why the earlier attempt failed.",
+    diagnosticPrefix: ["Summarize the previous failed assumption before editing.", "Inspect logs, recent diffs, and the exact failing request/route.", "Form one root-cause hypothesis and explain why it is more likely than the previous fix."],
+    fixPrefix: ["Make one different minimal patch, not a reworded repeat of the last fix.", "Explain why this patch is different from the failed attempt."]
+  },
+  forensic: {
+    id: "forensic",
+    opening: "Forensic recovery mode. No code changes until the architecture, recent changes, environment, and failing path are inspected.",
+    diagnosticPrefix: ["List the last relevant changes or diffs before the bug appeared.", "Trace the failing flow across component, API route, auth/data layer, environment, and deployment boundary.", "Create a no-code diagnosis summary first.", "If the tool supports rollback or restore points, identify the safest restore point before patching."],
+    fixPrefix: ["Apply only one patch after the diagnosis summary.", "Run the narrowest regression checks after the patch.", "If confidence is low, do not edit; ask for exact logs or screenshots."]
+  }
+};
+
+const toolProfiles = {
+  lovable: {
+    label: "Lovable",
+    heading: "LOVABLE\nLovable, use Plan mode first. Diagnose before editing.",
+    mode: "Plan",
+    inspect: ["Use Plan mode first; do not immediately rewrite the app.", "Inspect preview behavior, browser console errors, and the last Lovable prompt/change.", "If Supabase is involved, check Supabase Auth, RLS policies, integration state, and environment variables."],
+    fixRules: ["Use the smallest Lovable edit possible.", "If auth or database must be touched, state why before editing.", "Target one failing flow instead of broad app cleanup."],
+    validation: ["Verify in Lovable preview.", "Confirm the exact broken flow works after the change."]
+  },
+  bolt: {
+    label: "Bolt",
+    heading: "BOLT\nBOLT: Do not rewrite the app. Diagnose first, then make the smallest safe patch.",
+    mode: "Plan",
+    inspect: ["Use Plan mode or Discussion mode before Build mode.", "Do not use broad Attempt Fix behavior without evidence.", "Inspect env vars, Secrets, database connection, deployment config, package/build errors, and logs when relevant."],
+    fixRules: ["Make one focused Bolt patch.", "Do not regenerate unrelated screens/components.", "Explain exactly which files were changed and why."],
+    validation: ["Test in Bolt preview.", "Retest the exact broken flow after the patch."]
+  },
+  cursor: {
+    label: "Cursor",
+    heading: "CURSOR\nCursor, inspect the relevant files first. Do not guess.",
+    mode: "Review",
+    inspect: ["Search the repo for the failing route/component/function.", "Inspect recent diffs before editing.", "Identify exact files and functions involved.", "Run tests, build, lint, or the narrowest available check if possible."],
+    fixRules: ["Patch only after diagnosis.", "Keep the diff small.", "Do not edit unrelated files."],
+    validation: ["Run or describe the narrowest regression test.", "Give a changed-files summary."]
+  },
+  replit: {
+    label: "Replit",
+    heading: "REPLIT\nReplit Agent, diagnose in Preview first, then fix.",
+    mode: "Agent",
+    inspect: ["Check Preview first; if Preview is broken, do not start with production.", "Check Replit Secrets, Console/Shell logs, run/build commands, port/host binding, and deployment settings.", "Check database state and production deployment logs when relevant."],
+    fixRules: ["Make one minimal Replit-safe fix.", "Test in browser after changes.", "If a dashboard/secret setting is needed, tell me exactly what to change."],
+    validation: ["Verify Preview after the fix.", "If production is involved, verify deployment behavior separately."]
+  },
+  v0: {
+    label: "v0",
+    heading: "v0\nv0, inspect the app structure and make a minimal production-safe fix.",
+    mode: "Fix",
+    inspect: ["Check whether the failure is in a client component, server component, route handler, server action, or environment variable.", "Check Vercel preview vs production behavior when relevant.", "Inspect Next.js/Vercel build, runtime, and deployment logs."],
+    fixRules: ["Do not regenerate unrelated UI components.", "Make a production-safe patch.", "Explain required Vercel settings or env vars."],
+    validation: ["Validate the affected Next.js route/component.", "Include Vercel redeploy checklist if deployment is involved."]
+  },
+  claudeCode: {
+    label: "Claude Code",
+    heading: "CLAUDE CODE\nClaude Code, think through the codebase before editing.",
+    mode: "Agent",
+    inspect: ["Run git status and inspect recent changes before editing.", "Use repo search to find exact failing files/functions.", "Make a plan before patching.", "Run tests/build/lint after the patch if available."],
+    fixRules: ["Do not apply multiple speculative fixes.", "Keep a clear changed-files summary.", "Stop and ask for logs if evidence is missing."],
+    validation: ["Run available checks.", "Explain regression risk and verification steps."]
+  },
+  other: {
+    label: "AI coding agent",
+    heading: "AI CODING AGENT\nIdentify the stack first, then diagnose before editing.",
+    mode: "Diagnose",
+    inspect: ["Identify the framework, hosting platform, auth/data/payment provider, and failing surface first.", "Inspect logs, console errors, recent changes, and exact failing files/routes."],
+    fixRules: ["Make the smallest safe fix after diagnosis.", "Do not guess across unknown stack boundaries."],
+    validation: ["Verify the broken flow.", "Provide a regression checklist."]
+  }
+};
+
+toolProfiles.windsurf = toolProfiles.cursor;
+
+const breakProfiles = {
+  authBroke: {
+    task: "Auth flow diagnosis and minimal auth fix",
+    likely: () => "The selected break type points to auth provider configuration, callback/redirect URLs, session persistence, cookies, route guards, token refresh, or missing auth environment variables.",
+    noTouch: ["Do not touch database schema unless profile creation is proven to be the auth failure.", "Do not rewrite route guards or middleware broadly."],
+    diagnostics: ["Reproduce the failed signup/login/logout/session restore/protected route/callback step.", "Inspect browser console and network auth calls.", "Inspect server logs for callback, session, cookie, or token errors.", "Verify redirect/callback URLs match preview and production domains.", "Check auth provider env vars/secrets.", "If a profile row is created after signup, test that separately from auth itself."],
+    fixes: ["Fix only auth-related code/config.", "Preserve existing UI.", "If env/provider dashboard changes are required, list exact variable or redirect URL."],
+    validation: ["Test signup.", "Test login.", "Test logout.", "Test refresh/session restore.", "Test protected route access."]
+  },
+  databaseNotLoading: {
+    task: "Database/data loading diagnosis and minimal data fix",
+    likely: () => "The selected break type points to a failing query, wrong database URL, missing env vars, schema/migration mismatch, RLS/permissions, empty seed data, or preview/production database mismatch.",
+    noTouch: ["Do not rebuild or rename the database blindly.", "Do not change auth unless the query failure is caused by missing session/user ID."],
+    diagnostics: ["Identify which screen, component, API route, table, query, or view is failing.", "Check browser network response and server logs for the exact failed request.", "Check database env vars/secrets.", "Check schema, table names, column names, migrations, and seed data.", "If Supabase is used, check RLS policies and whether logged-in or anon roles can read the data.", "Check whether the app is hiding the real error behind an empty state."],
+    fixes: ["Fix the exact failing query/request/config.", "Add safe error handling only after the root cause is fixed.", "Do not rename tables/columns unless code is clearly using the wrong name."],
+    validation: ["Verify data loads in preview.", "Verify data loads in production if relevant.", "Confirm empty/error states still behave correctly."]
+  },
+  previewVsProduction: {
+    task: "Preview vs production mismatch diagnosis",
+    likely: () => "The selected break type points to missing production env vars, build-time/runtime differences, API base URL mismatch, domain/callback mismatch, server/client rendering differences, CORS, or deployment config.",
+    noTouch: ["Do not change working preview behavior unless the same code path is proven wrong.", "Do not hardcode production URLs as a shortcut."],
+    diagnostics: ["Compare Preview behavior against the production URL behavior.", "Check production logs and build/deployment logs.", "Verify every required env var exists in production scope.", "Check absolute URLs, API base URLs, redirects, auth callbacks, and CORS.", "Check if production uses different data/config than preview."],
+    fixes: ["Fix only the production-specific config/code path.", "Document any dashboard setting that must be changed.", "Redeploy only after config/code is corrected."],
+    validation: ["Retest Preview.", "Retest production URL.", "Confirm auth/API/data paths use the correct domain."]
+  },
+  fixBreakLoop: {
+    task: "Fix-break loop forensic recovery",
+    likely: () => "The selected break type points to repeated broad fixes, stale AI assumptions, cascading edits, and patches on top of patches without root-cause isolation.",
+    noTouch: ["Do not apply another broad fix.", "Do not stack multiple speculative patches.", "Do not touch auth, database, payment, env, or deployment settings without direct evidence."],
+    diagnostics: ["Stop making fixes immediately.", "Summarize the last 3 attempted fixes from chat/history/diff if available.", "Identify what changed before the bug first appeared.", "Inspect recent diffs or changed files.", "Choose one smallest root-cause hypothesis.", "If unsure, ask for exact logs instead of guessing."],
+    fixes: ["Make one patch only.", "Explain why this patch is different from the failed attempts.", "Use rollback/restore guidance if the tool supports it and the recent changes are too tangled."],
+    validation: ["Run the old broken flow.", "Run any flow touched by recent fixes.", "Confirm no new regression was introduced."]
+  },
+  deployFailed: {
+    task: "Deployment failure classification and minimal deploy fix",
+    likely: () => "The selected break type points to install/build/runtime failure, missing dependency, TypeScript or lint error, missing env vars/secrets, unsupported runtime, port/host config, package mismatch, or output directory config.",
+    noTouch: ["Do not change UI or product behavior to fix a deploy error.", "Do not change hosting config randomly."],
+    diagnostics: ["Read the exact deploy/build error first.", "Classify the failure as install, build, runtime, env, or hosting config.", "Identify the file, package, command, variable, or host setting causing it.", "Check build command, output directory, runtime, port/host, and package versions."],
+    fixes: ["Fix only the failing deploy cause.", "Run local build or equivalent before final answer.", "List exact env var/hosting setting if required."],
+    validation: ["Run build/typecheck/lint if available.", "Confirm the next deploy checklist."]
+  },
+  stripeBroke: {
+    task: "Stripe/payment flow diagnosis",
+    likely: () => "The selected break type points to checkout session creation, publishable/secret key mismatch, webhook secret, price ID, success/cancel URL, test/live mode mismatch, webhook event handling, or raw body signature handling.",
+    noTouch: ["Never expose secret keys.", "Do not touch unrelated billing UI unless the proven failure is visual.", "Do not switch test/live mode without confirmation."],
+    diagnostics: ["Classify failure as checkout creation, redirect, payment completion, webhook, or access unlock.", "Verify payment env vars/secrets.", "Verify price ID, product ID, and test/live mode.", "Verify success/cancel URLs for preview and production.", "Verify webhook endpoint, event handling, and signature/raw body handling."],
+    fixes: ["Fix only the payment path that is failing.", "If dashboard settings are required, list exact Stripe/deployment settings.", "Preserve existing pricing/UI unless directly broken."],
+    validation: ["Run safe test checkout.", "Verify success page.", "Verify webhook/access unlock if used."]
+  },
+  featureBrokeOldFeature: {
+    task: "Regression diagnosis: new feature broke old feature",
+    likely: () => "The selected break type points to a recent change affecting shared state, shared component, route conflict, API contract, props/interface, CSS/layout side effect, or dependency regression.",
+    noTouch: ["Do not remove the new feature unless it is impossible to preserve.", "Do not refactor unrelated files.", "Do not change styling unless the regression is visual."],
+    diagnostics: ["Identify the old feature that broke.", "Identify the new feature/change that preceded it.", "Inspect recent diff and files touched by the new change.", "Find shared component, state, route, API, or dependency used by both old and new feature.", "Explain the regression root cause in plain English."],
+    fixes: ["Restore the old feature while preserving the new feature if possible.", "Patch the shared contract or compatibility layer only.", "Avoid rollback unless the new change is clearly wrong."],
+    validation: ["Test the restored old feature.", "Test the new feature still works.", "Give a regression checklist for both flows."]
+  },
+  other: {
+    task: "Unknown break classification and minimal fix",
+    likely: () => "The selected break type is unknown, so the first job is classification: auth, database, deploy, preview/production, payment, UI, state, routing, dependency, or unknown.",
+    noTouch: ["Do not guess across unknown systems.", "Do not make broad app-wide changes."],
+    diagnostics: ["Classify the bug category first.", "Inspect logs/files related to that category.", "Check browser console, network tab, server logs, and recent changes.", "Identify the smallest likely root cause."],
+    fixes: ["Make the smallest safe fix after classification.", "If evidence is missing, ask for the exact log/error first."],
+    validation: ["Verify the classified broken flow.", "Confirm no related flow regressed."]
+  }
+};
+
+function chooseAttemptStyle(description, attemptCount) {
+  if (/(not working|still broken|need better prompt|same issue|again|didn'?t work|doesn'?t work|failed again|no change)/i.test(description)) {
+    return attemptCount >= 3 ? attemptStyles.forensic : attemptStyles.escalation;
+  }
+  if (attemptCount >= 3) return attemptStyles.forensic;
+  if (attemptCount === 2) return attemptStyles.escalation;
+  return attemptStyles.first;
+}
+
+function numbered(items) {
+  return items.map((item, index) => `${index + 1}. ${item}`).join("\n");
+}
+
+function normalizePromptKey(value) {
+  const normalized = String(value || "").toLowerCase().replace(/[^a-z0-9]+/g, "");
+  const aliases = {
+    claude: "claudeCode",
+    claudecode: "claudeCode",
+    authbroke: "authBroke",
+    databasenotloading: "databaseNotLoading",
+    previewvsproduction: "previewVsProduction",
+    fixbreakloop: "fixBreakLoop",
+    deployfailed: "deployFailed",
+    stripebroke: "stripeBroke",
+    featurebrokeoldfeature: "featureBrokeOldFeature"
+  };
+  return aliases[normalized] || normalized || "other";
+}
+
+function promptSimilarity(a, b) {
+  const aTokens = new Set(String(a).toLowerCase().replace(/[^a-z0-9]+/g, " ").split(/\s+/).filter((token) => token.length > 3));
+  const bTokens = new Set(String(b).toLowerCase().replace(/[^a-z0-9]+/g, " ").split(/\s+/).filter((token) => token.length > 3));
+  if (!aTokens.size || !bTokens.size) return 0;
+  const overlap = [...aTokens].filter((token) => bTokens.has(token)).length;
+  return overlap / Math.max(aTokens.size, bTokens.size);
 }
 
 function streamGate(limit) {
