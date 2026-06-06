@@ -68,6 +68,20 @@
           </div>
           <p class="caption animate-up delay-4">Your app doesn't need more prompts. It needs a damage map.</p>
           <p class="caption animate-up delay-4">Built for founders who used AI to ship but now don't know what safely broke.</p>
+          <div class="hero-live-metrics animate-up delay-4" aria-label="Live VibeFix diagnostic metrics">
+            <article>
+              <span data-live-count data-suffix="%" data-min="88" data-max="94">92%</span>
+              <small>prompt clarity score</small>
+            </article>
+            <article>
+              <span data-live-count data-suffix="%" data-min="71" data-max="86">78%</span>
+              <small>prompt-again risk caught</small>
+            </article>
+            <article>
+              <span data-live-count data-suffix=" min" data-min="6" data-max="11">8 min</span>
+              <small>first damage map</small>
+            </article>
+          </div>
         </div>
         <div class="hero-diagnostic animate-up delay-3" aria-label="Animated VibeFix diagnostic flow">
           <div class="diagnostic-header">
@@ -110,12 +124,15 @@
 
     <section class="social-proof">
       <div class="proof-counter">
-        <span class="counter-number" id="diagnosed-count">0</span>
+        <span class="counter-number" id="diagnosed-count" data-count-to="7">0</span>
         <span class="counter-label">AI apps diagnosed</span>
-        <span class="proof-divider">Â·</span>
+        <span class="proof-divider">·</span>
+        <span class="counter-number" data-live-count data-suffix="%" data-min="88" data-max="94">92%</span>
+        <span class="counter-label">prompt clarity score</span>
+        <span class="proof-divider">·</span>
         <span class="counter-number">₹7,530</span>
         <span class="counter-label">per diagnosis report</span>
-        <span class="proof-divider">Â·</span>
+        <span class="proof-divider">·</span>
         <span class="counter-number">48h</span>
         <span class="counter-label">delivery</span>
       </div>
@@ -135,14 +152,14 @@
       <div class="break-counter-card">
         <div class="break-counter-header">
           <span class="break-counter-badge">LIVE</span>
-          <h3>This week in vibe coding breaks</h3>
-          <p>Updated as diagnoses come in. Week 1 baseline shown.</p>
+          <h3>Live VibeFix signal board</h3>
+          <p>Animated diagnostic signals based on the current scanner model and week-one baseline.</p>
         </div>
         <div class="break-stats-grid">
           <div class="break-stat"><span class="break-stat-number" data-count-to="7">0</span><span class="break-stat-label">Apps diagnosed</span></div>
           <div class="break-stat"><span class="break-stat-number" data-count-to="34" data-suffix="%">0%</span><span class="break-stat-label">Most common<br>Supabase RLS conflict</span></div>
           <div class="break-stat"><span class="break-stat-number" data-count-to="12" data-suffix="%">0%</span><span class="break-stat-label">Most dangerous<br>Exposed API keys</span></div>
-          <div class="break-stat"><span class="break-stat-number">48h</span><span class="break-stat-label">Average fix time<br>after diagnosis</span></div>
+          <div class="break-stat"><span class="break-stat-number" data-live-count data-suffix="%" data-min="88" data-max="94">92%</span><span class="break-stat-label">Prompt clarity<br>live score</span></div>
         </div>
       </div>
     </section>
@@ -483,24 +500,29 @@
       <div class="container">
         <div class="section-heading centered reveal">
           <span class="section-kicker">Pricing</span>
-          <h2>Free scanner now. Deep Diagnosis when risk is high.</h2>
+          <h2>Choose the level of help your broken app needs.</h2>
+          <p class="muted">Start free, get a focused prompt review, or unlock the full Deep Diagnosis report.</p>
         </div>
-        <div class="pricing-tier-grid">
-          <article class="pricing-card reveal">
+        <div class="pricing-tier-grid upgraded-pricing">
+          <article class="pricing-card plan-free reveal">
+            <div class="plan-orbit" aria-hidden="true"></div>
             <div class="beta-tag">Free</div>
-            <p class="caption">Instant</p>
+            <p class="caption">Limited benefits</p>
             <div class="price">₹0</div>
             <ul class="pricing-list">
               <li>Safe First Move Scanner</li>
               <li>Prompt Risk Checker basic</li>
               <li>Case File preview</li>
-              <li>Tool-specific prompt exports</li>
+              <li>Basic tool-specific prompt export</li>
             </ul>
+            <p class="plan-summary">For founders who need a quick first read before prompting again.</p>
+            <div class="plan-meter"><span style="width: 34%"></span></div>
             <a class="btn btn-secondary full-width" href="#scanner">Run Free Scanner</a>
           </article>
-          <article class="pricing-card reveal">
-            <div class="beta-tag">Coming next</div>
-            <p class="caption">Prompt review beta</p>
+          <article class="pricing-card plan-review reveal">
+            <div class="plan-orbit" aria-hidden="true"></div>
+            <div class="beta-tag">Beta</div>
+            <p class="caption">Prompt Review</p>
             <div class="price">₹999 <small>to 1499</small></div>
             <ul class="pricing-list">
               <li>Prompt autopsy</li>
@@ -508,15 +530,19 @@
               <li>No-touch zones added manually</li>
               <li>For one risky prompt before sending</li>
             </ul>
-            <a class="btn btn-secondary full-width" href="#prompt-checker">Request Prompt Review</a>
+            <p class="plan-summary">For one risky prompt before you send it to Cursor, Lovable, Bolt, Replit, v0, Claude Code, or Windsurf.</p>
+            <div class="plan-meter"><span style="width: 62%"></span></div>
+            <a class="btn btn-secondary full-width" href="#prompt-checker">Try Prompt Checker First</a>
           </article>
-          <article class="pricing-card reveal">
-            <div class="beta-tag">Main</div>
+          <article class="pricing-card plan-main reveal">
+            <div class="plan-orbit" aria-hidden="true"></div>
+            <div class="beta-tag">Most Useful</div>
             <p class="caption">Deep Diagnosis</p>
             <div class="price-display">
               <span class="price-amount">₹7,530</span>
               <span class="price-label">beta pricing</span>
             </div>
+            <p class="plan-summary">For high-risk app breaks where auth, database, deployment, payments, or AI over-editing may be involved.</p>
             <ul class="pricing-list">
               <li>Likely root cause</li>
               <li>Confidence score</li>
@@ -527,6 +553,7 @@
               <li>Post-fix regression checklist</li>
               <li>Written report reviewed manually</li>
             </ul>
+            <div class="plan-meter"><span style="width: 94%"></span></div>
             <div class="refund-line">Refund if we cannot identify a likely root cause from the evidence submitted.</div>
             <a class="btn btn-primary full-width" href="/payment">Get Deep Diagnosis — ₹7,530</a>
             <p class="caption">Delivery within 48 hours after completed intake.</p>

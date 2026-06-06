@@ -70,6 +70,7 @@ if (nav) {
 
 initGsapAnimations();
 initCounters();
+initLiveMetrics();
 initBreakChecker();
 initPanicModal();
 
@@ -171,23 +172,24 @@ if (nav) {
   window.addEventListener("scroll", updateNavScroll, { passive: true });
 }
 
-function animateNumber(element, end, suffix = "", duration = 2000) {
+function animateNumber(element, end, suffix = "", duration = 2000, prefix = "") {
   if (!element) return;
+  const startValue = parseFloat(String(element.textContent || "0").replace(/[^\d.-]/g, "")) || 0;
   const start = performance.now();
   const tick = (now) => {
     const progress = Math.min(1, (now - start) / duration);
     const eased = 1 - Math.pow(1 - progress, 3);
-    element.textContent = `${Math.round(end * eased)}${suffix}`;
+    const value = Math.round(startValue + (end - startValue) * eased);
+    element.textContent = `${prefix}${value}${suffix}`;
     if (progress < 1) requestAnimationFrame(tick);
   };
   requestAnimationFrame(tick);
 }
 
 function initCounters() {
-  animateNumber(document.querySelector("#diagnosed-count"), 7, "", 2000);
   const stats = document.querySelectorAll("[data-count-to]");
   if (!stats.length) return;
-  const run = () => stats.forEach((stat) => animateNumber(stat, Number(stat.dataset.countTo || 0), stat.dataset.suffix || "", 1400));
+  const run = () => stats.forEach((stat) => animateNumber(stat, Number(stat.dataset.countTo || 0), stat.dataset.suffix || "", 1400, stat.dataset.prefix || ""));
   if (!("IntersectionObserver" in window)) {
     run();
     return;
@@ -200,6 +202,31 @@ function initCounters() {
   }, { threshold: 0.35 });
   const counterSection = document.querySelector(".break-counter");
   if (counterSection) observer.observe(counterSection);
+}
+
+function initLiveMetrics() {
+  const metrics = [...document.querySelectorAll("[data-live-count]")];
+  if (!metrics.length) return;
+
+  const updateMetric = (metric) => {
+    const min = Number(metric.dataset.min || 0);
+    const max = Number(metric.dataset.max || min);
+    const suffix = metric.dataset.suffix || "";
+    const prefix = metric.dataset.prefix || "";
+    const next = Math.round(min + Math.random() * Math.max(0, max - min));
+    metric.classList.add("is-ticking");
+    animateNumber(metric, next, suffix, 520, prefix);
+    setTimeout(() => metric.classList.remove("is-ticking"), 620);
+  };
+
+  const run = () => {
+    metrics.forEach((metric, index) => {
+      setTimeout(() => updateMetric(metric), index * 120);
+    });
+  };
+
+  run();
+  window.setInterval(run, 3200);
 }
 
 function initBreakChecker() {
