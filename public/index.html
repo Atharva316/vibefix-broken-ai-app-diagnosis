@@ -22,7 +22,7 @@
     "@type": "FAQPage",
     "mainEntity": [
       {"@type":"Question","name":"What is the Safe First Move Scanner?","acceptedAnswer":{"@type":"Answer","text":"It is a free diagnostic scanner that maps likely break layer, prompt-again risk, no-touch zones, rollback direction, missing evidence, and a safer next prompt before you ask AI to edit code again."}},
-      {"@type":"Question","name":"Is this automatic or manual?","acceptedAnswer":{"@type":"Answer","text":"The free scanner and prompt checker are automatic. The paid Deep Diagnosis is a written report reviewed manually after you submit the intake form."}},
+      {"@type":"Question","name":"Is this automatic or manual?","acceptedAnswer":{"@type":"Answer","text":"The free scanner is automatic. The paid Deep Diagnosis is a written report reviewed manually after you submit the intake form."}},
       {"@type":"Question","name":"Should I share API keys?","acceptedAnswer":{"@type":"Answer","text":"No. Do not share API keys, service role keys, passwords, private tokens, seed phrases, admin credentials, or production secrets. Use test credentials only if needed."}},
       {"@type":"Question","name":"What happens after payment?","acceptedAnswer":{"@type":"Answer","text":"After Razorpay payment, submit the VibeFix intake form with your Payment ID or Order ID. The written Deep Diagnosis is delivered by email within 48 hours after form submission."}}
     ]
@@ -40,8 +40,7 @@
     <button class="nav-toggle" type="button" aria-label="Open navigation" aria-expanded="false"><span></span><span></span><span></span></button>
     <div class="nav-links" aria-label="Page sections">
       <a href="#scanner">Scanner</a>
-      <a href="#prompt-checker">Prompt Checker</a>
-      <a href="#case-file">Case File</a>
+      <a href="#guides">Guides</a>
       <a href="#pricing">Pricing</a>
       <a href="#faq">FAQ</a>
     </div>
@@ -78,7 +77,7 @@
             <a class="btn btn-secondary" href="/payment">Get Deep Diagnosis</a>
           </div>
           <p class="caption animate-up delay-4">Your app doesn't need more prompts. It needs a damage map.</p>
-          <p class="caption animate-up delay-4">Built for founders who used AI to ship but now don't know what safely broke.</p>
+          <p class="caption animate-up delay-4">Built for AI-made apps that need a safer next move, not another blind rewrite.</p>
           <div class="hero-live-metrics animate-up delay-4" aria-label="Live VibeFix diagnostic metrics">
             <article>
               <span data-live-count data-suffix="%" data-min="88" data-max="94">92%</span>
@@ -202,7 +201,7 @@
     <section class="section-shell product-story">
       <div class="container">
         <div class="story-rail" aria-label="VibeFix product flow">
-          <article class="story-card reveal"><span>01</span><h3>App broke</h3><p>A founder sees login, data, deploy, checkout, or UI break after an AI change.</p></article>
+          <article class="story-card reveal"><span>01</span><h3>App broke</h3><p>A builder sees login, data, deploy, checkout, or UI break after an AI change.</p></article>
           <article class="story-card reveal"><span>02</span><h3>Prompt temptation</h3><p>The dangerous next move is asking AI to "fix everything" without boundaries.</p></article>
           <article class="story-card reveal"><span>03</span><h3>Risk detected</h3><p>VibeFix maps likely break layer, confidence, and prompt-again risk first.</p></article>
           <article class="story-card reveal"><span>04</span><h3>No-touch map</h3><p>Auth, database, env, payments, and working flows are protected until evidence proves otherwise.</p></article>
@@ -220,9 +219,17 @@
           <p class="muted">Before you prompt again, generate a VibeFix Case File: risk score, no-touch map, likely break layer, rollback direction, and a scoped repair prompt.</p>
         </div>
 
-        <div class="scanner-layout">
+        <div class="ux-flow-strip reveal" aria-label="How VibeFix works">
+          <span><b>1</b> Select tool</span>
+          <span><b>2</b> Pick what broke</span>
+          <span><b>3</b> Describe issue</span>
+          <span><b>4</b> Get safe prompt</span>
+          <span><b>5</b> Upgrade only if needed</span>
+        </div>
+
+        <div class="scanner-layout simplified-scanner">
           <form class="scanner-form reveal" id="safe-scanner-form">
-            <div class="form-grid-3">
+            <div class="form-grid-2 primary-scan-fields">
               <label>Builder/tool used
                 <select name="builder">
                   <option>Lovable</option><option>Bolt</option><option>Cursor</option><option>Replit</option><option>v0</option><option>Claude Code</option><option>Windsurf</option><option>ChatGPT</option><option>Gemini</option><option>DeepSeek</option><option>Other</option>
@@ -233,84 +240,60 @@
                   <option>auth/login/signup</option><option>database/data not loading</option><option>deployment</option><option>preview works but production broken</option><option>UI/layout</option><option>payment/checkout</option><option>env/config</option><option>routing</option><option>API integration</option><option>file upload</option><option>email</option><option>dashboard data</option><option>permissions</option><option>AI changed unrelated files</option><option>fix-break loop</option><option>blank screen</option><option>other</option>
                 </select>
               </label>
-              <label>Where does it happen?
-                <select name="issue_location">
-                  <option>production only</option><option>preview only</option><option>both</option><option>local only</option><option>mobile only</option><option>desktop only</option><option>not sure</option>
-                </select>
-              </label>
-              <label>When did it break?
-                <select name="break_timing">
-                  <option>after adding feature</option><option>after deploy</option><option>after auth change</option><option>after database change</option><option>after env variable change</option><option>after AI fix prompt</option><option>after package update</option><option>after copying code from another AI</option><option>random</option><option>dont know</option>
-                </select>
-              </label>
-              <label>Original app built with
-                <select name="original_ai_tool">
-                  <option>Lovable</option><option>Bolt</option><option>Cursor</option><option>Replit</option><option>v0</option><option>Claude Code</option><option>Windsurf</option><option>ChatGPT</option><option>Gemini</option><option>DeepSeek</option><option>Other</option>
-                </select>
-              </label>
-              <label>Last change made by
-                <select name="last_ai_tool">
-                  <option>Lovable</option><option>Bolt</option><option>Cursor</option><option>Replit</option><option>v0</option><option>Claude Code</option><option>Windsurf</option><option>ChatGPT</option><option>Gemini</option><option>DeepSeek</option><option>Other</option>
-                </select>
-              </label>
-              <label>Fix attempts
-                <select name="fix_attempts">
-                  <option>0</option><option>1</option><option>2</option><option>3+</option><option>5+</option>
-                </select>
-              </label>
-              <label>AI touched unrelated files?
-                <select name="unrelated_files">
-                  <option>not sure</option><option>yes</option><option>no</option>
-                </select>
-              </label>
-              <label>Rollback/checkpoint available?
-                <select name="rollback_available">
-                  <option>not sure</option><option>yes</option><option>no</option>
-                </select>
-              </label>
-              <label>Production users affected?
-                <select name="production_users">
-                  <option>no</option><option>yes</option><option>not sure</option>
-                </select>
-              </label>
-              <label>Real data involved?
-                <select name="real_data">
-                  <option>no</option><option>yes</option><option>not sure</option>
-                </select>
-              </label>
-              <label>Payment/auth/admin involved?
-                <select name="sensitive_systems">
-                  <option>no</option><option>yes</option><option>not sure</option>
-                </select>
-              </label>
             </div>
 
-            <label>Last working state
-              <textarea name="last_working_state" placeholder="Example: users could log in, dashboard loaded leads, checkout worked"></textarea>
-            </label>
             <label>Current broken behavior
               <textarea name="current_broken_behavior" placeholder="What does the user see now? What fails?"></textarea>
             </label>
             <label>Last prompt/change before break
               <textarea name="last_prompt" placeholder="Paste the exact prompt or describe the deploy/config/code change"></textarea>
             </label>
-            <label>Recent prompts / prompt autopsy input
-              <textarea name="recent_prompts" placeholder="Paste 1-5 recent prompts, one per line, if available"></textarea>
-            </label>
-            <label>What have you already tried?
-              <textarea name="already_tried" placeholder="Fix attempts, rollbacks, setting changes, redeploys"></textarea>
-            </label>
-            <label>Exact error/log if available
-              <textarea name="error_message" placeholder="Paste exact error text. Remove secrets first."></textarea>
-            </label>
-            <label>Screenshots/log links
-              <textarea name="evidence_links" placeholder="Paste links only. Do not paste private keys or passwords."></textarea>
-            </label>
-            <label>What should not be touched?
-              <textarea name="declared_no_touch" placeholder="Example: do not touch checkout, Supabase RLS, auth redirects, admin dashboard"></textarea>
-            </label>
+            <input type="hidden" name="issue_location" value="not sure" />
+            <input type="hidden" name="break_timing" value="dont know" />
+            <input type="hidden" name="original_ai_tool" value="not sure" />
+            <input type="hidden" name="last_ai_tool" value="not sure" />
+            <input type="hidden" name="fix_attempts" value="0" />
+            <input type="hidden" name="unrelated_files" value="not sure" />
+            <input type="hidden" name="rollback_available" value="not sure" />
+            <input type="hidden" name="production_users" value="not sure" />
+            <input type="hidden" name="real_data" value="not sure" />
+            <input type="hidden" name="sensitive_systems" value="not sure" />
+
+            <details class="advanced-scan-fields">
+              <summary>Add logs or advanced details</summary>
+              <div class="advanced-scan-grid">
+                <label>Where does it happen?
+                  <select name="issue_location_advanced">
+                    <option>not sure</option><option>production only</option><option>preview only</option><option>both</option><option>local only</option><option>mobile only</option><option>desktop only</option>
+                  </select>
+                </label>
+                <label>When did it break?
+                  <select name="break_timing_advanced">
+                    <option>dont know</option><option>after adding feature</option><option>after deploy</option><option>after auth change</option><option>after database change</option><option>after env variable change</option><option>after AI fix prompt</option><option>after package update</option><option>after copying code from another AI</option><option>random</option>
+                  </select>
+                </label>
+                <label>Last working state
+                  <textarea name="last_working_state" placeholder="Example: users could log in, dashboard loaded leads, checkout worked"></textarea>
+                </label>
+                <label>Exact error/log if available
+                  <textarea name="error_message" placeholder="Paste exact error text. Remove secrets first."></textarea>
+                </label>
+                <label>What have you already tried?
+                  <textarea name="already_tried" placeholder="Fix attempts, rollbacks, setting changes, redeploys"></textarea>
+                </label>
+                <label>What should not be touched?
+                  <textarea name="declared_no_touch" placeholder="Example: do not touch checkout, Supabase RLS, auth redirects, admin dashboard"></textarea>
+                </label>
+                <label>Recent prompts, if available
+                  <textarea name="recent_prompts" placeholder="Paste recent prompts only if they matter"></textarea>
+                </label>
+                <label>Screenshots/log links
+                  <textarea name="evidence_links" placeholder="Paste links only. Do not paste private keys or passwords."></textarea>
+                </label>
+              </div>
+            </details>
             <div class="secret-warning" id="scanner-secret-warning" hidden>This looks like a secret. Remove API keys, service role keys, tokens, passwords, private keys, or admin credentials before submitting.</div>
-            <button class="btn btn-primary full-width" type="submit">Generate VibeFix Case File</button>
+            <button class="btn btn-primary full-width" type="submit">Get Safe Prompt</button>
           </form>
 
           <aside class="case-file-panel reveal" id="case-file">
@@ -319,48 +302,51 @@
             </div>
             <div class="case-summary-card">
               <span class="section-kicker">Case File Preview</span>
-              <h2 id="case-title">Run the scanner to build your damage map.</h2>
-              <p class="muted" id="case-summary">VibeFix will identify likely break layer, no-touch zones, rollback direction, and a safe first prompt.</p>
+              <h2 id="case-title">Answer a few questions to get a safer prompt.</h2>
+              <p class="muted" id="case-summary">Start simple. VibeFix shows the safest next prompt first, then deeper details only if you need them.</p>
             </div>
             <div class="risk-dashboard">
-              <article class="risk-card result-card"><span>Fix-Risk Score</span><strong id="risk-score">--</strong><div class="score-meter"><i id="risk-meter"></i></div></article>
               <article class="risk-card result-card"><span>Prompt-Again Risk</span><strong id="prompt-risk">--</strong></article>
               <article class="risk-card result-card"><span>Likely Break Layer</span><strong id="break-layer">--</strong></article>
+              <article class="risk-card result-card compact-risk-score"><span>Fix-Risk Score</span><strong id="risk-score">--</strong><div class="score-meter"><i id="risk-meter"></i></div></article>
               <article class="risk-card result-card"><span>Evidence Confidence</span><strong id="confidence-score">--</strong></article>
-            </div>
-            <div class="case-grid">
-              <section class="case-section-card"><h3>Root Cause Hypothesis</h3><p id="root-hypothesis">Waiting for scanner input.</p></section>
-              <section class="case-section-card"><h3>No-Touch Zones</h3><div class="chip-list" id="no-touch-zones"></div></section>
-              <section class="case-section-card"><h3>Rollback vs Fix-Forward</h3><p id="rollback-direction">Waiting for scanner input.</p></section>
-              <section class="case-section-card"><h3>Safe First Move</h3><p id="safe-first-move">Waiting for scanner input.</p></section>
-              <section class="case-section-card"><h3>Missing Evidence Needed</h3><ul id="missing-evidence"></ul></section>
-              <section class="case-section-card"><h3>Regression Checklist</h3><ul id="regression-checklist"></ul></section>
-            </div>
-            <div class="timeline-card">
-              <h3>Damage Timeline</h3>
-              <ol id="damage-timeline"></ol>
             </div>
             <div class="prompt-card">
               <div class="copy-row"><h3>Safe First Prompt</h3><button class="copy-btn" type="button" data-copy-target="safe-first-prompt">Copy</button></div>
               <pre id="safe-first-prompt">Your scoped prompt will appear here.</pre>
             </div>
-            <div class="prompt-card">
-              <h3>Bad Prompt Warning</h3>
-              <p id="bad-prompt-warning">Vague prompts like "fix this" can turn a small config issue into a broad rewrite.</p>
-            </div>
-            <div class="export-grid">
-              <button class="copy-btn" type="button" data-export-tool="Cursor">Copy for Cursor</button>
-              <button class="copy-btn" type="button" data-export-tool="Lovable">Copy for Lovable</button>
-              <button class="copy-btn" type="button" data-export-tool="Bolt">Copy for Bolt</button>
-              <button class="copy-btn" type="button" data-export-tool="Replit">Copy for Replit</button>
-              <button class="copy-btn" type="button" data-export-tool="v0">Copy for v0</button>
-              <button class="copy-btn" type="button" data-export-tool="Claude Code">Copy for Claude Code</button>
-              <button class="copy-btn" type="button" data-export-tool="Windsurf">Copy for Windsurf</button>
-              <button class="copy-btn" type="button" data-export-tool="Generic AI">Copy Generic AI Prompt</button>
-              <button class="copy-btn" type="button" id="download-case-file">Download Markdown Report</button>
-              <button class="copy-btn" type="button" id="download-checklist">Download Debug Checklist</button>
-              <button class="copy-btn" type="button" id="copy-evidence-pack">Copy Evidence Pack</button>
-            </div>
+            <details class="case-file-more">
+              <summary>View full case file and exports</summary>
+              <div class="case-grid">
+                <section class="case-section-card"><h3>Root Cause Hypothesis</h3><p id="root-hypothesis">Waiting for scanner input.</p></section>
+                <section class="case-section-card"><h3>No-Touch Zones</h3><div class="chip-list" id="no-touch-zones"></div></section>
+                <section class="case-section-card"><h3>Rollback vs Fix-Forward</h3><p id="rollback-direction">Waiting for scanner input.</p></section>
+                <section class="case-section-card"><h3>Safe First Move</h3><p id="safe-first-move">Waiting for scanner input.</p></section>
+                <section class="case-section-card"><h3>Missing Evidence Needed</h3><ul id="missing-evidence"></ul></section>
+                <section class="case-section-card"><h3>Regression Checklist</h3><ul id="regression-checklist"></ul></section>
+              </div>
+              <div class="timeline-card">
+                <h3>Damage Timeline</h3>
+                <ol id="damage-timeline"></ol>
+              </div>
+              <div class="prompt-card">
+                <h3>Bad Prompt Warning</h3>
+                <p id="bad-prompt-warning">Vague prompts like "fix this" can turn a small config issue into a broad rewrite.</p>
+              </div>
+              <div class="export-grid">
+                <button class="copy-btn" type="button" data-export-tool="Cursor">Copy for Cursor</button>
+                <button class="copy-btn" type="button" data-export-tool="Lovable">Copy for Lovable</button>
+                <button class="copy-btn" type="button" data-export-tool="Bolt">Copy for Bolt</button>
+                <button class="copy-btn" type="button" data-export-tool="Replit">Copy for Replit</button>
+                <button class="copy-btn" type="button" data-export-tool="v0">Copy for v0</button>
+                <button class="copy-btn" type="button" data-export-tool="Claude Code">Copy for Claude Code</button>
+                <button class="copy-btn" type="button" data-export-tool="Windsurf">Copy for Windsurf</button>
+                <button class="copy-btn" type="button" data-export-tool="Generic AI">Copy Generic AI Prompt</button>
+                <button class="copy-btn" type="button" id="download-case-file">Download Markdown Report</button>
+                <button class="copy-btn" type="button" id="download-checklist">Download Debug Checklist</button>
+                <button class="copy-btn" type="button" id="copy-evidence-pack">Copy Evidence Pack</button>
+              </div>
+            </details>
             <div class="article-cta compact-cta">
               <h3>Need deeper review?</h3>
               <p>Get full Deep Diagnosis when the scanner says risk is high or evidence is messy.</p>
@@ -371,49 +357,26 @@
       </div>
     </section>
 
-    <section class="section-shell" id="prompt-checker">
-      <div class="container split-layout">
-        <div class="section-heading reveal">
-          <span class="section-kicker">Prompt Risk Checker</span>
-          <h2>Check the prompt before you send it.</h2>
-          <p class="muted">A vague fix prompt can rewrite the one part that was still working. Paste the prompt you are about to send to Cursor, Lovable, Bolt, Claude, Replit, v0, Windsurf or another AI tool.</p>
-        </div>
-        <div class="tool-form reveal">
-          <label>Prompt to check
-            <textarea id="inline-prompt-risk-input" placeholder="Example: fix login and make production work"></textarea>
-          </label>
-          <button class="btn btn-primary" type="button" id="inline-prompt-risk-button">Check Prompt Risk</button>
-          <div class="risk-output" id="inline-prompt-risk-output" hidden>
-            <div class="risk-card"><span>Risk Level</span><strong data-risk-level>--</strong></div>
-            <p><strong>Risky phrase found:</strong> <span data-risky-phrase>--</span></p>
-            <p data-risk-reason></p>
-            <h3>What it may accidentally touch</h3>
-            <div class="chip-list" data-risk-areas></div>
-            <h3>Safer replacement prompt</h3>
-            <pre data-safe-rewrite></pre>
+    <section class="section-shell compact-guides-section" id="guides">
+      <div class="container">
+        <div class="guide-toggle-card reveal">
+          <div>
+            <span class="section-kicker">Public guides</span>
+            <h2>Need a quick guide for your exact break?</h2>
+            <p class="muted">Keep the main flow clean. Open the guides only if you want a written debugging walkthrough.</p>
           </div>
+          <details class="guide-disclosure">
+            <summary>View public debugging guides</summary>
+            <div class="guide-grid">
+              <a class="guide-link" href="/lovable-app-broke-after-update.html">Lovable app broke after update</a>
+              <a class="guide-link" href="/cursor-broke-my-code.html">Cursor broke my code</a>
+              <a class="guide-link" href="/bolt-app-works-in-preview-not-production.html">Bolt app works in preview but not production</a>
+              <a class="guide-link" href="/supabase-rls-blocking-data.html">Supabase auth/data broke AI app</a>
+              <a class="guide-link" href="/break-patterns.html#blank-screen">AI-built app blank screen</a>
+              <a class="guide-link" href="/prompt-scope-checker.html">Stop AI from rewriting my code</a>
+            </div>
+          </details>
         </div>
-      </div>
-    </section>
-
-    <section class="section-shell">
-      <div class="container split-layout">
-        <div class="section-heading reveal">
-          <span class="section-kicker">Change History</span>
-          <h2>AI Change History / Provenance</h2>
-          <p class="muted">Do not guess which AI broke it. Build a practical suspicion map from recent prompts and changed areas.</p>
-        </div>
-        <form class="tool-form reveal" id="change-history-form">
-          <label>Original app built with <input name="original_tool" placeholder="Lovable, Bolt, Cursor..." /></label>
-          <label>Last change made by <input name="last_tool" placeholder="Cursor, Claude Code, Bolt..." /></label>
-          <label>Last touched area <input name="last_area" placeholder="auth, database, dashboard, checkout..." /></label>
-          <label>Did the bug appear immediately after that? <select name="appeared_after"><option>yes</option><option>no</option><option>not sure</option></select></label>
-          <label>Did AI change unrelated files? <select name="unrelated"><option>not sure</option><option>yes</option><option>no</option></select></label>
-          <label>Rollback/checkpoint available? <select name="rollback"><option>not sure</option><option>yes</option><option>no</option></select></label>
-          <label>Paste 1-5 recent prompts <textarea name="recent_prompts" placeholder="One prompt per line"></textarea></label>
-          <button class="btn btn-primary" type="submit">Analyze Change History</button>
-          <div class="risk-output" id="change-history-output" hidden></div>
-        </form>
       </div>
     </section>
 
@@ -432,26 +395,7 @@
       </div>
     </section>
 
-    <section class="section-shell">
-      <div class="container split-layout">
-        <div class="section-heading reveal">
-          <span class="section-kicker">Preventive Scan</span>
-          <h2>I am about to add a feature. What might break?</h2>
-          <p class="muted">Most AI tools rush to change code. VibeFix decides whether code should be changed at all.</p>
-        </div>
-        <form class="tool-form reveal" id="preventive-form">
-          <label>Builder tool <input name="builder" placeholder="Lovable, Cursor, Bolt..." /></label>
-          <label>Current app type <input name="app_type" placeholder="CRM, marketplace, dashboard..." /></label>
-          <label>Feature you want to add <textarea name="feature" placeholder="Describe the feature"></textarea></label>
-          <label>Sensitive systems involved <input name="sensitive" placeholder="auth, database, payments, API, admin, env" /></label>
-          <label>Is the app live with users? <select name="live_users"><option>no</option><option>yes</option><option>not sure</option></select></label>
-          <button class="btn btn-primary" type="submit">Generate Safe Feature Plan</button>
-          <div class="risk-output" id="preventive-output" hidden></div>
-        </form>
-      </div>
-    </section>
-
-    <section class="section-shell" id="case-file">
+    <section class="section-shell" id="sample-case-file">
       <div class="container">
         <div class="section-heading reveal">
           <span class="section-kicker">Demo Case File</span>
@@ -529,11 +473,11 @@
             <div class="price">₹0</div>
             <ul class="pricing-list">
               <li>Safe First Move Scanner</li>
-              <li>Prompt Risk Checker basic</li>
+              <li>Basic safe prompt output</li>
               <li>Case File preview</li>
               <li>Basic tool-specific prompt export</li>
             </ul>
-            <p class="plan-summary">For founders who need a quick first read before prompting again.</p>
+            <p class="plan-summary">For a quick first read before prompting again.</p>
             <div class="plan-meter"><span style="width: 34%"></span></div>
             <a class="btn btn-secondary full-width" href="#scanner">Run Free Scanner</a>
           </article>
@@ -550,7 +494,7 @@
             </ul>
             <p class="plan-summary">For one risky prompt before you send it to Cursor, Lovable, Bolt, Replit, v0, Claude Code, or Windsurf.</p>
             <div class="plan-meter"><span style="width: 62%"></span></div>
-            <a class="btn btn-secondary full-width" href="#prompt-checker">Try Prompt Checker First</a>
+            <a class="btn btn-secondary full-width" href="#scanner">Run Free Scanner First</a>
           </article>
           <article class="pricing-card plan-main reveal">
             <div class="plan-orbit" aria-hidden="true"></div>
@@ -615,23 +559,6 @@
       </div>
     </section>
 
-    <section class="section-shell">
-      <div class="container">
-        <div class="section-heading reveal">
-          <span class="section-kicker">Start Here</span>
-          <h2>Public debugging guides</h2>
-        </div>
-        <div class="guide-grid">
-          <a class="guide-link reveal" href="/lovable-app-broke-after-update.html">Lovable app broke after update</a>
-          <a class="guide-link reveal" href="/cursor-broke-my-code.html">Cursor broke my code</a>
-          <a class="guide-link reveal" href="/bolt-app-works-in-preview-not-production.html">Bolt app works in preview but not production</a>
-          <a class="guide-link reveal" href="/supabase-rls-blocking-data.html">Supabase auth/data broke AI app</a>
-          <a class="guide-link reveal" href="/break-patterns.html#blank-screen">AI-built app blank screen</a>
-          <a class="guide-link reveal" href="/prompt-scope-checker.html">Stop AI from rewriting my code</a>
-        </div>
-      </div>
-    </section>
-
     <section class="section-shell" id="faq">
       <div class="container narrow">
         <div class="section-heading centered reveal">
@@ -639,30 +566,19 @@
           <h2>FAQ</h2>
         </div>
         <div class="faq-list reveal">
-          <div class="faq-item"><button class="faq-question" type="button" aria-expanded="false"><span>Is this automatic or manual?</span><span class="faq-icon"></span></button><div class="faq-answer"><p>The free scanner and prompt checker are automatic. Deep Diagnosis is a written report reviewed manually after intake.</p></div></div>
+          <div class="faq-item"><button class="faq-question" type="button" aria-expanded="false"><span>Is this automatic or manual?</span><span class="faq-icon"></span></button><div class="faq-answer"><p>The free scanner is automatic. Deep Diagnosis is a written report reviewed manually after intake.</p></div></div>
           <div class="faq-item"><button class="faq-question" type="button" aria-expanded="false"><span>What is Safe First Move Scanner?</span><span class="faq-icon"></span></button><div class="faq-answer"><p>It is a diagnostic tool that maps prompt-again risk, likely break layer, no-touch zones, rollback direction, and a safe first prompt.</p></div></div>
           <div class="faq-item"><button class="faq-question" type="button" aria-expanded="false"><span>Will you fix the bug for me?</span><span class="faq-icon"></span></button><div class="faq-answer"><p>No. VibeFix gives diagnosis, safe repair direction, and prompts. It is not done-for-you development.</p></div></div>
-          <div class="faq-item"><button class="faq-question" type="button" aria-expanded="false"><span>Is this for non-technical founders?</span><span class="faq-icon"></span></button><div class="faq-answer"><p>Yes. VibeFix uses plain English and protects founders from broad prompts that can break more things.</p></div></div>
+          <div class="faq-item"><button class="faq-question" type="button" aria-expanded="false"><span>Is this for non-technical builders?</span><span class="faq-icon"></span></button><div class="faq-answer"><p>Yes. VibeFix uses plain English and protects builders from broad prompts that can break more things.</p></div></div>
           <div class="faq-item"><button class="faq-question" type="button" aria-expanded="false"><span>Do I need to share my repo?</span><span class="faq-icon"></span></button><div class="faq-answer"><p>No for the free scanner. For paid diagnosis, a repo link is optional and only useful if you are comfortable sharing it.</p></div></div>
           <div class="faq-item"><button class="faq-question" type="button" aria-expanded="false"><span>Should I share API keys?</span><span class="faq-icon"></span></button><div class="faq-answer"><p>No. Do not submit API keys, passwords, service role keys, private tokens, seed phrases, or admin credentials.</p></div></div>
           <div class="faq-item"><button class="faq-question" type="button" aria-expanded="false"><span>What if scanner confidence is low?</span><span class="faq-icon"></span></button><div class="faq-answer"><p>Collect the missing evidence shown in the case file before prompting again: exact error, logs, last prompt, screenshots, or changed files.</p></div></div>
           <div class="faq-item"><button class="faq-question" type="button" aria-expanded="false"><span>Why not just ask ChatGPT, Cursor, or Claude?</span><span class="faq-icon"></span></button><div class="faq-answer"><p>Use them, but first give them constraints. VibeFix helps define what not to touch, whether rollback is safer, and what evidence is missing.</p></div></div>
           <div class="faq-item"><button class="faq-question" type="button" aria-expanded="false"><span>What if rollback is safer?</span><span class="faq-icon"></span></button><div class="faq-answer"><p>The scanner will say so. If rollback is safer, do not keep stacking fixes on top of a fragile broken state.</p></div></div>
-          <div class="faq-item"><button class="faq-question" type="button" aria-expanded="false"><span>What if I used multiple AI tools?</span><span class="faq-icon"></span></button><div class="faq-answer"><p>Use the AI Change History section. It builds a suspicion map across prompts and tools without pretending certainty.</p></div></div>
+          <div class="faq-item"><button class="faq-question" type="button" aria-expanded="false"><span>What if I used multiple AI tools?</span><span class="faq-icon"></span></button><div class="faq-answer"><p>Use the scanner first. Add the last prompt or tool change in the advanced details only if it matters.</p></div></div>
           <div class="faq-item"><button class="faq-question" type="button" aria-expanded="false"><span>What if app has real users/data?</span><span class="faq-icon"></span></button><div class="faq-answer"><p>Risk goes up. Avoid auth, database, payments, admin permissions, and production settings until evidence proves the failing layer.</p></div></div>
           <div class="faq-item"><button class="faq-question" type="button" aria-expanded="false"><span>Is this a security audit?</span><span class="faq-icon"></span></button><div class="faq-answer"><p>No. VibeFix is not security testing, legal/compliance review, or 24/7 emergency support.</p></div></div>
           <div class="faq-item"><button class="faq-question" type="button" aria-expanded="false"><span>What if you cannot find root cause?</span><span class="faq-icon"></span></button><div class="faq-answer"><p>If Deep Diagnosis cannot identify a likely root cause from submitted evidence, you get a refund.</p></div></div>
-        </div>
-      </div>
-    </section>
-
-    <section class="section-shell">
-      <div class="container founder-card reveal">
-        <div class="founder-photo" aria-hidden="true"></div>
-        <div>
-          <span class="section-kicker">Founder</span>
-          <h2>Built by an AI builder debugging the same tools founders use.</h2>
-          <p class="muted">I'm Atharva, an engineering student and AI builder from Mumbai. I built VibeFix because I kept seeing non-technical founders destroy their apps with blind prompting after something broke. I've debugged Lovable, Bolt, Cursor, and Replit apps using Python, React, Node, Supabase, and Firebase. Every VibeFix report is reviewed by me personally before it's sent.</p>
         </div>
       </div>
     </section>

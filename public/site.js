@@ -528,11 +528,13 @@ const scannerSecretWarning = document.querySelector("#scanner-secret-warning");
 
 if (scannerForm) {
   scannerForm.addEventListener("input", () => {
+    syncAdvancedScannerFields(scannerForm);
     scannerSecretWarning.hidden = !containsSecret(new FormData(scannerForm));
   });
 
   scannerForm.addEventListener("submit", async (event) => {
     event.preventDefault();
+    syncAdvancedScannerFields(scannerForm);
     const payload = Object.fromEntries(new FormData(scannerForm).entries());
 
     if (containsSecret(new FormData(scannerForm))) {
@@ -552,6 +554,19 @@ if (scannerForm) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ payload, result })
     }).catch(() => {});
+  });
+}
+
+function syncAdvancedScannerFields(form) {
+  const fieldMap = {
+    issue_location_advanced: "issue_location",
+    break_timing_advanced: "break_timing"
+  };
+
+  Object.entries(fieldMap).forEach(([sourceName, targetName]) => {
+    const source = form.elements[sourceName];
+    const target = form.elements[targetName];
+    if (source && target && source.value) target.value = source.value;
   });
 }
 

@@ -2093,6 +2093,57 @@ h3 {
   transform: translateY(-2px);
 }
 
+.compact-guides-section {
+  padding-top: 72px;
+  padding-bottom: 72px;
+}
+
+.guide-toggle-card {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(360px, 1.1fr);
+  gap: 24px;
+  align-items: start;
+  padding: 24px;
+  border: 1px solid #1E1E2E;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(18, 18, 26, 0.92), rgba(10, 10, 15, 0.92));
+}
+
+.guide-toggle-card h2 {
+  margin-bottom: 10px;
+}
+
+.guide-disclosure summary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 48px;
+  border-radius: 8px;
+  background: #7C3AED;
+  color: #FFFFFF;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.guide-disclosure summary:hover {
+  background: #6D28D9;
+  transform: translateY(-1px);
+}
+
+.guide-disclosure summary::after {
+  margin-left: auto;
+  color: #FFFFFF;
+}
+
+.guide-disclosure[open] summary {
+  margin-bottom: 16px;
+}
+
+.guide-disclosure .guide-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding: 0 16px 16px;
+}
+
 .faq-list {
   border-top: 1px solid #1E1E2E;
 }
@@ -2318,6 +2369,42 @@ h3 {
   align-items: start;
 }
 
+.ux-flow-strip {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 22px;
+}
+
+.ux-flow-strip span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 12px 14px;
+  border: 1px solid #1E1E2E;
+  border-radius: 10px;
+  background: rgba(18, 18, 26, 0.72);
+  color: #94A3B8;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.ux-flow-strip b {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: rgba(124, 58, 237, 0.16);
+  color: #9B5CFF;
+  font-size: 12px;
+}
+
+.simplified-scanner .scanner-form {
+  gap: 16px;
+}
+
 .scanner-form,
 .case-file-panel {
   display: grid;
@@ -2342,9 +2429,73 @@ h3 {
   gap: 14px;
 }
 
+.form-grid-2,
+.advanced-scan-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.advanced-scan-fields,
+.case-file-more,
+.guide-disclosure {
+  border: 1px solid #1E1E2E;
+  border-radius: 10px;
+  background: rgba(10, 10, 15, 0.45);
+}
+
+.advanced-scan-fields summary,
+.case-file-more summary,
+.guide-disclosure summary {
+  cursor: pointer;
+  padding: 14px 16px;
+  color: #F8FAFC;
+  font-size: 14px;
+  font-weight: 800;
+  list-style: none;
+}
+
+.advanced-scan-fields summary::-webkit-details-marker,
+.case-file-more summary::-webkit-details-marker,
+.guide-disclosure summary::-webkit-details-marker {
+  display: none;
+}
+
+.advanced-scan-fields summary::after,
+.case-file-more summary::after,
+.guide-disclosure summary::after {
+  content: "+";
+  float: right;
+  color: #9B5CFF;
+  font-weight: 900;
+}
+
+.advanced-scan-fields[open] summary::after,
+.case-file-more[open] summary::after,
+.guide-disclosure[open] summary::after {
+  content: "-";
+}
+
+.advanced-scan-grid,
+.case-file-more .case-grid,
+.case-file-more .timeline-card,
+.case-file-more .prompt-card,
+.case-file-more .export-grid {
+  margin: 0 16px 16px;
+}
+
+.case-file-more {
+  display: grid;
+  gap: 0;
+}
+
 .case-file-panel {
   position: sticky;
   top: 96px;
+}
+
+.case-file-panel .risk-dashboard {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .process-tracker {
@@ -3022,11 +3173,19 @@ textarea:focus {
   .hero-content,
   .story-rail,
   .scanner-layout,
+  .ux-flow-strip,
+  .form-grid-2,
+  .advanced-scan-grid,
+  .guide-toggle-card,
   .form-grid-3,
   .risk-dashboard,
   .case-grid,
   .pricing-tier-grid {
     grid-template-columns: 1fr;
+  }
+
+  .guide-toggle-card {
+    padding: 18px;
   }
 
   .case-file-panel {
