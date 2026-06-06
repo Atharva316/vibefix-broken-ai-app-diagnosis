@@ -44,6 +44,10 @@ export default {
 
     try {
       if (url.pathname === "/auth/google") return startGoogleAuth(request, env);
+      if (url.pathname === "/auth/apple") return startSupabaseProviderAuth(request, env, "apple");
+      if (url.pathname === "/auth/email" && request.method === "POST") return startEmailMagicLink(request, env);
+      if (url.pathname === "/auth/phone" && request.method === "POST") return startPhoneOtp(request, env);
+      if (url.pathname === "/auth/phone/verify" && request.method === "POST") return verifyPhoneOtp(request, env);
       if (url.pathname === "/auth/callback") return finishSupabaseAuth(request, env);
       if (url.pathname === "/auth/google/callback") return finishGoogleAuth(request, env);
       if (url.pathname === "/auth/session" && request.method === "POST") return finishBrowserSupabaseSession(request, env);
@@ -138,15 +142,25 @@ async function startGoogleAuth(request, env) {
 }
 
 async function startSupabaseGoogleAuth(request, env) {
+  return startSupabaseProviderAuth(request, env, "google");
+}
+
+async function startSupabaseProviderAuth(request, env, provider) {
   const url = new URL(request.url);
   const next = safeNext(url.searchParams.get("next") || "/dashboard/ai");
+
+  if (!isSupabaseAuthConfigured(env)) {
+    if (provider === "google") return startGoogleAuth(request, env);
+    return authErrorPage(next, "Supabase auth is not configured for this deployment.");
+  }
+
   const state = cryptoRandom();
   const codeVerifier = pkceVerifier();
   const codeChallenge = await pkceChallenge(codeVerifier);
   const redirectTo = `${url.origin}/auth/callback?next=${encodeURIComponent(next)}&oauth_state=${state}`;
   const authUrl = new URL(`${env.SUPABASE_URL}/auth/v1/authorize`);
 
-  authUrl.searchParams.set("provider", "google");
+  authUrl.searchParams.set("provider", provider);
   authUrl.searchParams.set("redirect_to", redirectTo);
   authUrl.searchParams.set("response_type", "code");
   authUrl.searchParams.set("code_challenge", codeChallenge);
@@ -158,6 +172,91 @@ async function startSupabaseGoogleAuth(request, env) {
       cookie(PKCE_COOKIE, codeVerifier, { maxAge: 600 })
     ]
   });
+}
+
+async function startEmailMagicLink(request, env) {
+  if (!isSupabaseAuthConfigured(env)) return json({ error: "Supabase auth is not configured." }, 500);
+
+  const url = new URL(request.url);
+  const payload = await readJson(request);
+  const email = clean(payload.email || "").toLowerCase();
+  const next = safeNext(payload.next || "/dashboard/ai");
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return json({ error: "Enter a valid email address." }, 400);
+
+  const response = await fetch(`${env.SUPABASE_URL}/auth/v1/otp`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "apikey": env.SUPABASE_ANON_KEY
+    },
+    body: JSON.stringify({
+      email,
+      should_create_user: true,
+      email_redirect_to: `${url.origin}/auth/callback?next=${encodeURIComponent(next)}`
+    })
+  });
+
+  if (!response.ok) return json({ error: await supabaseErrorMessage(response, "Could not send magic link.") }, response.status);
+  return json({ ok: true, message: "Magic link sent. Check your email to finish signing in." });
+}
+
+async function startPhoneOtp(request, env) {
+  if (!isSupabaseAuthConfigured(env)) return json({ error: "Supabase auth is not configured." }, 500);
+
+  const payload = await readJson(request);
+  const phone = clean(payload.phone || "");
+
+  if (!/^\+[1-9]\d{7,14}$/.test(phone)) return json({ error: "Enter phone in international format, for example +919876543210." }, 400);
+
+  const response = await fetch(`${env.SUPABASE_URL}/auth/v1/otp`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "apikey": env.SUPABASE_ANON_KEY
+    },
+    body: JSON.stringify({
+      phone,
+      should_create_user: true
+    })
+  });
+
+  if (!response.ok) return json({ error: await supabaseErrorMessage(response, "Could not send phone OTP.") }, response.status);
+  return json({ ok: true, message: "OTP sent. Enter the code to finish signing in." });
+}
+
+async function verifyPhoneOtp(request, env) {
+  if (!isSupabaseAuthConfigured(env)) return json({ error: "Supabase auth is not configured." }, 500);
+
+  const payload = await readJson(request);
+  const phone = clean(payload.phone || "");
+  const token = clean(payload.token || "");
+  const next = safeNext(payload.next || "/dashboard/ai");
+
+  if (!phone || !token) return json({ error: "Phone number and OTP are required." }, 400);
+
+  const response = await fetch(`${env.SUPABASE_URL}/auth/v1/verify`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "apikey": env.SUPABASE_ANON_KEY
+    },
+    body: JSON.stringify({ phone, token, type: "sms" })
+  });
+
+  const tokenResponse = await response.json().catch(() => ({}));
+  if (!response.ok || !tokenResponse?.access_token) {
+    return json({ error: tokenResponse.error_description || tokenResponse.msg || tokenResponse.error || "OTP verification failed." }, response.status || 401);
+  }
+
+  try {
+    const sessionResponse = await createSupabaseSessionResponse(tokenResponse, next, env);
+    const setCookie = sessionResponse.headers.get("Set-Cookie");
+    return json({ ok: true, next }, 200, setCookie ? { "Set-Cookie": setCookie } : {});
+  } catch (error) {
+    console.error("Phone OTP session failed", error);
+    return json({ error: "Could not create session after OTP verification." }, 401);
+  }
 }
 
 async function startGuestSession(request, env) {
@@ -2654,6 +2753,19 @@ function json(data, status = 200, extraHeaders = {}) {
     status,
     headers: { "Content-Type": "application/json", "Cache-Control": "no-store", ...extraHeaders }
   });
+}
+
+async function readJson(request) {
+  try {
+    return await request.json();
+  } catch (error) {
+    return {};
+  }
+}
+
+async function supabaseErrorMessage(response, fallback) {
+  const payload = await response.json().catch(() => ({}));
+  return payload.error_description || payload.msg || payload.error || payload.message || fallback;
 }
 
 function html(content) {

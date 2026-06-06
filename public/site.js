@@ -68,6 +68,7 @@ if (nav) {
   hydrateAuthSlot(nav);
 }
 
+initAuthModal();
 initGsapAnimations();
 initCounters();
 initLiveMetrics();
@@ -84,7 +85,7 @@ async function hydrateAuthSlot(navElement) {
     const user = response.ok ? await response.json() : null;
 
     if (!user) {
-      slot.innerHTML = `<a class="nav-auth-link" href="/auth/google">Sign In</a>`;
+      slot.innerHTML = `<button class="nav-auth-link" type="button" data-auth-open>Sign In</button>`;
       return;
     }
 
@@ -95,8 +96,137 @@ async function hydrateAuthSlot(navElement) {
       <a class="nav-signout" href="/auth/signout">Sign Out</a>
     `;
   } catch (error) {
-    slot.innerHTML = `<a class="nav-auth-link" href="/auth/google">Sign In</a>`;
+    slot.innerHTML = `<button class="nav-auth-link" type="button" data-auth-open>Sign In</button>`;
   }
+}
+
+function initAuthModal() {
+  const modal = document.querySelector("#auth-modal");
+  if (!modal) return;
+
+  const status = modal.querySelector("#auth-status");
+  const emailForm = modal.querySelector("#auth-email-form");
+  const phoneForm = modal.querySelector("#auth-phone-form");
+  const otpForm = modal.querySelector("#auth-otp-form");
+  const phoneInput = modal.querySelector("#auth-phone");
+  let pendingPhone = "";
+
+  const nextPath = () => "/dashboard/ai";
+  const setStatus = (message, type = "") => {
+    if (!status) return;
+    status.textContent = message || "";
+    status.classList.toggle("is-error", type === "error");
+    status.classList.toggle("is-success", type === "success");
+  };
+  const showPanel = (panel) => {
+    if (emailForm) emailForm.hidden = panel !== "email";
+    if (phoneForm) phoneForm.hidden = panel !== "phone";
+    if (otpForm) otpForm.hidden = panel !== "otp";
+  };
+  const openModal = () => {
+    modal.hidden = false;
+    document.body.classList.add("modal-open");
+    showPanel("email");
+    setStatus("");
+    modal.querySelectorAll('a[href^="/auth/"]').forEach((link) => {
+      const url = new URL(link.getAttribute("href"), window.location.origin);
+      url.searchParams.set("next", nextPath());
+      link.setAttribute("href", `${url.pathname}${url.search}`);
+    });
+    setTimeout(() => modal.querySelector("#auth-email")?.focus(), 40);
+  };
+  const closeModal = () => {
+    modal.hidden = true;
+    document.body.classList.remove("modal-open");
+  };
+  const setLoading = (form, loading) => {
+    const button = form?.querySelector("button[type='submit']");
+    if (!button) return;
+    button.disabled = loading;
+    button.dataset.originalText ||= button.textContent;
+    button.textContent = loading ? "Please wait..." : button.dataset.originalText;
+  };
+  const postAuth = async (url, body) => {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || "Auth request failed.");
+    return data;
+  };
+
+  document.addEventListener("click", (event) => {
+    const openTarget = event.target.closest("[data-auth-open]");
+    if (openTarget) {
+      event.preventDefault();
+      openModal();
+      return;
+    }
+
+    if (event.target.closest("[data-auth-close]")) {
+      closeModal();
+      return;
+    }
+
+    const panelTarget = event.target.closest("[data-auth-panel]");
+    if (panelTarget) {
+      showPanel(panelTarget.dataset.authPanel || "email");
+      setStatus("");
+      setTimeout(() => phoneInput?.focus(), 40);
+    }
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !modal.hidden) closeModal();
+  });
+
+  emailForm?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    setLoading(emailForm, true);
+    setStatus("");
+    try {
+      const email = new FormData(emailForm).get("email");
+      const data = await postAuth("/auth/email", { email, next: nextPath() });
+      setStatus(data.message || "Magic link sent. Check your email.", "success");
+    } catch (error) {
+      setStatus(error.message, "error");
+    } finally {
+      setLoading(emailForm, false);
+    }
+  });
+
+  phoneForm?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    setLoading(phoneForm, true);
+    setStatus("");
+    try {
+      pendingPhone = String(new FormData(phoneForm).get("phone") || "").trim();
+      const data = await postAuth("/auth/phone", { phone: pendingPhone });
+      setStatus(data.message || "OTP sent. Enter the code.", "success");
+      showPanel("otp");
+      setTimeout(() => modal.querySelector("#auth-otp")?.focus(), 40);
+    } catch (error) {
+      setStatus(error.message, "error");
+    } finally {
+      setLoading(phoneForm, false);
+    }
+  });
+
+  otpForm?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    setLoading(otpForm, true);
+    setStatus("");
+    try {
+      const token = new FormData(otpForm).get("token");
+      const data = await postAuth("/auth/phone/verify", { phone: pendingPhone, token, next: nextPath() });
+      window.location.href = data.next || nextPath();
+    } catch (error) {
+      setStatus(error.message, "error");
+      setLoading(otpForm, false);
+    }
+  });
 }
 
 function initGsapAnimations() {
