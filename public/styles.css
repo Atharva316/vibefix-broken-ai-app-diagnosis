@@ -120,7 +120,7 @@ pre {
   font-size: 26px;
   font-weight: 800;
   letter-spacing: -0.02em;
-  animation: logoFloat 5s ease-in-out infinite;
+  animation: none;
 }
 
 .logo svg {
@@ -613,7 +613,7 @@ pre {
   background: radial-gradient(circle, rgba(124, 58, 237, 0.26), rgba(124, 58, 237, 0.08) 34%, transparent 68%);
   filter: blur(28px);
   transform: translate(-50%, -50%);
-  animation: moveGlow 8s ease-in-out infinite alternate;
+  animation: none;
 }
 
 .hero-orb {
@@ -924,7 +924,7 @@ h3 {
 }
 
 .hero-badge {
-  animation: pulse-border 2s ease-in-out infinite;
+  animation: none;
 }
 
 .section-kicker {

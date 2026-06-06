@@ -69,12 +69,9 @@ if (nav) {
 }
 
 initAuthModal();
-initGsapAnimations();
 initCounters();
-initLiveMetrics();
 initSectionFocus();
 initBreakChecker();
-initPanicModal();
 
 async function hydrateAuthSlot(navElement) {
   const slot = navElement.querySelector(".auth-slot");
@@ -85,7 +82,7 @@ async function hydrateAuthSlot(navElement) {
     const user = response.ok ? await response.json() : null;
 
     if (!user) {
-      slot.innerHTML = `<button class="nav-auth-link" type="button" data-auth-open>Sign In</button>`;
+      slot.innerHTML = `<a class="nav-auth-link" href="/auth/google" data-auth-open>Sign In</a>`;
       return;
     }
 
@@ -96,7 +93,7 @@ async function hydrateAuthSlot(navElement) {
       <a class="nav-signout" href="/auth/signout">Sign Out</a>
     `;
   } catch (error) {
-    slot.innerHTML = `<button class="nav-auth-link" type="button" data-auth-open>Sign In</button>`;
+    slot.innerHTML = `<a class="nav-auth-link" href="/auth/google" data-auth-open>Sign In</a>`;
   }
 }
 
@@ -167,6 +164,12 @@ function initAuthModal() {
 
     if (event.target.closest("[data-auth-close]")) {
       closeModal();
+      return;
+    }
+
+    const comingSoonTarget = event.target.closest("[data-auth-coming-soon]");
+    if (comingSoonTarget) {
+      setStatus(comingSoonTarget.dataset.authComingSoon || "This sign-in option is being configured. Use Google or email for now.", "success");
       return;
     }
 
