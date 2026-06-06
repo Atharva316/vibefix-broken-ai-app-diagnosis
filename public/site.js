@@ -71,6 +71,7 @@ if (nav) {
 initGsapAnimations();
 initCounters();
 initLiveMetrics();
+initSectionFocus();
 initBreakChecker();
 initPanicModal();
 
@@ -227,6 +228,19 @@ function initLiveMetrics() {
 
   run();
   window.setInterval(run, 3200);
+}
+
+function initSectionFocus() {
+  const sections = [...document.querySelectorAll(".section-shell, .break-counter, .break-checker, .social-proof")];
+  if (!sections.length || !("IntersectionObserver" in window)) return;
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      entry.target.classList.toggle("section-in-view", entry.isIntersecting);
+    });
+  }, { threshold: 0.22 });
+
+  sections.forEach((section) => observer.observe(section));
 }
 
 function initBreakChecker() {
