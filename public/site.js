@@ -347,28 +347,7 @@ function initCounters() {
 }
 
 function initLiveMetrics() {
-  const metrics = [...document.querySelectorAll("[data-live-count]")];
-  if (!metrics.length) return;
-
-  const updateMetric = (metric) => {
-    const min = Number(metric.dataset.min || 0);
-    const max = Number(metric.dataset.max || min);
-    const suffix = metric.dataset.suffix || "";
-    const prefix = metric.dataset.prefix || "";
-    const next = Math.round(min + Math.random() * Math.max(0, max - min));
-    metric.classList.add("is-ticking");
-    animateNumber(metric, next, suffix, 520, prefix);
-    setTimeout(() => metric.classList.remove("is-ticking"), 620);
-  };
-
-  const run = () => {
-    metrics.forEach((metric, index) => {
-      setTimeout(() => updateMetric(metric), index * 120);
-    });
-  };
-
-  run();
-  window.setInterval(run, 3200);
+  return;
 }
 
 function initSectionFocus() {
@@ -444,29 +423,7 @@ function initBreakChecker() {
 }
 
 function initPanicModal() {
-  const button = document.querySelector("#panic-btn");
-  const modal = document.querySelector("#panic-modal");
-  const close = document.querySelector("#panic-close");
-  if (!button || !modal || !close) return;
-  const closeModal = () => {
-    modal.style.opacity = "0";
-    setTimeout(() => { modal.hidden = true; }, 200);
-  };
-  button.addEventListener("click", () => {
-    modal.hidden = false;
-    modal.style.opacity = "0";
-    setTimeout(() => {
-      modal.style.transition = "opacity 0.2s ease";
-      modal.style.opacity = "1";
-    }, 10);
-  });
-  close.addEventListener("click", closeModal);
-  modal.addEventListener("click", (event) => {
-    if (event.target.id === "panic-modal") closeModal();
-  });
-  document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && !modal.hidden) closeModal();
-  });
+  return;
 }
 
 const quizState = {
