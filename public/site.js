@@ -106,11 +106,12 @@ function initGsapAnimations() {
   if (window.ScrollTrigger) gsap.registerPlugin(window.ScrollTrigger);
 
   gsap.from(".site-nav", { y: -20, opacity: 0, duration: 0.5, ease: "power2.out" });
-  gsap.from(".hero-badge", { y: 20, opacity: 0, duration: 0.4, delay: 0.2, ease: "power2.out" });
-  gsap.from(".hero h1", { y: 30, opacity: 0, duration: 0.6, delay: 0.3, ease: "power2.out" });
-  gsap.from(".hero .subhead", { y: 20, opacity: 0, duration: 0.5, delay: 0.5, ease: "power2.out" });
-  gsap.from(".hero .hero-actions", { y: 20, opacity: 0, duration: 0.4, delay: 0.7, ease: "power2.out" });
-  gsap.from(".hero .caption", { opacity: 0, duration: 0.5, delay: 0.9, stagger: 0.08, ease: "power2.out" });
+  const heroTimeline = gsap.timeline({ defaults: { ease: "power2.out" } });
+  heroTimeline
+    .from(".hero-badge", { y: 18, opacity: 0, duration: 0.45 })
+    .from(".hero h1", { y: 28, opacity: 0, duration: 0.6 }, "-=0.18")
+    .from(".hero .subhead", { y: 20, opacity: 0, duration: 0.5 }, "-=0.12")
+    .from(".hero .hero-actions .btn", { y: 18, opacity: 0, duration: 0.42, stagger: 0.08 }, "-=0.1");
 
   if (window.ScrollTrigger) {
     gsap.utils.toArray(".section-heading").forEach((heading) => {
@@ -134,15 +135,6 @@ function initGsapAnimations() {
       });
     });
 
-    gsap.from("#deliverables .risk-card", {
-      x: -30,
-      opacity: 0,
-      duration: 0.5,
-      stagger: 0.2,
-      ease: "power2.out",
-      scrollTrigger: { trigger: "#deliverables", start: "top 85%" }
-    });
-
     gsap.from("#pricing .pricing-card", {
       scale: 0.95,
       opacity: 0,
@@ -151,24 +143,40 @@ function initGsapAnimations() {
       ease: "back.out(1.2)",
       scrollTrigger: { trigger: "#pricing", start: "top 85%" }
     });
-  }
 
-  document.querySelectorAll(".btn, button").forEach((button) => {
-    button.addEventListener("mouseenter", () => {
-      gsap.to(button, {
-        scale: 1.03,
-        duration: 0.2,
-        boxShadow: button.classList.contains("btn-primary") ? "0 0 20px rgba(124,58,237,0.4)" : undefined
+    gsap.utils.toArray(".story-rail").forEach((rail) => {
+      gsap.from(rail.querySelectorAll(".story-card"), {
+        y: 36,
+        opacity: 0,
+        duration: 0.5,
+        stagger: 0.12,
+        ease: "power2.out",
+        scrollTrigger: { trigger: rail, start: "top 85%" }
       });
     });
-    button.addEventListener("mouseleave", () => {
-      gsap.to(button, { scale: 1, duration: 0.2, boxShadow: "" });
+  }
+
+  document.querySelectorAll(".btn, button, .nav-auth-link, .nav-signout, .avatar-button, .mobile-sticky-cta a").forEach((control) => {
+    control.addEventListener("mouseenter", () => {
+      gsap.to(control, {
+        scale: 1.035,
+        duration: 0.2,
+        boxShadow: "0 0 20px rgba(124,58,237,0.4)",
+        ease: "power2.out"
+      });
+    });
+    control.addEventListener("mouseleave", () => {
+      gsap.to(control, { scale: 1, duration: 0.2, boxShadow: "", ease: "power2.out" });
     });
   });
 }
 
 if (nav) {
-  const updateNavScroll = () => nav.classList.toggle("scrolled", window.scrollY > 60);
+  const updateNavScroll = () => {
+    const hero = document.querySelector(".hero");
+    const threshold = hero ? hero.offsetHeight - nav.offsetHeight : 60;
+    nav.classList.toggle("scrolled", window.scrollY > Math.max(60, threshold));
+  };
   updateNavScroll();
   window.addEventListener("scroll", updateNavScroll, { passive: true });
 }

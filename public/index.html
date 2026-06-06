@@ -53,18 +53,6 @@
     <section class="hero section-shell">
       <div class="grid-overlay" aria-hidden="true"></div>
       <div class="hero-glow" aria-hidden="true"></div>
-      <div class="hero-orb" aria-hidden="true"></div>
-      <a class="floating-brand-mark" href="/" aria-label="VibeFix home">
-        <strong>Vibe<span>Fix</span></strong>
-        <small>live diagnosis engine</small>
-      </a>
-      <div class="hero-signal-field" aria-hidden="true">
-        <span class="signal-ring ring-one"></span>
-        <span class="signal-ring ring-two"></span>
-        <span class="signal-packet packet-one">auth loop</span>
-        <span class="signal-packet packet-two">RLS risk</span>
-        <span class="signal-packet packet-three">safe prompt</span>
-      </div>
       <div class="container hero-content">
         <div class="hero-copy">
           <p class="eyebrow hero-badge animate-up">&#9889; BETA DIAGNOSIS AVAILABLE</p>
@@ -76,72 +64,13 @@
             <a class="btn btn-primary" href="#scanner">Run Free Safe First Move Scanner</a>
             <a class="btn btn-secondary" href="/payment">Get Deep Diagnosis</a>
           </div>
-          <p class="caption animate-up delay-4">Your app doesn't need more prompts. It needs a damage map.</p>
-          <p class="caption animate-up delay-4">Built for AI-made apps that need a safer next move, not another blind rewrite.</p>
-          <div class="hero-live-metrics animate-up delay-4" aria-label="Live VibeFix diagnostic metrics">
-            <article>
-              <span data-live-count data-suffix="%" data-min="88" data-max="94">92%</span>
-              <small>prompt clarity score</small>
-            </article>
-            <article>
-              <span data-live-count data-suffix="%" data-min="71" data-max="86">78%</span>
-              <small>prompt-again risk caught</small>
-            </article>
-            <article>
-              <span data-live-count data-suffix=" min" data-min="6" data-max="11">8 min</span>
-              <small>first damage map</small>
-            </article>
-          </div>
-          <div class="hero-prompt-path animate-up delay-4" aria-label="Prompt generation path">
-            <span>Paste symptom</span>
-            <i></i>
-            <span>Detect no-touch zones</span>
-            <i></i>
-            <span>Generate safer prompt</span>
-          </div>
-        </div>
-        <div class="hero-diagnostic animate-up delay-3" aria-label="Animated VibeFix diagnostic flow">
-          <div class="diagnostic-header">
-            <span>VibeFix live case file</span>
-            <strong>Risk scan active</strong>
-          </div>
-          <div class="diagnostic-flow">
-            <article class="flow-card flow-card-1">
-              <span>Input</span>
-              <strong>Broken AI app</strong>
-              <p>Preview works. Production login loops.</p>
-            </article>
-            <i aria-hidden="true"></i>
-            <article class="flow-card flow-card-2">
-              <span>Scan</span>
-              <strong>VibeFix scan</strong>
-              <p>Checking prompt-again risk and break layer.</p>
-            </article>
-            <i aria-hidden="true"></i>
-            <article class="flow-card flow-card-3 danger">
-              <span>Fix-Risk Score</span>
-              <strong>78/100</strong>
-              <p>High risk. Do not prompt broadly.</p>
-            </article>
-            <i aria-hidden="true"></i>
-            <article class="flow-card flow-card-4">
-              <span>No-Touch Zones</span>
-              <div class="flow-chips"><b>AUTH</b><b>DATABASE</b><b>ENV</b></div>
-            </article>
-            <i aria-hidden="true"></i>
-            <article class="flow-card flow-card-5 safe">
-              <span>Output</span>
-              <strong>Safe first prompt generated</strong>
-              <p>Inspect first. Plan before code.</p>
-            </article>
-          </div>
         </div>
       </div>
     </section>
 
     <section class="social-proof">
       <div class="proof-counter">
-        <span class="counter-number" id="diagnosed-count" data-count-to="7">0</span>
+        <span class="counter-number" id="diagnosed-count">7</span>
         <span class="counter-label">AI apps diagnosed</span>
         <span class="proof-divider">·</span>
         <span class="counter-number" data-live-count data-suffix="%" data-min="88" data-max="94">92%</span>
@@ -176,7 +105,7 @@
           <div class="break-stat"><span class="break-stat-number" data-count-to="7">0</span><span class="break-stat-label">Apps diagnosed</span></div>
           <div class="break-stat"><span class="break-stat-number" data-count-to="34" data-suffix="%">0%</span><span class="break-stat-label">Most common<br>Supabase RLS conflict</span></div>
           <div class="break-stat"><span class="break-stat-number" data-count-to="12" data-suffix="%">0%</span><span class="break-stat-label">Most dangerous<br>Exposed API keys</span></div>
-          <div class="break-stat"><span class="break-stat-number" data-live-count data-suffix="%" data-min="88" data-max="94">92%</span><span class="break-stat-label">Prompt clarity<br>live score</span></div>
+          <div class="break-stat"><span class="break-stat-number" data-count-to="92" data-suffix="%">0%</span><span class="break-stat-label">Prompt clarity<br>live score</span></div>
         </div>
       </div>
     </section>
@@ -380,84 +309,6 @@
       </div>
     </section>
 
-    <section class="section-shell" id="loop-detector">
-      <div class="container">
-        <div class="section-heading reveal">
-          <span class="section-kicker">Fix-Break Loop Detector</span>
-          <h2>If every fix creates a new bug, stop prompting.</h2>
-          <p class="muted">VibeFix flags when you are probably not dealing with one isolated bug and should collect evidence before another broad AI edit.</p>
-        </div>
-        <div class="problem-grid">
-          <article class="feature-card reveal"><h3>Loop signal</h3><p>Three or more fix attempts, unrelated file edits, rewrites, or repeated “fix this” prompts raise prompt-again risk.</p></article>
-          <article class="feature-card reveal"><h3>Likely systemic issue</h3><p>The scanner checks for env/config mismatch, auth boundary confusion, RLS/policy mismatch, route/state confusion, deploy mismatch, and AI over-editing.</p></article>
-          <article class="feature-card reveal"><h3>Safe response</h3><p>Do not run another broad fix prompt. Build the evidence pack, protect no-touch zones, and use a scoped repair prompt only.</p></article>
-        </div>
-      </div>
-    </section>
-
-    <section class="section-shell" id="sample-case-file">
-      <div class="container">
-        <div class="section-heading reveal">
-          <span class="section-kicker">Demo Case File</span>
-          <h2>Sample VibeFix Case File</h2>
-          <p class="muted">Demo case files available below. No fake proof. No fake numbers. Beta: first public case studies being built.</p>
-        </div>
-        <article class="sample-report reveal">
-          <div class="report-header">
-            <div>
-              <p class="caption">Demo case file</p>
-              <h3>Bolt app works in preview but breaks in production after Supabase auth change</h3>
-            </div>
-            <span class="status-pill warning">Fix-risk: 78/100</span>
-          </div>
-          <div class="report-sections-grid">
-            <div><span>Built With</span><strong>Bolt</strong><p>Supabase-backed dashboard app.</p></div>
-            <div><span>Symptom</span><strong>Production login redirect loop</strong><p>Preview works, production loops after callback.</p></div>
-            <div><span>Likely Layer</span><strong>Auth/env config</strong><p>Medium-high confidence because failure is production-only.</p></div>
-            <div><span>No-Touch Map</span><strong>Schema, RLS, checkout, UI</strong><p>Do not touch these until redirect/env mismatch is checked.</p></div>
-            <div><span>Direction</span><strong>Fix-forward if mismatch confirmed</strong><p>Rollback only if last change touched many unrelated files.</p></div>
-            <div><span>Safe Move</span><strong>Compare preview vs production config</strong><p>Check auth callback URLs and env variable names first.</p></div>
-            <div><span>Safe Prompt</span><strong>Plan before code</strong><p>Ask Bolt to inspect production auth redirect config before making changes.</p></div>
-            <div><span>Regression</span><strong>Login, logout, redirect, session</strong><p>Retest previous working flows after the smallest fix.</p></div>
-          </div>
-        </article>
-      </div>
-    </section>
-
-    <section class="section-shell">
-      <div class="container">
-        <div class="section-heading reveal">
-          <span class="section-kicker">Why VibeFix</span>
-          <h2>Why normal AI chats can make this worse</h2>
-          <p class="muted">ChatGPT, Claude, Gemini, Cursor, Lovable and Bolt are useful. But when your app is already fragile, normal chat alone often lacks the damage map.</p>
-        </div>
-        <div class="problem-grid">
-          <article class="feature-card reveal"><h3>They may not know your last working state.</h3><p>VibeFix forces before/after context before suggesting a repair.</p></article>
-          <article class="feature-card reveal"><h3>They respond to vague prompts.</h3><p>"Fix this" can trigger broad edits, refactors, or unrelated changes.</p></article>
-          <article class="feature-card reveal"><h3>They do not know your no-touch zones.</h3><p>VibeFix explicitly protects auth, database, payment, env, and working flows.</p></article>
-          <article class="feature-card reveal"><h3>They do not track the loop.</h3><p>VibeFix detects when repeated fixes are causing new breaks.</p></article>
-        </div>
-      </div>
-    </section>
-
-    <section class="section-shell" id="deliverables">
-      <div class="container">
-        <div class="section-heading reveal">
-          <span class="section-kicker">What VibeFix gives</span>
-          <h2>A damage map before edits.</h2>
-          <p class="muted">Most broken AI apps do not need a rewrite. They need a scoped repair decision and prompts that preserve what still works.</p>
-        </div>
-        <div class="case-grid">
-          <article class="risk-card reveal"><span>01</span><h3>Likely root cause</h3><p>Plain-English diagnosis tied to the submitted tool, symptom, last change, and evidence.</p></article>
-          <article class="risk-card reveal"><span>02</span><h3>No-touch map</h3><p>Auth, database, payment, env, admin, production data, and working flows that should not be touched without proof.</p></article>
-          <article class="risk-card reveal"><span>03</span><h3>Rollback vs fix-forward</h3><p>A practical direction for whether to revert, pause for evidence, or apply the smallest isolated fix.</p></article>
-          <article class="risk-card reveal"><span>04</span><h3>Tool-specific prompts</h3><p>Scoped prompts for Cursor, Lovable, Bolt, Replit, v0, Claude Code, Windsurf, and generic AI tools.</p></article>
-          <article class="risk-card reveal"><span>05</span><h3>Regression guardrails</h3><p>Checklist for old working flows, the broken flow, production/preview checks, and risky adjacent systems.</p></article>
-          <article class="risk-card reveal"><span>06</span><h3>Confidence boundaries</h3><p>VibeFix tells you when evidence is weak instead of pretending certainty from incomplete logs.</p></article>
-        </div>
-      </div>
-    </section>
-
     <section class="section-shell" id="pricing">
       <div class="container">
         <div class="section-heading centered reveal">
@@ -467,58 +318,47 @@
         </div>
         <div class="pricing-tier-grid upgraded-pricing">
           <article class="pricing-card plan-free reveal">
-            <div class="plan-orbit" aria-hidden="true"></div>
-            <div class="beta-tag">Free</div>
-            <p class="caption">Limited benefits</p>
+            <div class="plan-badge">START HERE</div>
+            <h3>Free</h3>
             <div class="price">₹0</div>
             <ul class="pricing-list">
-              <li>Safe First Move Scanner</li>
-              <li>Basic safe prompt output</li>
-              <li>Case File preview</li>
-              <li>Basic tool-specific prompt export</li>
+              <li>safe first move scanner</li>
+              <li>prompt again risk score</li>
+              <li>no-touch zone map</li>
+              <li>basic scoped repair prompt</li>
+              <li>tool specific export</li>
             </ul>
-            <p class="plan-summary">For a quick first read before prompting again.</p>
-            <div class="plan-meter"><span style="width: 34%"></span></div>
             <a class="btn btn-secondary full-width" href="#scanner">Run Free Scanner</a>
           </article>
-          <article class="pricing-card plan-review reveal">
-            <div class="plan-orbit" aria-hidden="true"></div>
-            <div class="beta-tag">Beta</div>
-            <p class="caption">Prompt Review</p>
-            <div class="price">₹999 <small>to 1499</small></div>
+          <article class="pricing-card plan-review plan-amber reveal">
+            <div class="plan-badge amber">REVIEW BEFORE SENDING</div>
+            <h3>Prompt Review</h3>
+            <div class="price">₹1,499</div>
             <ul class="pricing-list">
-              <li>Prompt autopsy</li>
-              <li>Safe prompt review</li>
-              <li>No-touch zones added manually</li>
-              <li>For one risky prompt before sending</li>
+              <li>manual review of 1 high risk prompt before you send it</li>
+              <li>no-touch zones added manually</li>
+              <li>12 hour turnaround</li>
+              <li>you get a yes or no on whether its safe to send</li>
             </ul>
-            <p class="plan-summary">For one risky prompt before you send it to Cursor, Lovable, Bolt, Replit, v0, Claude Code, or Windsurf.</p>
-            <div class="plan-meter"><span style="width: 62%"></span></div>
-            <a class="btn btn-secondary full-width" href="#scanner">Run Free Scanner First</a>
+            <a class="btn btn-secondary full-width" href="/payment">Get Prompt Review</a>
           </article>
-          <article class="pricing-card plan-main reveal">
-            <div class="plan-orbit" aria-hidden="true"></div>
-            <div class="beta-tag">Most Useful</div>
-            <p class="caption">Deep Diagnosis</p>
+          <article class="pricing-card plan-main plan-purple reveal">
+            <div class="plan-badge purple">MOST COMPLETE</div>
+            <h3>Deep Diagnosis</h3>
             <div class="price-display">
               <span class="price-amount">₹7,530</span>
-              <span class="price-label">beta pricing</span>
             </div>
-            <p class="plan-summary">For high-risk app breaks where auth, database, deployment, payments, or AI over-editing may be involved.</p>
             <ul class="pricing-list">
-              <li>Likely root cause</li>
-              <li>Confidence score</li>
-              <li>No-touch map</li>
-              <li>Rollback vs fix-forward</li>
-              <li>Priority fix order</li>
-              <li>Exact tool-specific repair prompts</li>
-              <li>Post-fix regression checklist</li>
-              <li>Written report reviewed manually</li>
+              <li>likely root cause</li>
+              <li>confidence score</li>
+              <li>no-touch map</li>
+              <li>rollback vs fix forward</li>
+              <li>exact tool specific repair prompts</li>
+              <li>regression checklist</li>
+              <li>written report reviewed manually</li>
             </ul>
-            <div class="plan-meter"><span style="width: 94%"></span></div>
-            <div class="refund-line">Refund if we cannot identify a likely root cause from the evidence submitted.</div>
             <a class="btn btn-primary full-width" href="/payment">Get Deep Diagnosis — ₹7,530</a>
-            <p class="caption">Delivery within 48 hours after completed intake.</p>
+            <p class="caption">Full refund if we cant find the root cause</p>
           </article>
         </div>
       </div>
@@ -594,10 +434,10 @@
     </section>
   </main>
 
-  <a class="mobile-sticky-cta" href="#scanner">
-    <span>Your app is broken</span>
-    <strong>Run Safe Scanner</strong>
-  </a>
+  <div class="mobile-sticky-cta" aria-label="Mobile quick action">
+    <span>App broken?</span>
+    <a href="#scanner">Run Free Scanner</a>
+  </div>
 
   <a class="prompt-nudge" href="#scanner" aria-label="Generate a safer prompt">
     <span>Prompt generator live</span>
