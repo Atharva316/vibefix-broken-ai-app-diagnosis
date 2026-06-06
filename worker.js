@@ -115,7 +115,7 @@ function contentTypeFor(path) {
 }
 
 async function startGoogleAuth(request, env) {
-  if (env.SUPABASE_URL) return startSupabaseGoogleAuth(request, env);
+  if (isSupabaseAuthConfigured(env)) return startSupabaseGoogleAuth(request, env);
   if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET) return startGuestSession(request, env);
 
   const url = new URL(request.url);
@@ -181,11 +181,13 @@ async function startGuestSession(request, env) {
 }
 
 async function finishSupabaseAuth(request, env) {
-  if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) return startGuestSession(request, env);
-
   const url = new URL(request.url);
   const next = safeNext(url.searchParams.get("next") || "/dashboard/ai");
   const code = url.searchParams.get("code");
+
+  if (!isSupabaseAuthConfigured(env)) {
+    return startGuestSession(new Request(`${url.origin}/auth/guest?next=${encodeURIComponent(next)}`, request), env);
+  }
 
   if (!code) {
     return html(`<!DOCTYPE html>
@@ -240,11 +242,11 @@ async function finishSupabaseAuth(request, env) {
     console.error("Supabase code exchange failed", error);
   }
 
-  return startGuestSession(new Request(`${url.origin}/auth/google?next=${encodeURIComponent(next)}`, request), env);
+  return startGuestSession(new Request(`${url.origin}/auth/guest?next=${encodeURIComponent(next)}`, request), env);
 }
 
 async function finishBrowserSupabaseSession(request, env) {
-  if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) return json({ error: "Supabase auth is not configured" }, 500);
+  if (!isSupabaseAuthConfigured(env)) return json({ error: "Supabase auth is not configured" }, 500);
   let payload;
   try {
     payload = await request.json();
@@ -294,6 +296,10 @@ async function createSupabaseSessionResponse(token, next, env) {
   return redirect(next, {
     "Set-Cookie": cookie(COOKIE_NAME, sessionId, { maxAge: SESSION_TTL_SECONDS })
   });
+}
+
+function isSupabaseAuthConfigured(env) {
+  return Boolean(env.SUPABASE_URL && env.SUPABASE_ANON_KEY);
 }
 
 async function finishGoogleAuth(request, env) {
