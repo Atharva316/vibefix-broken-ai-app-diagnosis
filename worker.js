@@ -74,11 +74,13 @@ export default {
 };
 
 async function serveStaticAsset(request, env) {
+  const url = new URL(request.url);
+  const path = normalizeAssetPath(url.pathname);
+
+  if (shouldFetchFreshAsset(path)) return fetchGitHubAsset(path);
   if (env.ASSETS) return env.ASSETS.fetch(request);
   if (!env.VIBEFIX_KV) return new Response("Not found", { status: 404 });
 
-  const url = new URL(request.url);
-  const path = normalizeAssetPath(url.pathname);
   const value = await env.VIBEFIX_KV.get(`asset:${path}`, { type: "arrayBuffer" });
 
   if (!value) return fetchGitHubAsset(path);
@@ -98,9 +100,13 @@ async function fetchGitHubAsset(path) {
   return new Response(response.body, {
     headers: {
       "Content-Type": contentTypeFor(path),
-      "Cache-Control": path === "/index.html" ? "public, max-age=60" : "public, max-age=3600"
+      "Cache-Control": shouldFetchFreshAsset(path) ? "no-store" : "public, max-age=3600"
     }
   });
+}
+
+function shouldFetchFreshAsset(path) {
+  return path.endsWith(".html") || path.endsWith(".css") || path.endsWith(".js");
 }
 
 function normalizeAssetPath(pathname) {
