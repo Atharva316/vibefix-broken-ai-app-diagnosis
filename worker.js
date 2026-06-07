@@ -77,8 +77,10 @@ async function serveStaticAsset(request, env) {
   const url = new URL(request.url);
   const path = normalizeAssetPath(url.pathname);
 
-  if (shouldFetchFreshAsset(path)) return fetchGitHubAsset(path);
-  if (env.ASSETS) return env.ASSETS.fetch(request);
+  if (env.ASSETS) {
+    return withStaticAssetHeaders(await env.ASSETS.fetch(request), path);
+  }
+
   if (!env.VIBEFIX_KV) return new Response("Not found", { status: 404 });
 
   const value = await env.VIBEFIX_KV.get(`asset:${path}`, { type: "arrayBuffer" });
@@ -90,6 +92,19 @@ async function serveStaticAsset(request, env) {
       "Content-Type": contentTypeFor(path),
       "Cache-Control": path === "/index.html" ? "public, max-age=60" : "public, max-age=3600"
     }
+  });
+}
+
+function withStaticAssetHeaders(response, path) {
+  if (!shouldFetchFreshAsset(path)) return response;
+
+  const headers = new Headers(response.headers);
+  headers.set("Cache-Control", "no-store, max-age=0");
+
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers
   });
 }
 
