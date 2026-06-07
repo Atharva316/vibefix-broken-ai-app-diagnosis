@@ -2,13 +2,20 @@ const revealElements = document.querySelectorAll(".reveal");
 const progressBar = document.querySelector(".scroll-progress");
 
 if (progressBar) {
+  let progressTicking = false;
   const updateProgress = () => {
     const max = document.documentElement.scrollHeight - window.innerHeight;
     const progress = max > 0 ? (window.scrollY / max) * 100 : 0;
     progressBar.style.width = `${Math.min(100, Math.max(0, progress))}%`;
+    progressTicking = false;
+  };
+  const requestProgressUpdate = () => {
+    if (progressTicking) return;
+    progressTicking = true;
+    requestAnimationFrame(updateProgress);
   };
   updateProgress();
-  window.addEventListener("scroll", updateProgress, { passive: true });
+  window.addEventListener("scroll", requestProgressUpdate, { passive: true });
 }
 
 if ("IntersectionObserver" in window) {
@@ -232,78 +239,6 @@ function initAuthModal() {
   });
 }
 
-function initGsapAnimations() {
-  const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-  if (!window.gsap || reduceMotion) return;
-  const { gsap } = window;
-  if (window.ScrollTrigger) gsap.registerPlugin(window.ScrollTrigger);
-
-  gsap.from(".site-nav", { y: -20, opacity: 0, duration: 0.5, ease: "power2.out" });
-  const heroTimeline = gsap.timeline({ defaults: { ease: "power2.out" } });
-  heroTimeline
-    .from(".hero-badge", { y: 18, opacity: 0, duration: 0.45 })
-    .from(".hero h1", { y: 28, opacity: 0, duration: 0.6 }, "-=0.18")
-    .from(".hero .subhead", { y: 20, opacity: 0, duration: 0.5 }, "-=0.12")
-    .from(".hero .hero-actions .btn", { y: 18, opacity: 0, duration: 0.42, stagger: 0.08 }, "-=0.1");
-
-  if (window.ScrollTrigger) {
-    gsap.utils.toArray(".section-heading").forEach((heading) => {
-      gsap.from(heading, {
-        y: 40,
-        opacity: 0,
-        duration: 0.6,
-        ease: "power2.out",
-        scrollTrigger: { trigger: heading, start: "top 85%" }
-      });
-    });
-
-    gsap.utils.toArray(".problem-grid").forEach((grid) => {
-      gsap.from(grid.querySelectorAll(".feature-card"), {
-        y: 50,
-        opacity: 0,
-        duration: 0.5,
-        stagger: 0.15,
-        ease: "power2.out",
-        scrollTrigger: { trigger: grid, start: "top 85%" }
-      });
-    });
-
-    gsap.from("#pricing .pricing-card", {
-      scale: 0.95,
-      opacity: 0,
-      duration: 0.6,
-      stagger: 0.12,
-      ease: "back.out(1.2)",
-      scrollTrigger: { trigger: "#pricing", start: "top 85%" }
-    });
-
-    gsap.utils.toArray(".story-rail").forEach((rail) => {
-      gsap.from(rail.querySelectorAll(".story-card"), {
-        y: 36,
-        opacity: 0,
-        duration: 0.5,
-        stagger: 0.12,
-        ease: "power2.out",
-        scrollTrigger: { trigger: rail, start: "top 85%" }
-      });
-    });
-  }
-
-  document.querySelectorAll(".btn, button, .nav-auth-link, .nav-signout, .avatar-button, .mobile-sticky-cta a").forEach((control) => {
-    control.addEventListener("mouseenter", () => {
-      gsap.to(control, {
-        scale: 1.035,
-        duration: 0.2,
-        boxShadow: "0 0 20px rgba(124,58,237,0.4)",
-        ease: "power2.out"
-      });
-    });
-    control.addEventListener("mouseleave", () => {
-      gsap.to(control, { scale: 1, duration: 0.2, boxShadow: "", ease: "power2.out" });
-    });
-  });
-}
-
 if (nav) {
   const updateNavScroll = () => {
     const hero = document.querySelector(".hero");
@@ -342,10 +277,8 @@ function initCounters() {
       observer.disconnect();
     }
   }, { threshold: 0.35 });
-}
 
-function initLiveMetrics() {
-  return;
+  stats.forEach((stat) => observer.observe(stat));
 }
 
 function initSectionFocus() {
@@ -418,10 +351,6 @@ function initBreakChecker() {
   input.addEventListener("keypress", (event) => {
     if (event.key === "Enter") button.click();
   });
-}
-
-function initPanicModal() {
-  return;
 }
 
 const quizState = {

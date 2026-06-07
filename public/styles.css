@@ -13,10 +13,12 @@
 
 html {
   scroll-behavior: smooth;
+  scroll-padding-top: 96px;
 }
 
 body {
   min-height: 100vh;
+  overflow-x: hidden;
   background: #0A0A0F;
   color: #94A3B8;
   font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -541,6 +543,13 @@ pre {
   padding: 100px 0;
 }
 
+.section-shell:not(.hero),
+.break-checker,
+.social-proof {
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 760px;
+}
+
 .section-shell::before,
 .break-counter::before,
 .break-checker::before,
@@ -946,6 +955,41 @@ h3 {
   justify-content: center;
   gap: 14px;
   margin-top: 42px;
+}
+
+.hero-value-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  width: min(100%, 760px);
+  margin-top: 22px;
+}
+
+.hero-value-grid span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 44px;
+  padding: 9px 12px;
+  border: 1px solid rgba(124, 58, 237, 0.22);
+  border-radius: 10px;
+  background: rgba(18, 18, 26, 0.52);
+  color: #B8C0D9;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.hero-value-grid b {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: rgba(124, 58, 237, 0.16);
+  color: #A78BFA;
+  font-size: 12px;
 }
 
 .hero-live-metrics {
@@ -3663,6 +3707,15 @@ textarea:focus {
   .hero-actions,
   .pricing-actions {
     width: 100%;
+  }
+
+  .hero-value-grid {
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
+  .hero-value-grid span {
+    justify-content: flex-start;
   }
 
   .btn {
