@@ -19,7 +19,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/styles.css?v=ux-speed-20260607" />
+  <link rel="stylesheet" href="/styles.css?v=premium-zinc-20260607" />
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -138,24 +138,46 @@
 
         <div class="scanner-layout simplified-scanner">
           <form class="scanner-form reveal" id="safe-scanner-form">
-            <div class="form-grid-2 primary-scan-fields">
-              <label>Builder/tool used
-                <select name="builder">
+            <div class="primary-scan-fields premium-selector-stack">
+              <fieldset class="segmented-field">
+                <legend>Builder/tool used</legend>
+                <select name="builder" class="synced-select" aria-label="Builder/tool used">
                   <option>Lovable</option><option>Bolt</option><option>Cursor</option><option>Replit</option><option>v0</option><option>Claude Code</option><option>Windsurf</option><option>ChatGPT</option><option>Gemini</option><option>DeepSeek</option><option>Other</option>
                 </select>
-              </label>
-              <label>What broke?
-                <select name="break_type">
+                <div class="selector-pill-grid" data-segmented-select="builder">
+                  <button type="button" class="select-pill is-selected" data-select-value="Lovable">Lovable</button>
+                  <button type="button" class="select-pill" data-select-value="Bolt">Bolt</button>
+                  <button type="button" class="select-pill" data-select-value="Cursor">Cursor</button>
+                  <button type="button" class="select-pill" data-select-value="Replit">Replit</button>
+                  <button type="button" class="select-pill" data-select-value="v0">v0</button>
+                  <button type="button" class="select-pill" data-select-value="Claude Code">Claude Code</button>
+                  <button type="button" class="select-pill" data-select-value="Windsurf">Windsurf</button>
+                  <button type="button" class="select-pill" data-select-value="Other">Other</button>
+                </div>
+              </fieldset>
+              <fieldset class="segmented-field">
+                <legend>What broke?</legend>
+                <select name="break_type" class="synced-select" aria-label="What broke?">
                   <option>auth/login/signup</option><option>database/data not loading</option><option>deployment</option><option>preview works but production broken</option><option>UI/layout</option><option>payment/checkout</option><option>env/config</option><option>routing</option><option>API integration</option><option>file upload</option><option>email</option><option>dashboard data</option><option>permissions</option><option>AI changed unrelated files</option><option>fix-break loop</option><option>blank screen</option><option>other</option>
                 </select>
-              </label>
+                <div class="selector-pill-grid" data-segmented-select="break_type">
+                  <button type="button" class="select-pill is-selected" data-select-value="auth/login/signup">Auth broke</button>
+                  <button type="button" class="select-pill" data-select-value="database/data not loading">Data not loading</button>
+                  <button type="button" class="select-pill" data-select-value="preview works but production broken">Preview vs production</button>
+                  <button type="button" class="select-pill" data-select-value="fix-break loop">Fix-break loop</button>
+                  <button type="button" class="select-pill" data-select-value="deployment">Deploy failed</button>
+                  <button type="button" class="select-pill" data-select-value="payment/checkout">Checkout broke</button>
+                  <button type="button" class="select-pill" data-select-value="UI/layout">UI/layout</button>
+                  <button type="button" class="select-pill" data-select-value="other">Other</button>
+                </div>
+              </fieldset>
             </div>
 
             <label>Current broken behavior
-              <textarea name="current_broken_behavior" placeholder="What does the user see now? What fails?"></textarea>
+              <textarea class="code-editor-textarea" name="current_broken_behavior" placeholder="What does the user see now? What fails?"></textarea>
             </label>
             <label>Last prompt/change before break
-              <textarea name="last_prompt" placeholder="Paste the exact prompt or describe the deploy/config/code change"></textarea>
+              <textarea class="code-editor-textarea" name="last_prompt" placeholder="Paste the exact prompt or describe the deploy/config/code change"></textarea>
             </label>
             <input type="hidden" name="issue_location" value="not sure" />
             <input type="hidden" name="break_timing" value="dont know" />
@@ -221,7 +243,7 @@
               <article class="risk-card result-card"><span>Evidence Confidence</span><strong id="confidence-score">--</strong></article>
             </div>
             <div class="prompt-card">
-              <div class="copy-row"><h3>Safe First Prompt</h3><button class="copy-btn" type="button" data-copy-target="safe-first-prompt">Copy</button></div>
+              <div class="copy-row"><h3>Safe First Prompt</h3><button class="copy-btn icon-copy-btn" type="button" data-copy-target="safe-first-prompt" aria-label="Copy safe first prompt"><svg aria-hidden="true" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg><span>Copy</span></button></div>
               <pre id="safe-first-prompt">Your scoped prompt will appear here.</pre>
             </div>
             <details class="case-file-more">
@@ -468,6 +490,6 @@
   <footer class="footer">
     VibeFix Â· Safe Prompting System Â· Not 24/7 support Â· Diagnosis for common AI-app break patterns
   </footer>
-  <script src="/site.js?v=ux-speed-20260607"></script>
+  <script src="/site.js?v=premium-zinc-20260607"></script>
 </body>
 </html>

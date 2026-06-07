@@ -79,6 +79,7 @@ initAuthModal();
 initCounters();
 initSectionFocus();
 initBreakChecker();
+initSegmentedSelects();
 
 async function hydrateAuthSlot(navElement) {
   const slot = navElement.querySelector(".auth-slot");
@@ -350,6 +351,25 @@ function initBreakChecker() {
   button.addEventListener("click", check);
   input.addEventListener("keypress", (event) => {
     if (event.key === "Enter") button.click();
+  });
+}
+
+function initSegmentedSelects() {
+  document.querySelectorAll("[data-segmented-select]").forEach((group) => {
+    const form = group.closest("form");
+    const select = form?.querySelector(`select[name="${group.dataset.segmentedSelect}"]`);
+    if (!select) return;
+
+    group.querySelectorAll("[data-select-value]").forEach((button) => {
+      button.classList.toggle("is-selected", button.dataset.selectValue === select.value);
+      button.addEventListener("click", () => {
+        select.value = button.dataset.selectValue || select.value;
+        select.dispatchEvent(new Event("change", { bubbles: true }));
+        select.dispatchEvent(new Event("input", { bubbles: true }));
+        group.querySelectorAll("[data-select-value]").forEach((item) => item.classList.remove("is-selected"));
+        button.classList.add("is-selected");
+      });
+    });
   });
 }
 
@@ -882,11 +902,21 @@ function animateRiskScore(score) {
 }
 
 function updateRiskCards(result) {
-  const riskClass = result.score >= 70 ? "risk-high" : result.score >= 36 ? "risk-medium" : "risk-low";
-  document.querySelectorAll(".risk-dashboard .risk-card").forEach((card) => {
+  const applyState = (selector, state) => {
+    const card = document.querySelector(selector)?.closest(".risk-card");
+    if (!card) return;
     card.classList.remove("risk-low", "risk-medium", "risk-high");
-    card.classList.add(riskClass);
-  });
+    card.classList.add(state);
+  };
+
+  const scoreState = result.score >= 70 ? "risk-high" : result.score >= 36 ? "risk-medium" : "risk-low";
+  const confidenceState = lower(result.confidence) === "high" ? "risk-low" : lower(result.confidence) === "medium" ? "risk-medium" : "risk-high";
+  const promptState = lower(result.promptRisk) === "high" ? "risk-high" : lower(result.promptRisk) === "medium" ? "risk-medium" : "risk-low";
+
+  applyState("#prompt-risk", promptState);
+  applyState("#risk-score", scoreState);
+  applyState("#confidence-score", confidenceState);
+  applyState("#break-layer", "risk-medium");
 }
 
 function zoneClass(zone) {
@@ -983,10 +1013,11 @@ async function copyText(text, button) {
     return setButtonStatus(button, "Copy unavailable");
   }
   const old = button.textContent;
+  const oldHtml = button.innerHTML;
   button.classList.add("copied");
   button.textContent = old.toLowerCase().includes("prompt") ? "Copied Safe Prompt" : "Copied";
   setTimeout(() => {
-    button.textContent = old;
+    button.innerHTML = oldHtml;
     button.classList.remove("copied");
   }, 1400);
 }
