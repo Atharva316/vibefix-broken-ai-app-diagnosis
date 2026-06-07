@@ -99,6 +99,7 @@ function withStaticAssetHeaders(response, path) {
   if (!shouldFetchFreshAsset(path)) return response;
 
   const headers = new Headers(response.headers);
+  headers.set("Content-Type", contentTypeFor(path));
   headers.set("Cache-Control", "no-store, max-age=0");
 
   return new Response(response.body, {
