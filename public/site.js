@@ -808,7 +808,7 @@ function buildNoTouchZones(payload, layer) {
 
 function rollbackDecision(payload, score, layer) {
   if (payload.rollback_available === "yes" && (score >= 70 || payload.unrelated_files === "yes" || String(payload.fix_attempts).includes("5"))) {
-    return "Rollback is safer. Return to the last working checkpoint, then re-apply the intended change with a smaller scoped prompt.";
+    return "Rollback is safer. Return to the last working checkpoint, then re-apply the intended change with a smaller scoped request.";
   }
   if (payload.rollback_available === "no" && score >= 70) {
     return "Pause and collect evidence before editing. No rollback plus high-risk systems means broad fix prompts are unsafe.";
@@ -902,14 +902,14 @@ function promptAutopsyWarning(payload) {
   const found = dangerousPhrase(prompts);
   if (found) return `Dangerous prompt language detected: "${found}". It is too broad and may cause unrelated edits. Ask AI to inspect first, plan before code, and preserve no-touch zones.`;
   if (!payload.last_prompt?.trim()) return "No last prompt was provided. Without it, do not assume cause. Collect the exact prompt/change before editing.";
-  return "No severe broad rewrite phrase detected, but still use a scoped prompt with no-touch zones.";
+  return "No severe broad rewrite phrase detected, but still define no-touch zones before asking for changes.";
 }
 
 function renderCaseFile(payload, result) {
   const panel = document.querySelector("#case-file");
   panel?.classList.remove("has-results");
   setText("#case-title", result.loopDetected ? "Loop Detected: stop broad fix prompts." : "VibeFix Case File generated.");
-  setText("#case-summary", result.loopDetected ? "You are probably not dealing with one isolated bug. Collect evidence and use scoped prompts only." : "Second-pass safety check complete. Use this case file before prompting again.");
+  setText("#case-summary", result.loopDetected ? "You are probably not dealing with one isolated bug. Collect evidence before another repair attempt." : "Second-pass safety check complete. Use this diagnosis before prompting again.");
   animateRiskScore(result.score);
   setText("#prompt-risk", result.promptRisk);
   setText("#break-layer", result.layer);
@@ -1053,8 +1053,8 @@ ${result.noTouchZones.map((zone) => `- ${zone}`).join("\n")}
 ## Rollback vs Fix-Forward
 ${result.rollbackDirection}
 
-## Safe First Prompt
-${result.safePrompt}
+## Repair Prompt
+Unlocked in Deep Diagnosis.
 
 ## Evidence Needed
 ${result.missingEvidence.map((item) => `- ${item}`).join("\n")}
@@ -1076,7 +1076,7 @@ async function copyText(text, button) {
   const old = button.textContent;
   const oldHtml = button.innerHTML;
   button.classList.add("copied");
-  button.textContent = old.toLowerCase().includes("prompt") ? "Copied Safe Prompt" : "Copied";
+  button.textContent = "Copied";
   setTimeout(() => {
     button.innerHTML = oldHtml;
     button.classList.remove("copied");
