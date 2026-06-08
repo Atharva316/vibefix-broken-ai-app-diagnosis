@@ -207,7 +207,7 @@ function showUpgradeGate(limit = 3) {
 function normalizePaymentLinks() {
   document.querySelectorAll("#upgrade-gate a, .upgrade-gate a, .empty-state a.btn-primary").forEach((link) => {
     link.href = PAYMENT_URL;
-    link.textContent = "Get Beta Diagnosis — ₹7,530";
+    link.textContent = "Get Beta Diagnosis - Rs 7,530 (~$90 USD)";
   });
 }
 

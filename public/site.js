@@ -80,6 +80,7 @@ initCounters();
 initSectionFocus();
 initBreakChecker();
 initSegmentedSelects();
+initCaseEmailCapture();
 
 async function hydrateAuthSlot(navElement) {
   const slot = navElement.querySelector(".auth-slot");
@@ -373,6 +374,55 @@ function initSegmentedSelects() {
   });
 }
 
+function initCaseEmailCapture() {
+  const form = document.querySelector("#case-email-form");
+  const status = document.querySelector("#case-email-status");
+  if (!form) return;
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (!scannerState.result || !scannerState.payload) {
+      if (status) status.textContent = "Run the scanner first.";
+      return;
+    }
+
+    const submitButton = form.querySelector("button[type='submit']");
+    const oldText = submitButton?.textContent || "";
+    if (submitButton) {
+      submitButton.disabled = true;
+      submitButton.textContent = "Saving...";
+    }
+    if (status) status.textContent = "";
+
+    try {
+      const email = new FormData(form).get("email");
+      const response = await fetch("/api/casefile-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          builder: scannerState.payload.builder,
+          break_type: scannerState.payload.break_type,
+          prompt_risk: scannerState.result.promptRisk,
+          likely_layer: scannerState.result.layer,
+          confidence: scannerState.result.confidence
+        })
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok || !data?.success) throw new Error(data?.error || "Could not save email.");
+      if (status) status.textContent = "Saved. You now own the case file reminder.";
+      form.reset();
+    } catch (error) {
+      if (status) status.textContent = error.message || "Could not save email.";
+    } finally {
+      if (submitButton) {
+        submitButton.disabled = false;
+        submitButton.textContent = oldText;
+      }
+    }
+  });
+}
+
 const quizState = {
   builder: "Lovable",
   break: "auth",
@@ -624,7 +674,7 @@ async function runProcessTracker() {
     "Checking prompt-again risk",
     "Detecting no-touch zones",
     "Checking rollback vs fix-forward",
-    "Building safe first prompt",
+    "Building diagnosis",
     "Running second-pass safety check",
     "Finalizing VibeFix Case File"
   ];
@@ -679,7 +729,7 @@ function buildCaseFile(payload) {
   const missingEvidence = missingEvidenceList(payload);
   const checklist = regressionChecklist(layer);
   const hypothesis = rootHypothesis(payload, layer);
-  const safePrompt = buildToolPrompt(payload, layer, noTouchZones, "Generic AI");
+  const safePrompt = "";
   const badPromptWarning = promptAutopsyWarning(payload);
 
   return {
@@ -867,7 +917,7 @@ function renderCaseFile(payload, result) {
   setText("#root-hypothesis", result.hypothesis);
   setText("#rollback-direction", result.rollbackDirection);
   setText("#safe-first-move", result.safeFirstMove);
-  setText("#safe-first-prompt", result.safePrompt);
+  setText("#safe-first-prompt", lockedRepairPromptMessage(result));
   setText("#bad-prompt-warning", result.badPromptWarning);
   updateRiskCards(result);
   const riskMeter = document.querySelector("#risk-meter");
@@ -877,10 +927,21 @@ function renderCaseFile(payload, result) {
   }
   setHtml("#no-touch-zones", result.noTouchZones.map((zone) => `<span class="${zoneClass(zone)}">${escapeHtml(zone)}</span>`).join(""));
   setHtml("#missing-evidence", result.missingEvidence.map((item) => `<li>${escapeHtml(item)}</li>`).join(""));
-  setHtml("#regression-checklist", result.checklist.map((item) => `<li>${escapeHtml(item)}</li>`).join(""));
+  setHtml("#regression-checklist", "<li>Unlocked in Deep Diagnosis with the exact tool-specific repair prompt.</li>");
   setHtml("#damage-timeline", result.timeline.map((item) => `<li>${escapeHtml(item)}</li>`).join(""));
+  const emailForm = document.querySelector("#case-email-form");
+  if (emailForm) emailForm.hidden = false;
   requestAnimationFrame(() => panel?.classList.add("has-results"));
   panel?.scrollIntoView?.({ behavior: "smooth", block: "start" });
+}
+
+function lockedRepairPromptMessage(result) {
+  return `Free diagnosis complete.
+
+Likely break layer: ${result.layer}
+Prompt-again risk: ${result.promptRisk}
+
+Exact repair prompts, tool-specific exports, and the regression checklist are unlocked in Deep Diagnosis.`;
 }
 
 function animateRiskScore(score) {

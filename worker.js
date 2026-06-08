@@ -61,6 +61,7 @@ export default {
       if (url.pathname === "/api/rollback-calculator" && request.method === "POST") return handleRollbackCalculator(request, env);
       if (url.pathname === "/api/prompt-checker" && request.method === "POST") return handlePromptChecker(request, env);
       if (url.pathname === "/api/safe-scan" && request.method === "POST") return handleSafeScan(request, env);
+      if (url.pathname === "/api/casefile-email" && request.method === "POST") return handleCasefileEmail(request, env);
       if (url.pathname.startsWith("/report/")) return renderStoredReport(request, env);
       if (url.pathname === "/pricing") return redirect(PAYMENT_URL);
       if (url.pathname === "/dashboard") return redirect("/dashboard/reports");
@@ -813,6 +814,40 @@ async function handleSafeScan(request, env) {
   return json({ success: true, stored });
 }
 
+async function handleCasefileEmail(request, env) {
+  assertKv(env);
+
+  let payload;
+  try {
+    payload = await request.json();
+  } catch (error) {
+    return json({ success: false, error: "Invalid JSON body" }, 400);
+  }
+
+  const email = clean(payload.email || "").toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return json({ success: false, error: "Enter a valid email address." }, 400);
+  }
+
+  const record = {
+    email,
+    source: "free_scanner_casefile",
+    created_at: new Date().toISOString(),
+    builder: clean(payload.builder || ""),
+    break_type: clean(payload.break_type || ""),
+    prompt_risk: clean(payload.prompt_risk || ""),
+    likely_layer: clean(payload.likely_layer || ""),
+    confidence: clean(payload.confidence || "")
+  };
+
+  const subscriberKey = `subscriber:${email}`;
+  const eventKey = `subscriber_event:${Date.now()}:${crypto.randomUUID()}`;
+  await env.VIBEFIX_KV.put(subscriberKey, JSON.stringify(record));
+  await env.VIBEFIX_KV.put(eventKey, JSON.stringify(record), { expirationTtl: 60 * 60 * 24 * 180 });
+
+  return json({ success: true });
+}
+
 async function saveIntakeSubmission(env, payload, reportRecord) {
   await supabaseInsert(env, "vibefix_intakes", {
     razorpay_payment_id: clean(payload.payment_id || payload.razorpay_payment_id || payload.razorpay_order_id || ""),
@@ -1495,7 +1530,7 @@ function getIssueProfile(breakType) {
         "Run the same feature in an incognito session to avoid cached state masking issues.",
         "Write down what the last change was and why it caused the regression.",
         "Redeploy cleanly after verification instead of stacking hot fixes.",
-        "Watch the updated component for 48 hours after release."
+        "Watch the updated component closely after release."
       ],
       nextRisk: () => "The next likely break is another flow that depends on the same updated component or shared state, because the original issue came from a regression introduced by a recent change."
     },
@@ -1555,7 +1590,7 @@ function getIssueProfile(breakType) {
         "Retest password reset or magic-link flow if your app uses it.",
         "Confirm protected pages still redirect correctly after login.",
         "Document the callback or session setting that caused the failure.",
-        "Monitor auth-related errors for the next 48 hours."
+        "Monitor auth-related errors after release."
       ],
       nextRisk: () => "If the auth root cause is only patched at the symptom level, the next failure will likely be session persistence, protected-route access, or onboarding for new users."
     },
@@ -1675,7 +1710,7 @@ function getIssueProfile(breakType) {
         "Confirm the success page receives and preserves the expected payment identifiers.",
         "Verify the paid user sees the next intended state immediately after checkout.",
         "Document which payment callback or redirect assumption was wrong.",
-        "Watch the checkout flow closely for 48 hours."
+        "Watch the checkout flow closely after release."
       ],
       nextRisk: () => "If the root cause is ignored, the next failure is usually duplicate charges, missing paid access, or a mismatch between payment success and what the app unlocks afterward."
     },
@@ -1735,7 +1770,7 @@ function getIssueProfile(breakType) {
         "Retest the original bug plus one adjacent flow after every change.",
         "Save the last working version before sending the next repair prompt.",
         "Document which prompt caused the biggest regression.",
-        "Use smaller, file-specific prompts for the next 48 hours."
+        "Use smaller, file-specific prompts after release."
       ],
       nextRisk: () => "If the repair loop continues, the next break will probably be an unrelated but working part of the app that the AI touched while trying to fix the original issue."
     },
@@ -2291,7 +2326,7 @@ function renderReportsPage(user, reports, env) {
     <div class="empty-state">
       <h3>No reports yet.</h3>
       <p>Get your first diagnosis →</p>
-      <a class="btn btn-primary" href="${escapeAttr(checkout)}">Get Beta Diagnosis — ₹7,530</a>
+      <a class="btn btn-primary" href="${escapeAttr(checkout)}">Get Beta Diagnosis &mdash; &#8377;7,530 (~$90 USD)</a>
     </div>
   `;
 
@@ -2373,7 +2408,7 @@ function renderAiPage(user, env) {
         </div>
         <div class="upgrade-gate" id="upgrade-gate" hidden>
           <p>You have used all 3 free prompt generations. Get the full VibeFix diagnosis report to continue.</p>
-          <a class="btn btn-primary" href="${escapeAttr(upgradeUrl)}">Get Beta Diagnosis — ₹7,530</a>
+          <a class="btn btn-primary" href="${escapeAttr(upgradeUrl)}">Get Beta Diagnosis &mdash; &#8377;7,530 (~$90 USD)</a>
         </div>
       </aside>
     </section>
