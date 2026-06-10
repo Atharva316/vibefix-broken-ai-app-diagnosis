@@ -52,6 +52,8 @@ export default {
       if (url.pathname === "/auth/google/callback") return finishGoogleAuth(request, env);
       if (url.pathname === "/auth/session" && request.method === "POST") return finishBrowserSupabaseSession(request, env);
       if (url.pathname === "/auth/signout") return signOut(request, env);
+      if (url.pathname === "/api/config") return json(getClientConfig(env));
+      if (url.pathname === "/api/auth/exchange" && request.method === "POST") return exchangeSupabaseSession(request, env);
       if (url.pathname === "/api/me") return json(await getPublicUserState(request, env));
       if (url.pathname === "/api/ai" && request.method === "POST") return handleAi(request, env);
       if (url.pathname === "/api/diagnose" && request.method === "POST") return handleDiagnose(request, env);
@@ -2967,4 +2969,91 @@ function escapeHtml(value) {
 
 function escapeAttr(value) {
   return escapeHtml(value).replace(/`/g, "&#96;");
+}
+
+function getClientConfig(env) {
+  const googleOAuthEnabled = typeof env.SUPABASE_GOOGLE_ENABLED === "string"
+    ? env.SUPABASE_GOOGLE_ENABLED === "true"
+    : undefined;
+
+  return {
+    supabaseUrl: env.SUPABASE_URL || "",
+    supabaseAnonKey: env.SUPABASE_ANON_KEY || "",
+    loginPath: "/login",
+    googleOAuthEnabled
+  };
+}
+
+async function exchangeSupabaseSession(request, env) {
+  assertEnv(env, ["SUPABASE_URL", "SUPABASE_ANON_KEY"]);
+  assertKv(env);
+
+  let body = {};
+  try {
+    body = await request.json();
+  } catch (error) {
+    return new Response(JSON.stringify({ success: false, error: "Invalid JSON body." }), {
+      status: 400,
+      headers: { "Content-Type": "application/json; charset=utf-8" }
+    });
+  }
+
+  const accessToken = clean(body.accessToken || "");
+  if (!accessToken) {
+    return new Response(JSON.stringify({ success: false, error: "Missing access token." }), {
+      status: 400,
+      headers: { "Content-Type": "application/json; charset=utf-8" }
+    });
+  }
+
+  const supabaseUser = await getSupabaseUser(env, accessToken);
+  if (!supabaseUser) {
+    return new Response(JSON.stringify({ success: false, error: "Supabase session could not be verified." }), {
+      status: 401,
+      headers: { "Content-Type": "application/json; charset=utf-8" }
+    });
+  }
+
+  const userId = supabaseUser.id;
+  const user = {
+    googleId: userId,
+    email: supabaseUser.email || "",
+    name: supabaseUser.user_metadata?.full_name || supabaseUser.user_metadata?.name || supabaseUser.email || "VibeFix User",
+    avatar: supabaseUser.user_metadata?.avatar_url || supabaseUser.user_metadata?.picture || "",
+    created_at: supabaseUser.created_at || new Date().toISOString(),
+    diagnosis_count: Number((await env.VIBEFIX_KV.get(`diagnosis_count:${userId}`)) || "0"),
+    auth_provider: supabaseUser.app_metadata?.provider || "email"
+  };
+
+  await env.VIBEFIX_KV.put(`user:${userId}`, JSON.stringify(user));
+  const sessionId = cryptoRandom();
+  await env.VIBEFIX_KV.put(`session:${sessionId}`, JSON.stringify({
+    userId,
+    created_at: new Date().toISOString(),
+    source: "supabase"
+  }), { expirationTtl: SESSION_TTL_SECONDS });
+
+  const response = new Response(JSON.stringify({
+    success: true,
+    user
+  }), {
+    headers: {
+      "Content-Type": "application/json; charset=utf-8",
+      "Set-Cookie": cookie(COOKIE_NAME, sessionId, { maxAge: SESSION_TTL_SECONDS })
+    }
+  });
+
+  return response;
+}
+
+async function getSupabaseUser(env, accessToken) {
+  const response = await fetch(`${env.SUPABASE_URL}/auth/v1/user`, {
+    headers: {
+      apikey: env.SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${accessToken}`
+    }
+  });
+
+  if (!response.ok) return null;
+  return response.json();
 }
