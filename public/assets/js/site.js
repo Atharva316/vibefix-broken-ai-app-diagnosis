@@ -92,7 +92,7 @@ async function hydrateAuthSlot(navElement) {
     const user = response.ok ? await response.json() : null;
 
     if (!user) {
-      slot.innerHTML = `<a class="nav-auth-link" href="/auth/google" data-auth-open>Sign In</a>`;
+      slot.innerHTML = `<a class="nav-auth-link" href="/login.html">Sign In</a>`;
       return;
     }
 
@@ -103,7 +103,7 @@ async function hydrateAuthSlot(navElement) {
       <a class="nav-signout" href="/auth/signout">Sign Out</a>
     `;
   } catch (error) {
-    slot.innerHTML = `<a class="nav-auth-link" href="/auth/google" data-auth-open>Sign In</a>`;
+    slot.innerHTML = `<a class="nav-auth-link" href="/login.html">Sign In</a>`;
   }
 }
 
