@@ -10,16 +10,32 @@ The site is for non-technical founders and indie builders using Lovable, Bolt, C
 
 ## Stack
 
-- Cloudflare Worker entry: `worker.js`
+- Cloudflare Worker entry: `src/worker.js`
 - Static assets: `public/`
 - Deploy config: `wrangler.toml`
-- Supabase setup SQL: `supabase-setup.sql`
+- Supabase setup SQL: `database/supabase-setup.sql`
 - No frontend framework is currently used.
+
+## Project layout
+
+```
+src/worker.js              Cloudflare Worker (API, auth, dashboard)
+database/supabase-setup.sql
+public/
+  index.html               Homepage
+  sitemap.xml
+  assets/css|js|images/    Shared styles, scripts, images
+  pages/                   Intake and payment flow
+  tools/                   Interactive scanners and calculators
+  guides/                  SEO diagnosis guides
+```
+
+Public URLs like `/intake.html` and `/styles.css` are preserved via path aliases in the worker.
 
 ## Important Commands
 
-- Syntax check Worker: `node --check worker.js`
-- Syntax check site JS: `node --check public/site.js`
+- Syntax check Worker: `node --check src/worker.js`
+- Syntax check site JS: `node --check public/assets/js/site.js`
 - Cloudflare dry run: `npx wrangler deploy --dry-run`
 - Local dev: `npx wrangler dev`
 

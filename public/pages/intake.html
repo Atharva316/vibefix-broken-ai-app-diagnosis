@@ -5,10 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>VibeFix Broken App Diagnosis Intake</title>
   <meta name="description" content="Submit the details needed for your VibeFix Broken App Diagnosis report." />
+  <meta property="og:title" content="VibeFix Broken App Diagnosis Intake" />
+  <meta property="og:description" content="Submit the details needed to diagnose your broken AI-built app." />
+  <meta property="og:image" content="https://vibefix-broken-ai-app-diagnosis.atharvam144.workers.dev/assets/images/og-image.svg" />
+  <meta property="og:url" content="https://vibefix-broken-ai-app-diagnosis.atharvam144.workers.dev/intake.html" />
+  <meta property="og:type" content="website" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="/assets/css/styles.css" />
 </head>
 <body>
   <nav class="site-nav" aria-label="Primary navigation">
@@ -19,9 +24,6 @@
       <a href="/#pricing">Pricing</a>
       <a href="/#faq">FAQ</a>
     </div>
-    <div class="auth-slot">
-      <a class="nav-auth-link" href="/login.html">Sign In</a>
-    </div>
   </nav>
 
   <main class="intake-page-shell">
@@ -31,8 +33,9 @@
         <h1>VibeFix Broken App Diagnosis Intake</h1>
         <p class="subhead">Submit the details needed to diagnose your broken AI-built app.</p>
         <p class="muted">This intake helps identify what changed, what broke, whether rollback or fix-forward is safer, what not to touch, and the safest AI prompts to use next.</p>
-        <p class="muted">After submitting this form, you’ll receive a written diagnosis report by email within 48 hours.</p>
+        <p class="muted">After submitting this form, you’ll receive a written diagnosis report by email within 2-3 business days.</p>
         <div class="warning-box">VibeFix is a diagnosis report for common AI-built app break patterns. It is not 24/7 emergency support, full security testing, legal/compliance review, guaranteed implementation, or full code fixing.</div>
+        <div class="secret-warning">Do not submit API keys, database passwords, private tokens, seed phrases, service role keys, admin credentials, or production secrets. Use test credentials only.</div>
       </section>
 
       <div class="intake-layout">
@@ -115,6 +118,7 @@
               <span class="intake-section-number">04</span>
               <h2>Build tool</h2>
             </div>
+            <div class="intake-grid">
             <div class="form-field">
               <label for="build_tool">What did you build the app with? <span class="required-mark">*</span></label>
               <select id="build_tool" name="build_tool" required>
@@ -126,8 +130,34 @@
                 <option>v0</option>
                 <option>Claude Code</option>
                 <option>Windsurf</option>
+                <option>ChatGPT</option>
+                <option>Gemini</option>
+                <option>DeepSeek</option>
                 <option>Other</option>
               </select>
+            </div>
+            <div class="form-field">
+              <label for="original_builder">Original app built with</label>
+              <select id="original_builder" name="original_builder">
+                <option value="">Select if different</option>
+                <option>Lovable</option>
+                <option>Bolt</option>
+                <option>Cursor</option>
+                <option>Replit</option>
+                <option>v0</option>
+                <option>Claude Code</option>
+                <option>Windsurf</option>
+                <option>ChatGPT</option>
+                <option>Gemini</option>
+                <option>DeepSeek</option>
+                <option>Other</option>
+              </select>
+            </div>
+            <div class="form-field full">
+              <label for="last_ai_tool">Last AI/tool that made the change</label>
+              <input id="last_ai_tool" name="last_ai_tool" type="text" placeholder="Example: Cursor, Lovable, Bolt, Claude Code, ChatGPT, Gemini, etc." />
+              <p class="helper-text">This helps identify the most suspicious change boundary. It does not prove cause by itself.</p>
+            </div>
             </div>
           </section>
 
@@ -215,6 +245,40 @@
                 <textarea id="already_tried" name="already_tried" required></textarea>
                 <p class="helper-text">List every fix attempt, prompt, rollback, setting change, or redeploy you already tried.</p>
               </div>
+              <div class="form-field full">
+                <label for="recent_prompts">Last 1-5 AI prompts, if available</label>
+                <textarea id="recent_prompts" name="recent_prompts" placeholder="Paste each recent prompt on a new line."></textarea>
+                <p class="helper-text">This is used for prompt autopsy and fix-break loop detection.</p>
+              </div>
+              <div class="form-field">
+                <label for="fix_attempt_count">Number of fix attempts</label>
+                <select id="fix_attempt_count" name="fix_attempt_count">
+                  <option value="">Select if known</option>
+                  <option>0</option>
+                  <option>1-2</option>
+                  <option>3-5</option>
+                  <option>More than 5</option>
+                  <option>Not sure</option>
+                </select>
+              </div>
+              <div class="form-field">
+                <label for="unrelated_files_touched">Did AI touch unrelated files?</label>
+                <select id="unrelated_files_touched" name="unrelated_files_touched">
+                  <option value="">Select answer</option>
+                  <option>Yes</option>
+                  <option>No</option>
+                  <option>Not sure</option>
+                </select>
+              </div>
+              <div class="form-field full">
+                <label for="ai_rewrite_done">Did AI rewrite, rebuild, or heavily refactor anything?</label>
+                <select id="ai_rewrite_done" name="ai_rewrite_done">
+                  <option value="">Select answer</option>
+                  <option>Yes</option>
+                  <option>No</option>
+                  <option>Not sure</option>
+                </select>
+              </div>
             </div>
           </section>
 
@@ -242,6 +306,44 @@
                   <option>Production only</option>
                   <option>Both preview and production</option>
                   <option>Local environment only</option>
+                  <option>Mobile only</option>
+                  <option>Desktop only</option>
+                  <option>Not sure</option>
+                </select>
+              </div>
+              <div class="form-field">
+                <label for="production_users_affected">Are production users affected?</label>
+                <select id="production_users_affected" name="production_users_affected">
+                  <option value="">Select answer</option>
+                  <option>Yes</option>
+                  <option>No</option>
+                  <option>Not sure</option>
+                </select>
+              </div>
+              <div class="form-field">
+                <label for="real_data_involved">Is real user data involved?</label>
+                <select id="real_data_involved" name="real_data_involved">
+                  <option value="">Select answer</option>
+                  <option>Yes</option>
+                  <option>No</option>
+                  <option>Not sure</option>
+                </select>
+              </div>
+              <div class="form-field">
+                <label for="auth_payment_admin_involved">Does this involve auth, payment, admin, or permissions?</label>
+                <select id="auth_payment_admin_involved" name="auth_payment_admin_involved">
+                  <option value="">Select answer</option>
+                  <option>Yes</option>
+                  <option>No</option>
+                  <option>Not sure</option>
+                </select>
+              </div>
+              <div class="form-field">
+                <label for="rollback_available">Is a rollback/checkpoint available?</label>
+                <select id="rollback_available" name="rollback_available">
+                  <option value="">Select answer</option>
+                  <option>Yes</option>
+                  <option>No</option>
                   <option>Not sure</option>
                 </select>
               </div>
@@ -420,6 +522,10 @@
       formData.set("app_name", payload.app_name);
       formData.set("build_tool", payload.build_tool);
       formData.set("break_type", payload.break_type);
+      formData.set("last_ai_tool", payload.last_ai_tool || "");
+      formData.set("original_builder", payload.original_builder || "");
+      formData.set("fix_attempt_count", payload.fix_attempt_count || "");
+      formData.set("rollback_available", payload.rollback_available || "");
       formData.set("raw_submission", JSON.stringify(payload, null, 2));
 
       try {

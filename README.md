@@ -10,11 +10,28 @@ The site combines a free Safe First Move Scanner, Prompt Risk Checker, AI Change
 
 ## Stack
 
-- Cloudflare Worker: `worker.js`
+- Cloudflare Worker: `src/worker.js`
 - Static assets: `public/`
 - Deployment config: `wrangler.toml`
-- Supabase schema: `supabase-setup.sql`
+- Supabase schema: `database/supabase-setup.sql`
 - No frontend framework
+
+## Project layout
+
+```
+src/worker.js                 API routes, auth, dashboard rendering
+database/supabase-setup.sql   Tables, RLS, grants
+public/
+  index.html                  Landing page
+  sitemap.xml
+  assets/
+    css/styles.css
+    js/site.js, dashboard.js
+    images/og-image.svg
+  pages/                      intake, payment, success pages
+  tools/                      prompt checker, rollback calculator
+  guides/                     SEO diagnosis articles
+```
 
 ## Required Cloudflare setup
 
@@ -85,7 +102,7 @@ Product data tables:
 - `vibefix_intakes`
 - `vibefix_case_files`
 
-Use `supabase-setup.sql` to create the required tables, RLS policies, and PostgREST grants.
+Use `database/supabase-setup.sql` to create the required tables, RLS policies, and PostgREST grants.
 
 ## KV keys used
 
@@ -99,8 +116,8 @@ Use `supabase-setup.sql` to create the required tables, RLS policies, and PostgR
 
 Run:
 
-`node --check worker.js`
+`node --check src/worker.js`
 
-`node --check public/site.js`
+`node --check public/assets/js/site.js`
 
 `npx wrangler deploy --dry-run`
