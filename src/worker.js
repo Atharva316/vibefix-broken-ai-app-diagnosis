@@ -170,7 +170,7 @@ const ASSET_FILE_ALIASES = {
   "/supabase-rls-blocking-data.html": "/guides/supabase-rls-blocking-data.html",
   "/v0-app-broke.html": "/guides/v0-app-broke.html",
   "/login.html": "/pages/login.html",
-  "/signup.html": "/pages/signup.html",
+  "/signup.html": "/pages/login.html",
   "/login.js": "/assets/js/login.js",
   "/session-guard.js": "/assets/js/session-guard.js",
   "/auth/callback.html": "/pages/auth-callback.html"
