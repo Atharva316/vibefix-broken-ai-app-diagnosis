@@ -3,37 +3,35 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Bolt App Works in Preview But Not Production — First Checks</title>
-  <meta name="description" content="Bolt app works in preview but breaks in production? Check these 6 things before you touch anything." />
-  <meta property="og:title" content="Bolt App Works in Preview But Not Production — VibeFix" />
-  <meta property="og:description" content="Check environment variables, auth redirects, API URLs, build settings, and deploy behavior before another prompt." />
-  <meta property="og:image" content="https://vibefix-broken-ai-app-diagnosis.atharvam144.workers.dev/og-image.svg" />
-  <meta property="og:url" content="https://vibefix-broken-ai-app-diagnosis.atharvam144.workers.dev/bolt-app-works-in-preview-not-production.html" />
-  <meta property="og:type" content="article" />
+
+  <title>Bolt App Works in Preview But Not Production - First Checks</title>
+  <meta name="description" content="If your Bolt app works in preview but breaks in production, check environment variables, auth redirects, API URLs, build settings, and deploy behavior first." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/styles.css" />
-  <script type="application/ld+json">
-  {"@context":"https://schema.org","@type":"Article","headline":"Bolt App Works in Preview But Not Production — First Checks","datePublished":"2026-06-04","dateModified":"2026-06-04","author":{"@type":"Person","name":"Atharva"}}
-  </script>
 </head>
+
 <body>
   <nav class="site-nav" aria-label="Primary navigation">
     <a class="logo" href="/" aria-label="VibeFix home">Vibe<span>Fix</span></a>
-    <a class="nav-cta" href="https://rzp.io/rzp/bM3R4oPl">Get Beta Diagnosis &mdash; &#8377;7,530 (~$90 USD)</a>
+    <a class="nav-cta" href="/payment.html">Get Beta Diagnosis — ₹1 Test</a>
+    <div class="auth-slot">
+      <a class="nav-auth-link" href="/login.html">Sign In</a>
+    </div>
   </nav>
 
   <main class="article-page">
-    <article class="container narrow">
-      <header class="article-hero">
-        <a class="article-back" href="/">← Back to VibeFix</a>
-        <p class="caption">Last updated: June 2026</p>
-        <h1>Bolt App Works in Preview But Not Production — First Checks</h1>
-        <p class="subhead">If your Bolt app works in preview but breaks after deploy, the problem is often not the UI. It may be environment variables, API URLs, auth redirects, build settings, or production-only behavior.</p>
-      </header>
+    <section class="container narrow article-hero">
+      <a class="article-back" href="/">Back to VibeFix</a>
+      <h1 class="animate-up">Bolt App Works in Preview But Not Production - First Checks</h1>
+      <p class="subhead animate-up delay-2">
+        If your Bolt app works in preview but breaks after deploy, the problem is often not the UI. It may be environment variables, API URLs, auth redirects, build settings, or production-only behavior.
+      </p>
+    </section>
 
-      <div class="article-content">
+    <article class="container narrow article-content">
+      <section class="reveal">
         <h2>Check these first</h2>
         <ul>
           <li>Are environment variables set in production?</li>
@@ -43,15 +41,19 @@
           <li>Does the build log show warnings or failed assets?</li>
           <li>Are browser console errors different in production?</li>
         </ul>
+      </section>
 
+      <section class="reveal">
         <h2>Do not do this</h2>
         <ul>
           <li>Do not rewrite the whole app.</li>
           <li>Do not reset your database blindly.</li>
           <li>Do not change auth settings without knowing the redirect issue.</li>
-          <li>Do not keep prompting “fix production” without logs.</li>
+          <li>Do not keep prompting "fix production" without logs.</li>
         </ul>
+      </section>
 
+      <section class="reveal">
         <h2>Prompt to use</h2>
         <pre>My Bolt app works in preview but breaks in production.
 
@@ -75,34 +77,28 @@ Give me:
 3. safest first checks
 4. rollback vs fix-forward recommendation
 5. smallest safe fix</pre>
+      </section>
 
-        <section class="common-causes">
-          <h2>The 5 most common causes</h2>
-          <ol class="cause-list">
-            <li><strong>Environment variables not set in Bolt production settings.</strong> This is the first thing to check when a Bolt app works in preview but fails after deployment. Preview can use one configuration path while the production build depends on variables saved separately in the deployment environment. Missing API URLs, Supabase keys, auth callback URLs, payment webhook values, or service endpoints can create blank screens, failed requests, or login loops. You can identify this by comparing the working preview request against the failed production request in the browser network tab. This is different from a general app bug because the code may be fine. The live environment simply does not have the values the code expects. Before asking Bolt to rewrite components, list every required environment variable, confirm the exact names, and verify they are present in production.</li>
-            <li><strong>Hardcoded localhost:3000 URLs in API calls.</strong> AI-generated apps often begin with local URLs during preview and forget to replace them before production. The app can look perfect in Bolt preview, then fail on the live domain because the browser is still trying to call `localhost:3000`, a local API server, or a preview-only endpoint. Identify this by opening the production network tab and looking at failed request URLs. If any request points to localhost, a private port, or a development-only host, the issue is not the UI. It is an environment boundary mistake. This differs from a general backend bug because production users cannot reach your local machine. The safe fix is to replace hardcoded URLs with environment-based base URLs and confirm each environment points to the correct API.</li>
-            <li><strong>Build optimization removing code that worked in dev.</strong> Production builds minify, tree-shake, bundle, and optimize code differently than preview. Code that accidentally depends on dynamic imports, browser-only globals, unused-looking exports, or unsafe conditional class names can survive development but fail after optimization. The symptoms include missing components, styles that disappear, code that runs in preview but not production, or errors that only appear in the deployed build. This is different from a general bug because the source behavior and production bundle behavior diverge. Identify it by checking the production build logs, looking for warnings, and testing whether the failure appears only after deployment. Do not ask Bolt to redesign the page first. Ask it to inspect build-only differences and find the smallest code path affected by optimization.</li>
-            <li><strong>CORS policy not updated for the production domain.</strong> A Bolt preview URL may be allowed by your backend or third-party service while the final production domain is blocked. The browser then refuses API responses even when the server is reachable. Look for console errors mentioning CORS, blocked origins, preflight requests, or missing `Access-Control-Allow-Origin` headers. This is not a general API bug because the endpoint can work in preview, Postman, or server-side tests while failing in the production browser. The difference is the requesting origin. Check your backend, Supabase function, Firebase function, custom API, or third-party dashboard for allowed domains. Add only the correct production domain. Avoid disabling CORS broadly or accepting every origin unless you fully understand the security tradeoff.</li>
-            <li><strong>Database connection string pointing to the dev database instead of production.</strong> Sometimes production deploys successfully but reads from the wrong database. The app may show old data, no data, missing users, failed migrations, or tables that do not match the latest schema. Identify it by checking which database host and project the production environment variables reference, then compare a known production record against what the app loads. This is different from a general database bug because the query may be correct and the live app may still connect successfully. It is just connected to the wrong place. Do not reset tables or rerun migrations blindly. First confirm the production connection string, project reference, schema version, and RLS policies. Only then decide whether to update configuration, run migrations, or roll back.</li>
-          </ol>
-        </section>
+      <section class="article-cta reveal">
+        <h2>Still stuck?</h2>
+        <p>
+          Get VibeFix Broken App Diagnosis. I'll review what broke and give you a rollback/fix-forward decision and exact AI repair prompts.
+        </p>
+        <a class="btn btn-primary" href="/payment.html">Get Beta Diagnosis — ₹1 Test</a>
+        <p class="caption">Temporary test mode: this uses the ₹1 Razorpay test link. The production price will be ₹7,530 after testing.</p>
+        <p><a href="/free-30-minute-recovery-checklist.pdf">Download the free recovery checklist</a></p>
+      </section>
 
-        <section class="article-cta">
-          <h2>Still stuck?</h2>
-          <p>Get VibeFix Broken App Diagnosis. I'll review what broke and give you a rollback/fix-forward decision and exact AI repair prompts.</p>
-          <a class="btn btn-primary" href="https://rzp.io/rzp/bM3R4oPl">Get Beta Diagnosis &mdash; &#8377;7,530 (~$90 USD)</a>
-          <p><a href="/free-30-minute-recovery-checklist.pdf">Download the free recovery checklist</a></p>
-        </section>
-
-        <section class="related-links">
-          <h2>Related guides</h2>
-          <p>If the break started after a Lovable update, read this → <a href="/lovable-app-broke-after-update.html">Lovable app broke after update</a></p>
-          <p>If your AI keeps fixing one thing and breaking another, read this → <a href="/cursor-broke-my-code.html">Cursor broke my code</a></p>
-        </section>
-
-        <p class="muted">Note: VibeFix is not 24/7 emergency support, full security testing, legal/compliance review, or guaranteed bug fixing.</p>
-      </div>
+      <p class="muted reveal">
+        Note: VibeFix is not 24/7 emergency support, full security testing, legal/compliance review, or guaranteed bug fixing.
+      </p>
     </article>
   </main>
+
+  <footer class="footer">
+    VibeFix · Not 24/7 support · Diagnosis for common AI-app break patterns
+  </footer>
+
+  <script src="/site.js"></script>
 </body>
 </html>

@@ -1,0 +1,405 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>VibeFix | Login</title>
+    <meta name="description" content="Sign in to VibeFix with email or Google." />
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0a0a0a;
+        --card: #111111;
+        --border: #1f1f1f;
+        --input: #1a1a1a;
+        --input-border: #2a2a2a;
+        --text: #f1f5f9;
+        --muted: #94a3b8;
+        --accent: #22d3ee;
+        --accent-hover: #06b6d4;
+        --danger: #f87171;
+        --success: #4ade80;
+        --shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
+      }
+
+      * { box-sizing: border-box; }
+      html, body { height: 100%; }
+      body {
+        margin: 0;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: var(--text);
+        background:
+          radial-gradient(circle at top, rgba(34, 211, 238, 0.12), transparent 26%),
+          linear-gradient(180deg, #111111 0%, #0a0a0a 100%);
+      }
+
+      a { color: inherit; }
+
+      .shell {
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+      }
+
+      .card {
+        width: min(100%, 420px);
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        box-shadow: var(--shadow);
+        padding: 28px;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 10px;
+        border: 1px solid rgba(34, 211, 238, 0.22);
+        border-radius: 999px;
+        color: var(--accent);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        margin: 16px 0 8px;
+        font-size: 30px;
+        line-height: 1.05;
+      }
+
+      p {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.6;
+      }
+
+      .stack { display: grid; gap: 14px; margin-top: 22px; }
+
+      label {
+        display: grid;
+        gap: 8px;
+        font-size: 14px;
+        color: var(--text);
+        font-weight: 600;
+      }
+
+      input {
+        width: 100%;
+        padding: 12px;
+        border-radius: 8px;
+        border: 1px solid var(--input-border);
+        background: var(--input);
+        color: var(--text);
+        outline: none;
+        font: inherit;
+      }
+
+      input:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.12);
+      }
+
+      .button {
+        width: 100%;
+        border: 0;
+        border-radius: 8px;
+        padding: 12px 14px;
+        font: inherit;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.15s ease, transform 0.15s ease;
+      }
+
+      .button:active { transform: translateY(1px); }
+      .button:disabled {
+        cursor: not-allowed;
+        opacity: 0.58;
+      }
+
+      .button.primary {
+        background: var(--accent);
+        color: #000;
+      }
+
+      .button.primary:hover { background: var(--accent-hover); }
+
+      .button.google {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        background: var(--input);
+        color: var(--text);
+        border: 1px solid var(--input-border);
+      }
+
+      .button.google:hover { border-color: var(--accent); }
+
+      .google-icon {
+        width: 18px;
+        height: 18px;
+        flex: 0 0 auto;
+      }
+
+      .row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        margin-top: 8px;
+        font-size: 14px;
+      }
+
+      .row a {
+        color: var(--accent);
+        text-decoration: none;
+      }
+
+      .row a:hover { color: var(--accent-hover); }
+
+      .message {
+        min-height: 20px;
+        font-size: 14px;
+        color: var(--muted);
+      }
+
+      .message.error { color: var(--danger); }
+      .message.success { color: var(--success); }
+
+      .divider {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        gap: 12px;
+        align-items: center;
+        color: var(--muted);
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .divider::before,
+      .divider::after {
+        content: "";
+        height: 1px;
+        background: var(--border);
+      }
+
+      .footer {
+        margin-top: 18px;
+        color: var(--muted);
+        font-size: 14px;
+        text-align: center;
+      }
+
+      .footer a { color: var(--accent); text-decoration: none; }
+      .footer a:hover { color: var(--accent-hover); }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  </head>
+  <body>
+    <main class="shell">
+      <section class="card">
+        <span class="eyebrow">VibeFix Access</span>
+        <h1>Sign in</h1>
+        <p>Use your email password or continue with Google.</p>
+
+        <div class="stack">
+          <button class="button google" id="google-btn" type="button" aria-label="Sign in with Google">
+            <svg class="google-icon" viewBox="0 0 48 48" aria-hidden="true">
+              <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303C33.654 32.657 29.266 36 24 36c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.156 7.962 3.038l5.657-5.657C34.053 6.053 29.299 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.651-.389-3.917z"/>
+              <path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.655 15.108 18.967 12 24 12c3.059 0 5.842 1.156 7.962 3.038l5.657-5.657C34.053 6.053 29.299 4 24 4 16.318 4 9.656 8.337 6.306 14.691z"/>
+              <path fill="#4CAF50" d="M24 44c5.187 0 9.91-1.986 13.463-5.216l-6.23-5.268C29.206 35.091 26.771 36 24 36c-5.245 0-9.618-3.322-11.286-7.946l-6.52 5.025C9.504 39.556 16.227 44 24 44z"/>
+              <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303c-1.254 3.479-4.023 6.165-7.07 7.516l.002-.001 6.23 5.268C33.99 39.49 40 35 40 24c0-1.341-.138-2.651-.389-3.917z"/>
+            </svg>
+            Sign in with Google
+          </button>
+
+          <div class="divider">or</div>
+
+          <form id="login-form" class="stack" novalidate>
+            <label>
+              Email
+              <input id="email" type="email" autocomplete="email" placeholder="you@example.com" required />
+            </label>
+            <label>
+              Password
+              <input id="password" type="password" autocomplete="current-password" placeholder="Enter your password" required />
+            </label>
+            <button class="button primary" type="submit">Sign in</button>
+          </form>
+
+          <div class="row">
+            <a href="#" id="forgot-link">Forgot password?</a>
+            <a href="/signup.html">Create account</a>
+          </div>
+
+          <div class="row">
+            <a href="#" id="resend-link">Resend confirmation email</a>
+            <span></span>
+          </div>
+
+          <div id="message" class="message" aria-live="polite"></div>
+        </div>
+
+        <div class="footer">
+          Protected pages will sync with your Worker session automatically.
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const SUPABASE_URL = "https://fraufatburxkfynjbidq.supabase.co";
+      const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZyYXVmYXRidXJ4a2Z5bmpiaWRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1NTU3NTgsImV4cCI6MjA5NjEzMTc1OH0.OXbuf7O9vbyYLaTKFZA99Rw3_j_E4-LqcXyRH3heQB0";
+      const NEXT_PATH = new URLSearchParams(window.location.search).get("next") || "/dashboard/ai";
+      const REDIRECT_TO = `${window.location.origin}/auth/callback.html?next=${encodeURIComponent(NEXT_PATH)}`;
+      const SUPABASE = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        auth: { autoRefreshToken: true, persistSession: true, detectSessionInUrl: true, flowType: "pkce" }
+      });
+
+      const message = document.getElementById("message");
+      const emailInput = document.getElementById("email");
+      const passwordInput = document.getElementById("password");
+      const loginForm = document.getElementById("login-form");
+      const googleBtn = document.getElementById("google-btn");
+      const forgotLink = document.getElementById("forgot-link");
+      const resendLink = document.getElementById("resend-link");
+      let googleOAuthEnabled = false;
+
+      function setMessage(text, kind = "") {
+        message.textContent = text;
+        message.className = `message${kind ? ` ${kind}` : ""}`;
+      }
+
+      function friendlyError(text) {
+        const value = String(text || "");
+        if (/invalid login credentials/i.test(value)) return "Incorrect email or password. Please try again.";
+        if (/email not confirmed/i.test(value)) return "Please confirm your email before logging in. Check your inbox.";
+        if (/unsupported provider|provider is not enabled/i.test(value)) {
+          return "Google sign-in is not enabled in Supabase yet. Use email sign-in or enable the Google provider.";
+        }
+        return "Something went wrong. Please try again.";
+      }
+
+      fetch("/api/config", { cache: "no-store" })
+        .then((response) => response.ok ? response.json() : null)
+        .then((config) => {
+          googleOAuthEnabled = config?.googleOAuthEnabled !== false;
+          if (!googleOAuthEnabled && googleBtn) {
+            googleBtn.disabled = true;
+            googleBtn.title = "Google sign-in is not enabled in Supabase yet.";
+          }
+        })
+        .catch(() => {
+          if (googleBtn) {
+            googleBtn.disabled = true;
+            googleBtn.title = "Auth config could not be loaded.";
+          }
+        });
+
+      async function exchangeSession(session) {
+        if (!session?.access_token) return false;
+        const response = await fetch("/api/auth/exchange", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ accessToken: session.access_token })
+        });
+        return response.ok;
+      }
+
+      googleBtn.addEventListener("click", async () => {
+        if (!googleOAuthEnabled) {
+          setMessage("Google sign-in is not enabled in Supabase yet. Use email/password for now.", "error");
+          return;
+        }
+        setMessage("Redirecting to Google...");
+        const { error } = await SUPABASE.auth.signInWithOAuth({
+          provider: "google",
+          options: {
+            redirectTo: REDIRECT_TO,
+            scopes: "https://www.googleapis.com/auth/userinfo.email"
+          }
+        });
+        if (error) setMessage(friendlyError(error.message), "error");
+      });
+
+      forgotLink.addEventListener("click", async (event) => {
+        event.preventDefault();
+        const email = emailInput.value.trim();
+        if (!email) {
+          setMessage("Enter your email first, then click Forgot password.", "error");
+          return;
+        }
+        const { error } = await SUPABASE.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/login.html`
+        });
+        if (error) {
+          setMessage(friendlyError(error.message), "error");
+          return;
+        }
+        setMessage("Password reset email sent!", "success");
+      });
+
+      resendLink.addEventListener("click", async (event) => {
+        event.preventDefault();
+        const email = emailInput.value.trim();
+        if (!email) {
+          setMessage("Enter your email first, then resend the confirmation email.", "error");
+          return;
+        }
+
+        const { error } = await SUPABASE.auth.resend({
+          type: "signup",
+          email,
+          options: {
+            emailRedirectTo: REDIRECT_TO
+          }
+        });
+
+        if (error) {
+          setMessage(friendlyError(error.message), "error");
+          return;
+        }
+
+        setMessage("Confirmation email sent again. Check your inbox.", "success");
+      });
+
+      loginForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const email = emailInput.value.trim();
+        const password = passwordInput.value;
+        if (!email || !password) {
+          setMessage("Please enter your email and password.", "error");
+          return;
+        }
+
+        setMessage("Signing you in...");
+        const { data, error } = await SUPABASE.auth.signInWithPassword({ email, password });
+        if (error) {
+          const messageText = /invalid login credentials/i.test(String(error.message || ""))
+            ? "Incorrect email or password. If you just signed up, confirm your email first."
+            : friendlyError(error.message);
+          setMessage(messageText, "error");
+          if (/email not confirmed/i.test(String(error.message || ""))) {
+            setMessage("Please confirm your email before logging in. If you did not receive it, use Resend confirmation email.", "error");
+          }
+          return;
+        }
+
+        await exchangeSession(data.session);
+        window.location.href = NEXT_PATH;
+      });
+
+      (async () => {
+        const { data } = await SUPABASE.auth.getSession();
+        if (data.session) {
+          await exchangeSession(data.session);
+          window.location.href = NEXT_PATH;
+        }
+      })();
+    </script>
+  </body>
+</html>

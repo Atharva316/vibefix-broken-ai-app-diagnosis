@@ -3,40 +3,42 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Lovable App Broke After Update — What To Do Before You Make It Worse</title>
-  <meta name="description" content="Lovable app broke after update? Here's the exact rollback vs fix-forward decision process — before another prompt makes it worse." />
-  <meta property="og:title" content="Lovable App Broke After Update — VibeFix" />
-  <meta property="og:description" content="Use this rollback vs fix-forward process before another prompt makes your Lovable app worse." />
-  <meta property="og:image" content="https://vibefix-broken-ai-app-diagnosis.atharvam144.workers.dev/og-image.svg" />
-  <meta property="og:url" content="https://vibefix-broken-ai-app-diagnosis.atharvam144.workers.dev/lovable-app-broke-after-update.html" />
-  <meta property="og:type" content="article" />
+
+  <title>Lovable App Broke After Update - What To Do Before You Make It Worse</title>
+  <meta name="description" content="If your Lovable app broke after an update, stop prompting blindly. Use this rollback vs fix-forward checklist before you make the issue worse." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/styles.css" />
-  <script type="application/ld+json">
-  {"@context":"https://schema.org","@type":"Article","headline":"Lovable App Broke After Update — What To Do Before You Make It Worse","datePublished":"2026-06-04","dateModified":"2026-06-04","author":{"@type":"Person","name":"Atharva"}}
-  </script>
 </head>
+
 <body>
   <nav class="site-nav" aria-label="Primary navigation">
     <a class="logo" href="/" aria-label="VibeFix home">Vibe<span>Fix</span></a>
-    <a class="nav-cta" href="https://rzp.io/rzp/bM3R4oPl">Get Beta Diagnosis &mdash; &#8377;7,530 (~$90 USD)</a>
+    <a class="nav-cta" href="/payment.html">Get Beta Diagnosis — ₹1 Test</a>
+    <div class="auth-slot">
+      <a class="nav-auth-link" href="/login.html">Sign In</a>
+    </div>
   </nav>
 
   <main class="article-page">
-    <article class="container narrow">
-      <header class="article-hero">
-        <a class="article-back" href="/">← Back to VibeFix</a>
-        <p class="caption">Last updated: June 2026</p>
-        <h1>Lovable App Broke After Update — What To Do Before You Make It Worse</h1>
-        <p class="subhead">If your Lovable app broke after an update or prompt, do not keep asking it to “fix everything.” That is how small bugs turn into full app chaos.</p>
-      </header>
+    <section class="container narrow article-hero">
+      <a class="article-back" href="/">Back to VibeFix</a>
+      <h1 class="animate-up">Lovable App Broke After Update - What To Do Before You Make It Worse</h1>
+      <p class="subhead animate-up delay-2">
+        If your Lovable app broke after an update or prompt, do not keep asking it to "fix everything." That is how small bugs turn into full app chaos.
+      </p>
+    </section>
 
-      <div class="article-content">
+    <article class="container narrow article-content">
+      <section class="reveal">
         <h2>First: stop prompting blindly</h2>
-        <p>Your first goal is not to fix. Your first goal is to identify what changed between the last working version and the broken version.</p>
+        <p>
+          Your first goal is not to fix. Your first goal is to identify what changed between the last working version and the broken version.
+        </p>
+      </section>
 
+      <section class="reveal">
         <h2>Check the break type</h2>
         <ul>
           <li>Did the UI break?</li>
@@ -45,7 +47,9 @@
           <li>Does it work in preview but fail in production?</li>
           <li>Did a new feature break an old feature?</li>
         </ul>
+      </section>
 
+      <section class="reveal">
         <h2>Find the last working state</h2>
         <p>Write down:</p>
         <ul>
@@ -55,13 +59,18 @@
           <li>any auth/database/env changes</li>
           <li>the exact error message</li>
         </ul>
+      </section>
 
+      <section class="reveal">
         <h2>Rollback vs fix-forward</h2>
         <p><strong>Rollback</strong> if the app was working before one recent AI edit and multiple things broke at once.</p>
         <p><strong>Fix forward</strong> if the issue is isolated, small, and you understand the affected page/component.</p>
+      </section>
 
+      <section class="reveal">
         <h2>Prompt to use</h2>
         <p>Paste this into Lovable:</p>
+
         <pre>Do not rewrite the app.
 
 My Lovable app broke after this change: [describe change]
@@ -81,34 +90,28 @@ Then tell me:
 2. whether to rollback or fix forward
 3. the safest smallest fix
 4. how to test that the fix worked</pre>
+      </section>
 
-        <section class="common-causes">
-          <h2>The 5 most common causes</h2>
-          <ol class="cause-list">
-            <li><strong>Lovable context window collapse.</strong> This usually happens after a long build session where Lovable has been asked to add pages, change data flow, adjust styling, and repair older bugs in the same conversation. The next small prompt can cause the AI to lose track of the original app structure and silently rebuild assumptions it should have preserved. You can identify this pattern by checking whether the update touched unrelated routes, renamed components, removed guard logic, or changed a working flow that was never mentioned in the prompt. It is different from a general bug because one isolated line is rarely the full cause. The real problem is that the AI no longer has a stable map of what must stay unchanged. Before prompting again, write down the last working behavior, the exact last prompt, and the specific files or features that must not be rewritten.</li>
-            <li><strong>Supabase RLS policy not updated after a user role change.</strong> Lovable apps often use Supabase for auth, tables, and user-owned records. When a new role, profile field, team table, or ownership rule is added, the UI may still load while the data disappears. The strongest signs are empty dashboards, successful login followed by no records, network responses returning zero rows, or Supabase permission errors. This is not a normal frontend rendering bug because the page can be visually correct and the database query can still run. The break lives at the boundary between the logged-in user and Row Level Security. Compare the old working role against the new role, check whether policies mention the new table or column, and avoid asking Lovable to rewrite the dashboard until database access has been verified.</li>
-            <li><strong>Environment variable not set in production.</strong> A Lovable preview can work while the live app fails because preview has configuration that production does not. Common missing values include Supabase URL, Supabase anon key, API base URL, auth redirect URL, payment callback URL, or a third-party service key. You can identify this by comparing preview behavior to the deployed URL and checking the browser console, network tab, and deployment settings. This is different from a general code bug because the same code path can succeed in one environment and fail in another. The safest diagnostic step is to list every required environment variable and confirm it exists in the production host with the exact same naming expected by the app. Do that before letting Lovable change application logic, routes, or components.</li>
-            <li><strong>Auth session invalidated after schema change.</strong> A schema update can break login even when the auth provider itself still works. This often appears after adding a profiles table, changing user metadata, adding roles, or altering a route guard. The user may sign in successfully, then get redirected back to login, land on a blank dashboard, or fail because the app expects a profile row that no longer exists. This differs from a general login bug because credentials, OAuth, and sessions may all be valid. The failure happens after auth, when the app tries to load user-specific data or authorize a route. Test with an old user and a brand-new user, then check the profile creation path and route guard assumptions. Avoid rebuilding auth until you know whether the issue is session storage, profile lookup, policy access, or redirect configuration.</li>
-            <li><strong>Tailwind class purge removing active styles in production build.</strong> AI builders sometimes generate dynamic class names such as status-based colors, conditional spacing, or assembled strings that look fine in preview but disappear from the production CSS bundle. The live symptom can look dramatic: buttons lose colors, active states vanish, layouts collapse, or entire panels appear invisible. This is not the same as a normal CSS typo because the class can exist in the component logic while still being absent from the final build. Check whether classes are built dynamically and whether the broken styles appear only after deployment. If preview looks correct and production looks unstyled, do not ask Lovable to redesign the page. Ask it to identify dynamic Tailwind classes, replace unsafe class construction with explicit class names, and test the production build path.</li>
-          </ol>
-        </section>
+      <section class="article-cta reveal">
+        <h2>Still stuck?</h2>
+        <p>
+          Get VibeFix Broken App Diagnosis. I'll review what broke, identify the likely root cause, tell you whether to rollback or fix forward, and give you exact AI prompts to repair safely.
+        </p>
+        <a class="btn btn-primary" href="/payment.html">Get Beta Diagnosis — ₹1 Test</a>
+        <p class="caption">Temporary test mode: this uses the ₹1 Razorpay test link. The production price will be ₹7,530 after testing.</p>
+        <p><a href="/free-30-minute-recovery-checklist.pdf">Or download the free 30-minute recovery checklist</a></p>
+      </section>
 
-        <section class="article-cta">
-          <h2>Still stuck?</h2>
-          <p>Get VibeFix Broken App Diagnosis. I'll review what broke, identify the likely root cause, tell you whether to rollback or fix forward, and give you exact AI prompts to repair safely.</p>
-          <a class="btn btn-primary" href="https://rzp.io/rzp/bM3R4oPl">Get Beta Diagnosis &mdash; &#8377;7,530 (~$90 USD)</a>
-          <p><a href="/free-30-minute-recovery-checklist.pdf">Or download the free 30-minute recovery checklist</a></p>
-        </section>
-
-        <section class="related-links">
-          <h2>Related guides</h2>
-          <p>If your issue is a fix-break loop rather than a post-update break, read this → <a href="/cursor-broke-my-code.html">Cursor broke my code</a></p>
-          <p>If your app works in preview but fails after deploy, read this → <a href="/bolt-app-works-in-preview-not-production.html">Bolt app works in preview but not production</a></p>
-        </section>
-
-        <p class="muted">Note: VibeFix is not 24/7 emergency support, full security testing, legal/compliance review, or guaranteed bug fixing.</p>
-      </div>
+      <p class="muted reveal">
+        Note: VibeFix is not 24/7 emergency support, full security testing, legal/compliance review, or guaranteed bug fixing.
+      </p>
     </article>
   </main>
+
+  <footer class="footer">
+    VibeFix · Not 24/7 support · Diagnosis for common AI-app break patterns
+  </footer>
+
+  <script src="/site.js"></script>
 </body>
 </html>

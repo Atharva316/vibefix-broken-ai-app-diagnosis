@@ -4,52 +4,36 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <title>VibeFix &mdash; Broken AI App Diagnosis for Lovable, Bolt, Cursor &amp; Replit</title>
-  <meta name="description" content="VibeFix diagnoses broken AI-built apps from Lovable, Bolt, Cursor, Replit, v0 and Claude Code. Know what broke, what not to touch, and when to upgrade for exact repair prompts." />
-  <meta name="robots" content="index,follow" />
-  <meta name="theme-color" content="#0A0A0F" />
+  <title>VibeFix - Broken AI App Diagnosis</title>
+  <meta name="description" content="Built your app with Lovable, Bolt, Cursor, Replit, v0, or Claude and now something broke? Get a diagnosis, rollback/fix-forward decision, and AI repair prompts." />
   <meta name="google-site-verification" content="CkViALb8o1cnVkclpZWrAPkAIDFy5N0qVnV6jzXVU4E" />
-  <meta property="og:title" content="VibeFix &mdash; Broken AI App Diagnosis for Lovable, Bolt, Cursor &amp; Replit" />
-  <meta property="og:description" content="Diagnose broken AI-built apps before another prompt makes the damage worse." />
-  <meta property="og:image" content="https://vibefix-broken-ai-app-diagnosis.atharvam144.workers.dev/og-image.svg" />
-  <meta property="og:url" content="https://vibefix-broken-ai-app-diagnosis.atharvam144.workers.dev/" />
-  <meta property="og:type" content="website" />
-  <meta name="twitter:card" content="summary_large_image" />
-  <link rel="canonical" href="https://vibefix-broken-ai-app-diagnosis.atharvam144.workers.dev/" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/styles.css?v=premium-zinc-20260607" />
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    "mainEntity": [
-      {"@type":"Question","name":"What is the Safe First Move Scanner?","acceptedAnswer":{"@type":"Answer","text":"It is a free diagnostic scanner that maps likely break layer, prompt-again risk, no-touch zones, rollback direction, missing evidence, and whether Deep Diagnosis is needed before you ask AI to edit code again."}},
-      {"@type":"Question","name":"Is this automatic or manual?","acceptedAnswer":{"@type":"Answer","text":"The free scanner is automatic. The paid Deep Diagnosis is a written report reviewed manually after you submit the intake form."}},
-      {"@type":"Question","name":"Should I share API keys?","acceptedAnswer":{"@type":"Answer","text":"No. Do not share API keys, service role keys, passwords, private tokens, seed phrases, admin credentials, or production secrets. Use test credentials only if needed."}},
-      {"@type":"Question","name":"What happens after payment?","acceptedAnswer":{"@type":"Answer","text":"After Razorpay payment, submit the VibeFix intake form with your Payment ID or Order ID. The written Deep Diagnosis is delivered by email within 2-3 business days after form submission."}}
-    ]
-  }
+  <link rel="stylesheet" href="/styles.css" />
+  <script type="text/javascript">
+    (function(c,l,a,r,i,t,y){
+        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+        t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+    })(window, document, "clarity", "script", "x0w4s3yka6");
   </script>
 </head>
 
 <body>
-  <div class="scroll-progress" aria-hidden="true"></div>
   <nav class="site-nav" aria-label="Primary navigation">
     <a class="logo" href="/" aria-label="VibeFix home">
       <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 2 3 6.8l9 4.8 9-4.8L12 2Zm0 5.1 4.7-2.5L12 2.9 7.3 4.6 12 7.1ZM3 10.2l9 4.8 9-4.8v3.4l-9 4.8-9-4.8v-3.4Zm0 6.2 9 4.8 9-4.8v2.8l-9 4.8-9-4.8v-2.8Z"/></svg>
       Vibe<span>Fix</span>
     </a>
-    <button class="nav-toggle" type="button" aria-label="Open navigation" aria-expanded="false"><span></span><span></span><span></span></button>
     <div class="nav-links" aria-label="Page sections">
-      <a href="#scanner">Scanner</a>
-      <a href="#guides">Guides</a>
+      <a href="#why">Why VibeFix</a>
+      <a href="#diagnose">What We Diagnose</a>
       <a href="#pricing">Pricing</a>
       <a href="#faq">FAQ</a>
     </div>
     <div class="auth-slot">
-      <a class="nav-auth-link" href="/auth/google" data-auth-open>Sign In</a>
+        <a class="nav-auth-link" href="/login.html">Sign In</a>
     </div>
   </nav>
 
@@ -57,337 +41,123 @@
     <section class="hero section-shell">
       <div class="grid-overlay" aria-hidden="true"></div>
       <div class="hero-glow" aria-hidden="true"></div>
+      <div class="hero-orbits" aria-hidden="true">
+        <span class="orbit orbit-one"></span>
+        <span class="orbit orbit-two"></span>
+        <span class="orbit orbit-three"></span>
+      </div>
       <div class="container hero-content">
-        <div class="hero-copy">
-          <p class="eyebrow hero-badge animate-up">&#9889; BETA DIAGNOSIS AVAILABLE</p>
-          <h1 class="animate-up delay-1">Your AI-built app broke. <span>Stop prompting blindly.</span></h1>
-          <p class="subhead animate-up delay-2">
-            Diagnose what broke, what not to touch, and whether rollback or fix-forward is safer before another AI prompt makes the damage worse.
-          </p>
-          <div class="hero-actions animate-up delay-3">
-            <a class="btn btn-primary" href="#scanner">Run Free Safe First Move Scanner</a>
-            <a class="btn btn-secondary" href="/payment">Get Deep Diagnosis</a>
-          </div>
-          <div class="hero-value-grid animate-up delay-4" aria-label="VibeFix value">
-            <span><b>1</b> Describe what broke</span>
-            <span><b>2</b> Get no-touch zones</span>
-            <span><b>3</b> Decide next move</span>
-          </div>
+        <p class="eyebrow animate-up">&#9889; BETA DIAGNOSIS AVAILABLE</p>
+        <h1 class="animate-up delay-1">Your AI-built app broke.<span>Stop prompting blindly.</span></h1>
+        <div class="hero-badge animate-up delay-2">₹7,530 beta</div>
+        <p class="subhead animate-up delay-2">
+          In 48 hours, you'll know exactly what broke, what not to touch, and the exact prompts to fix it - without triggering a full rewrite.
+        </p>
+        <div class="hero-actions animate-up delay-3">
+          <a class="btn btn-primary" href="/payment.html">Get Beta Diagnosis — ₹1 Test</a>
+          <a class="btn btn-secondary helper-btn" href="/dashboard/ai">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 2h2l.6 4.1a6.2 6.2 0 0 1 2.3 1.3l3.8-1.7 1 1.8-3.3 2.5c.1.4.1.8.1 1.2s0 .8-.1 1.2l3.3 2.5-1 1.8-3.8-1.7a6.2 6.2 0 0 1-2.3 1.3L14 20h-2l-.6-3.7a6.2 6.2 0 0 1-2.3-1.3l-3.8 1.7-1-1.8 3.3-2.5a6 6 0 0 1-.1-1.2c0-.4 0-.8.1-1.2L4.3 7.5l1-1.8 3.8 1.7a6.2 6.2 0 0 1 2.3-1.3L12 2Zm1 8a2 2 0 1 0 0 4 2 2 0 0 0 0-4Z"/></svg>
+            Try Free AI Helper
+          </a>
         </div>
+        <p class="caption animate-up delay-4">Temporary test mode: this uses the ₹1 Razorpay test link. The production price will be ₹7,530 after testing.</p>
+        <p class="caption animate-up delay-4">For broken Lovable, Bolt, Cursor, Replit, v0 & Claude-built apps</p>
       </div>
     </section>
 
-    <section class="social-proof">
-      <div class="proof-counter honest-proof">
-        <span>Beta scanner for broken AI-built apps.</span>
-        <span class="proof-divider">·</span>
-        <span>Free diagnosis first.</span>
-        <span class="proof-divider">·</span>
-        <span>Deep diagnosis if risk is high.</span>
-      </div>
-      <p class="proof-subtitle">For apps built with:</p>
-      <div class="tool-logos">
-        <span class="tool-tag">Lovable</span>
-        <span class="tool-tag">Bolt</span>
-        <span class="tool-tag">Cursor</span>
-        <span class="tool-tag">Replit</span>
-        <span class="tool-tag">v0</span>
-        <span class="tool-tag">Claude Code</span>
-        <span class="tool-tag">Windsurf</span>
-      </div>
-    </section>
-
-    <section class="break-checker">
-      <h2>Is your error message common?</h2>
-      <p>Paste it below. See if we've diagnosed it before.</p>
-      <div class="checker-input-row">
-        <input type="text" id="error-input" placeholder="e.g. TypeError: Cannot read properties of undefined..." />
-        <button id="check-btn" type="button">Check It</button>
-      </div>
-      <div id="checker-result" class="checker-result" hidden></div>
-    </section>
-
-    <section class="section-shell product-story">
+    <section class="section-shell">
       <div class="container">
-        <div class="story-rail" aria-label="VibeFix product flow">
-          <article class="story-card reveal"><span>01</span><h3>App broke</h3><p>A builder sees login, data, deploy, checkout, or UI break after an AI change.</p></article>
-          <article class="story-card reveal"><span>02</span><h3>Prompt temptation</h3><p>The dangerous next move is asking AI to "fix everything" without boundaries.</p></article>
-          <article class="story-card reveal"><span>03</span><h3>Risk detected</h3><p>VibeFix maps likely break layer, confidence, and prompt-again risk first.</p></article>
-          <article class="story-card reveal"><span>04</span><h3>No-touch map</h3><p>Auth, database, env, payments, and working flows are protected until evidence proves otherwise.</p></article>
-          <article class="story-card reveal"><span>05</span><h3>Repair direction</h3><p>The free output shows the safest next move before exact repair prompts are unlocked in Deep Diagnosis.</p></article>
-          <article class="story-card reveal"><span>06</span><h3>Deep Diagnosis</h3><p>If the case is high risk, the paid report gives a manually reviewed repair direction.</p></article>
-        </div>
-      </div>
-    </section>
-
-    <section class="section-shell" id="scanner">
-      <div class="container">
-        <div class="section-heading reveal">
-          <span class="section-kicker">Free Scanner</span>
-          <h2>Safe First Move Scanner</h2>
-          <p class="muted">Before you prompt again, generate a free diagnosis: risk score, no-touch map, likely break layer, evidence confidence, and rollback direction. Exact repair prompts are unlocked in Deep Diagnosis.</p>
-        </div>
-
-        <div class="ux-flow-strip reveal" aria-label="How VibeFix works">
-          <span><b>1</b> Select tool</span>
-          <span><b>2</b> Pick what broke</span>
-          <span><b>3</b> Describe issue</span>
-          <span><b>4</b> See diagnosis</span>
-          <span><b>5</b> Unlock repair prompts</span>
-        </div>
-
-        <div class="scanner-layout simplified-scanner">
-          <form class="scanner-form reveal" id="safe-scanner-form">
-            <div class="primary-scan-fields premium-selector-stack">
-              <fieldset class="segmented-field">
-                <legend>Builder/tool used</legend>
-                <select name="builder" class="synced-select" aria-label="Builder/tool used">
-                  <option>Lovable</option><option>Bolt</option><option>Cursor</option><option>Replit</option><option>v0</option><option>Claude Code</option><option>Windsurf</option><option>ChatGPT</option><option>Gemini</option><option>DeepSeek</option><option>Other</option>
-                </select>
-                <div class="selector-pill-grid" data-segmented-select="builder">
-                  <button type="button" class="select-pill is-selected" data-select-value="Lovable">Lovable</button>
-                  <button type="button" class="select-pill" data-select-value="Bolt">Bolt</button>
-                  <button type="button" class="select-pill" data-select-value="Cursor">Cursor</button>
-                  <button type="button" class="select-pill" data-select-value="Replit">Replit</button>
-                  <button type="button" class="select-pill" data-select-value="v0">v0</button>
-                  <button type="button" class="select-pill" data-select-value="Claude Code">Claude Code</button>
-                  <button type="button" class="select-pill" data-select-value="Windsurf">Windsurf</button>
-                  <button type="button" class="select-pill" data-select-value="Other">Other</button>
-                </div>
-              </fieldset>
-              <fieldset class="segmented-field">
-                <legend>What broke?</legend>
-                <select name="break_type" class="synced-select" aria-label="What broke?">
-                  <option>auth/login/signup</option><option>database/data not loading</option><option>deployment</option><option>preview works but production broken</option><option>UI/layout</option><option>payment/checkout</option><option>env/config</option><option>routing</option><option>API integration</option><option>file upload</option><option>email</option><option>dashboard data</option><option>permissions</option><option>AI changed unrelated files</option><option>fix-break loop</option><option>blank screen</option><option>other</option>
-                </select>
-                <div class="selector-pill-grid" data-segmented-select="break_type">
-                  <button type="button" class="select-pill is-selected" data-select-value="auth/login/signup">Auth broke</button>
-                  <button type="button" class="select-pill" data-select-value="database/data not loading">Data not loading</button>
-                  <button type="button" class="select-pill" data-select-value="preview works but production broken">Preview vs production</button>
-                  <button type="button" class="select-pill" data-select-value="fix-break loop">Fix-break loop</button>
-                  <button type="button" class="select-pill" data-select-value="deployment">Deploy failed</button>
-                  <button type="button" class="select-pill" data-select-value="payment/checkout">Checkout broke</button>
-                  <button type="button" class="select-pill" data-select-value="UI/layout">UI/layout</button>
-                  <button type="button" class="select-pill" data-select-value="other">Other</button>
-                </div>
-              </fieldset>
-            </div>
-
-            <label>Current broken behavior
-              <textarea class="code-editor-textarea" name="current_broken_behavior" placeholder="What does the user see now? What fails?"></textarea>
-            </label>
-            <label>Last prompt/change before break
-              <textarea class="code-editor-textarea" name="last_prompt" placeholder="Paste the exact prompt or describe the deploy/config/code change"></textarea>
-            </label>
-            <input type="hidden" name="issue_location" value="not sure" />
-            <input type="hidden" name="break_timing" value="dont know" />
-            <input type="hidden" name="original_ai_tool" value="not sure" />
-            <input type="hidden" name="last_ai_tool" value="not sure" />
-            <input type="hidden" name="fix_attempts" value="0" />
-            <input type="hidden" name="unrelated_files" value="not sure" />
-            <input type="hidden" name="rollback_available" value="not sure" />
-            <input type="hidden" name="production_users" value="not sure" />
-            <input type="hidden" name="real_data" value="not sure" />
-            <input type="hidden" name="sensitive_systems" value="not sure" />
-
-            <details class="advanced-scan-fields">
-              <summary>Add logs or advanced details</summary>
-              <div class="advanced-scan-grid">
-                <label>Where does it happen?
-                  <select name="issue_location_advanced">
-                    <option>not sure</option><option>production only</option><option>preview only</option><option>both</option><option>local only</option><option>mobile only</option><option>desktop only</option>
-                  </select>
-                </label>
-                <label>When did it break?
-                  <select name="break_timing_advanced">
-                    <option>dont know</option><option>after adding feature</option><option>after deploy</option><option>after auth change</option><option>after database change</option><option>after env variable change</option><option>after AI fix prompt</option><option>after package update</option><option>after copying code from another AI</option><option>random</option>
-                  </select>
-                </label>
-                <label>Last working state
-                  <textarea name="last_working_state" placeholder="Example: users could log in, dashboard loaded leads, checkout worked"></textarea>
-                </label>
-                <label>Exact error/log if available
-                  <textarea name="error_message" placeholder="Paste exact error text. Remove secrets first."></textarea>
-                </label>
-                <label>What have you already tried?
-                  <textarea name="already_tried" placeholder="Fix attempts, rollbacks, setting changes, redeploys"></textarea>
-                </label>
-                <label>What should not be touched?
-                  <textarea name="declared_no_touch" placeholder="Example: do not touch checkout, Supabase RLS, auth redirects, admin dashboard"></textarea>
-                </label>
-                <label>Recent prompts, if available
-                  <textarea name="recent_prompts" placeholder="Paste recent prompts only if they matter"></textarea>
-                </label>
-                <label>Screenshots/log links
-                  <textarea name="evidence_links" placeholder="Paste links only. Do not paste private keys or passwords."></textarea>
-                </label>
-              </div>
-            </details>
-            <div class="secret-warning" id="scanner-secret-warning" hidden>This looks like a secret. Remove API keys, service role keys, tokens, passwords, private keys, or admin credentials before submitting.</div>
-            <button class="btn btn-primary full-width" type="submit">Generate Free Diagnosis</button>
-          </form>
-
-          <aside class="case-file-panel reveal" id="case-file">
-            <div class="process-tracker" id="process-tracker">
-              <span>Ready</span>
-            </div>
-            <div class="case-summary-card">
-              <span class="section-kicker">Case File Preview</span>
-              <h2 id="case-title">Answer a few questions to get a safer prompt.</h2>
-              <p class="muted" id="case-summary">Start simple. VibeFix shows the likely break layer, no-touch zones, and safest next move first.</p>
-            </div>
-            <div class="risk-dashboard">
-              <article class="risk-card result-card"><span>Prompt-Again Risk</span><strong id="prompt-risk">--</strong></article>
-              <article class="risk-card result-card"><span>Likely Break Layer</span><strong id="break-layer">--</strong></article>
-              <article class="risk-card result-card compact-risk-score"><span>Fix-Risk Score</span><strong id="risk-score">--</strong><div class="score-meter"><i id="risk-meter"></i></div></article>
-              <article class="risk-card result-card"><span>Evidence Confidence</span><strong id="confidence-score">--</strong></article>
-            </div>
-            <div class="prompt-card">
-              <div class="copy-row"><h3>Repair Prompt</h3><a class="copy-btn icon-copy-btn" href="/payment" aria-label="Unlock repair prompt"><svg aria-hidden="true" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg><span>Unlock</span></a></div>
-              <pre id="safe-first-prompt">Run the scanner to see whether this case needs a paid repair prompt.</pre>
-            </div>
-            <form class="case-email-capture" id="case-email-form" hidden>
-              <div>
-                <h3>Email me this case file</h3>
-                <p class="muted">Get this diagnosis saved and receive new break-pattern updates when VibeFix learns from real reports.</p>
-              </div>
-              <label class="sr-only" for="case-email">Email address</label>
-              <div class="email-capture-row">
-                <input id="case-email" name="email" type="email" placeholder="you@example.com" autocomplete="email" required />
-                <button class="btn btn-secondary" type="submit">Save Case</button>
-              </div>
-              <p class="email-capture-status" id="case-email-status" role="status" aria-live="polite"></p>
-            </form>
-            <details class="case-file-more">
-              <summary>View full case file and exports</summary>
-              <div class="case-grid">
-                <section class="case-section-card"><h3>Root Cause Hypothesis</h3><p id="root-hypothesis">Waiting for scanner input.</p></section>
-                <section class="case-section-card"><h3>No-Touch Zones</h3><div class="chip-list" id="no-touch-zones"></div></section>
-                <section class="case-section-card"><h3>Rollback vs Fix-Forward</h3><p id="rollback-direction">Waiting for scanner input.</p></section>
-                <section class="case-section-card"><h3>Safe First Move</h3><p id="safe-first-move">Waiting for scanner input.</p></section>
-                <section class="case-section-card"><h3>Missing Evidence Needed</h3><ul id="missing-evidence"></ul></section>
-                <section class="case-section-card"><h3>Regression Checklist</h3><ul id="regression-checklist"><li>Unlocked in Deep Diagnosis.</li></ul></section>
-              </div>
-              <div class="timeline-card">
-                <h3>Damage Timeline</h3>
-                <ol id="damage-timeline"></ol>
-              </div>
-              <div class="prompt-card">
-                <h3>Bad Prompt Warning</h3>
-                <p id="bad-prompt-warning">Vague prompts like "fix this" can turn a small config issue into a broad rewrite.</p>
-              </div>
-              <div class="export-grid locked-export-grid">
-                <div class="upgrade-lock">
-                  <h3>Exact repair prompts are paid.</h3>
-                  <p>Deep Diagnosis includes Cursor, Lovable, Bolt, Replit, v0, Claude Code and Windsurf repair prompts, plus the regression checklist.</p>
-                  <a class="btn btn-primary" href="/payment">Unlock Deep Diagnosis &mdash; &#8377;7,530 (~$90 USD)</a>
-                </div>
-              </div>
-            </details>
-            <div class="article-cta compact-cta">
-              <h3>Need deeper review?</h3>
-              <p>Get full Deep Diagnosis when the scanner says risk is high or evidence is messy.</p>
-              <a class="btn btn-primary" href="/payment">Get Deep Diagnosis &mdash; &#8377;7,530 (~$90 USD)</a>
-            </div>
-          </aside>
-        </div>
-      </div>
-    </section>
-
-    <section class="section-shell compact-guides-section" id="guides">
-      <div class="container">
-        <div class="guide-toggle-card reveal">
-          <div>
-            <span class="section-kicker">Public guides</span>
-            <h2>Need a quick guide for your exact break?</h2>
-            <p class="muted">Keep the main flow clean. Open the guides only if you want a written debugging walkthrough.</p>
-          </div>
-          <details class="guide-disclosure">
-            <summary>View public debugging guides</summary>
-            <div class="guide-grid">
-              <a class="guide-link" href="/lovable-app-broke-after-update.html">Lovable app broke after update</a>
-              <a class="guide-link" href="/cursor-broke-my-code.html">Cursor broke my code</a>
-              <a class="guide-link" href="/bolt-app-works-in-preview-not-production.html">Bolt app works in preview but not production</a>
-              <a class="guide-link" href="/supabase-rls-blocking-data.html">Supabase auth/data broke AI app</a>
-              <a class="guide-link" href="/break-patterns.html#blank-screen">AI-built app blank screen</a>
-              <a class="guide-link" href="/prompt-scope-checker.html">Stop AI from rewriting my code</a>
-            </div>
-          </details>
-        </div>
-      </div>
-    </section>
-
-    <section class="section-shell" id="pricing">
-      <div class="container">
-        <div class="section-heading centered reveal">
-          <span class="section-kicker">Pricing</span>
-          <h2>Choose the level of help your broken app needs.</h2>
-          <p class="muted">Start with a free diagnosis. Upgrade only when you need exact repair prompts and a manually reviewed report.</p>
-        </div>
-        <div class="pricing-tier-grid upgraded-pricing">
-          <article class="pricing-card plan-free reveal">
-            <div class="plan-badge">START HERE</div>
-            <h3>Free</h3>
-            <div class="price">&#8377;0</div>
-            <ul class="pricing-list">
-              <li>safe first move scanner</li>
-              <li>prompt again risk score</li>
-              <li>no-touch zone map</li>
-              <li>rollback vs fix-forward direction</li>
-              <li>email capture for future break updates</li>
-            </ul>
-            <a class="btn btn-secondary full-width" href="#scanner">Run Free Scanner</a>
+        <div class="live-metrics reveal">
+          <article class="metric-card">
+            <span class="metric-label">Prompt precision</span>
+            <div class="metric-value" data-counter="98" data-suffix="%">0%</div>
+            <p>Focused prompts that stay on the broken area and avoid unrelated rewrites.</p>
           </article>
-          <article class="pricing-card plan-review plan-amber reveal">
-            <div class="plan-badge amber">REVIEW BEFORE SENDING</div>
-            <h3>Prompt Review</h3>
-            <div class="price">&#8377;1,499 <span class="price-note">(~$18 USD)</span></div>
-            <ul class="pricing-list">
-              <li>pre-launch audit before adding a risky feature</li>
-              <li>no-touch zones mapped before you prompt</li>
-              <li>12 hour turnaround for planned changes</li>
-              <li>clear yes/no on whether the prompt is safe</li>
-            </ul>
-            <a class="btn btn-secondary full-width" href="/payment">Get Prompt Review</a>
+          <article class="metric-card metric-accent">
+            <span class="metric-label">Safe-touch score</span>
+            <div class="metric-value" data-counter="94" data-suffix="%">0%</div>
+            <p>How often the guidance avoids touching working auth, payments, or database paths.</p>
           </article>
-          <article class="pricing-card plan-main plan-purple reveal">
-            <div class="plan-badge purple">MOST COMPLETE</div>
-            <h3>Deep Diagnosis</h3>
-            <div class="price-display">
-              <span class="price-amount">&#8377;7,530</span><span class="price-note">(~$90 USD)</span>
-            </div>
-            <ul class="pricing-list">
-              <li>likely root cause</li>
-              <li>confidence score</li>
-              <li>no-touch map</li>
-              <li>rollback vs fix forward</li>
-              <li>exact tool-specific repair prompts</li>
-              <li>regression checklist</li>
-              <li>written report reviewed manually</li>
-            </ul>
-            <a class="btn btn-primary full-width" href="/payment">Get Deep Diagnosis &mdash; &#8377;7,530 (~$90 USD)</a>
-            <p class="caption">Full refund if we cant find the root cause</p>
+          <article class="metric-card">
+            <span class="metric-label">Fix-forward bias</span>
+            <div class="metric-value" data-counter="72" data-suffix="%">0%</div>
+            <p>Signals when the report prefers the smallest safe change over a full rebuild.</p>
+          </article>
+          <article class="metric-card">
+            <span class="metric-label">Report readiness</span>
+            <div class="metric-value" data-counter="48" data-suffix="h">0h</div>
+            <p>Target turnaround after intake submission for the final written report.</p>
           </article>
         </div>
       </div>
     </section>
 
     <section class="section-shell">
+      <div class="container">
+        <div class="section-heading reveal">
+          <span class="section-kicker">Start here</span>
+          <h2>Start here if you're stuck right now</h2>
+        </div>
+        <div class="guide-grid">
+          <a class="guide-link reveal" href="/lovable-app-broke-after-update.html">Lovable app broke after update</a>
+          <a class="guide-link reveal" href="/cursor-broke-my-code.html">Cursor broke my code</a>
+          <a class="guide-link reveal" href="/bolt-app-works-in-preview-not-production.html">Bolt app works in preview but not production</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-shell" id="why">
+      <div class="container">
+        <div class="section-heading reveal">
+          <span class="section-kicker">Problem</span>
+          <h2>AI-built apps break differently.</h2>
+          <p class="muted">
+            The code may work, but you may not fully understand why. Then one prompt, update, deploy, auth change, or database change breaks the app - and every new "fix this" prompt creates another problem.
+          </p>
+        </div>
+
+        <div class="problem-grid">
+          <article class="feature-card reveal">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 2 3 7v10l9 5 9-5V7l-9-5Zm0 2.3 6.7 3.7L12 11.7 5.3 8 12 4.3Zm-7 5.4 6 3.3v6.5l-6-3.4V9.7Zm8 9.8V13l6-3.3v6.4l-6 3.4Z"/></svg>
+            <h3>Fix-break loops</h3>
+            <p>AI fixes one issue and breaks another feature that used to work.</p>
+          </article>
+          <article class="feature-card reveal">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 5h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-5l1.5 2H18v2H6v-2h1.5L9 18H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Zm0 2v9h16V7H4Z"/></svg>
+            <h3>Preview vs production</h3>
+            <p>Your app works in preview but fails after deploy or with real users.</p>
+          </article>
+          <article class="feature-card reveal">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1a5 5 0 0 1 5 5v3h1a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5Zm-3 8h6V6a3 3 0 0 0-6 0v3Zm3 4a2 2 0 0 0-1 3.73V19h2v-2.27A2 2 0 0 0 12 13Z"/></svg>
+            <h3>Auth/data confusion</h3>
+            <p>Login, signup, Supabase/Firebase, or dashboard data suddenly stops working.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-shell" id="diagnose">
       <div class="container split-layout">
         <div class="section-heading reveal">
-          <span class="section-kicker">Payment & Intake</span>
-          <h2>Safe Deep Diagnosis flow</h2>
-          <p class="muted">Pay with Razorpay. Submit the VibeFix intake. Receive a written diagnosis within 2-3 business days.</p>
+          <span class="section-kicker">Diagnosis</span>
+          <h2>What VibeFix diagnoses</h2>
+          <p class="muted">A structured way to understand the break before another AI prompt makes the system harder to recover.</p>
         </div>
+
         <div class="check-panel reveal">
-          <ol class="submitted-steps">
-            <li>Pay through Razorpay.</li>
-            <li>Open the VibeFix intake form.</li>
-            <li>Include your Razorpay Payment ID / Order ID.</li>
-            <li>Submit app details, errors, no-touch areas, and safe test access if needed.</li>
-            <li>Receive written Deep Diagnosis within 2-3 business days after form submission.</li>
-          </ol>
-          <div class="warning-box">Do not submit API keys, database passwords, private tokens, seed phrases, service role keys, admin credentials, or production secrets. Use test credentials only.</div>
+          <ul class="check-list">
+            <li>Lovable app broke after update</li>
+            <li>Bolt app works in preview but not production</li>
+            <li>Cursor broke old code after adding a new feature</li>
+            <li>Replit deployment issue</li>
+            <li>Database/data not loading</li>
+            <li>Auth/login/signup flow broke</li>
+            <li>AI keeps changing unrelated code</li>
+            <li>You need to know whether to rollback or fix forward</li>
+          </ul>
+          <div class="warning-box">
+            VibeFix is not 24/7 emergency support, full security testing, legal/compliance review, or guaranteed implementation. It is a structured diagnosis for common AI-app break patterns.
+          </div>
         </div>
       </div>
     </section>
@@ -395,14 +165,109 @@
     <section class="section-shell">
       <div class="container">
         <div class="section-heading reveal">
-          <span class="section-kicker">Trust & Safety</span>
-          <h2>Designed for restraint, not reckless code edits.</h2>
+          <span class="section-kicker">Deliverables</span>
+          <h2>What you get</h2>
         </div>
-        <div class="problem-grid">
-          <article class="feature-card reveal"><h3>No production DB access needed for basic diagnosis.</h3><p>The free scanner works from your description and evidence.</p></article>
-          <article class="feature-card reveal"><h3>Redact API keys and secrets.</h3><p>We never ask for service role keys or production secrets.</p></article>
-          <article class="feature-card reveal"><h3>We tell you when confidence is low.</h3><p>Missing logs or screenshots lower confidence instead of creating fake certainty.</p></article>
-          <article class="feature-card reveal"><h3>Not a security audit.</h3><p>VibeFix is diagnosis for common AI-app break patterns, not compliance review.</p></article>
+
+        <div class="numbered-list">
+          <article class="numbered-item reveal">
+            <span>01</span>
+            <div>
+              <h3>Likely root cause</h3>
+              <p>Written in plain English, not code. You'll know whether it's an auth conflict, database policy, environment variable, or deployment mismatch - and exactly why it happened in your specific case.</p>
+            </div>
+          </article>
+          <article class="numbered-item reveal">
+            <span>02</span>
+            <div>
+              <h3>Rollback vs fix-forward</h3>
+              <p>A clear decision on whether to revert or repair safely. You'll know what not to touch, which change likely caused the break, and the safest next move before you prompt again.</p>
+            </div>
+          </article>
+          <article class="numbered-item reveal">
+            <span>03</span>
+            <div>
+              <h3>Exact AI prompts</h3>
+              <p>Prompts to paste into Cursor, Claude, Lovable, or Bolt without triggering a full rewrite. Each prompt is scoped to your actual issue so the AI fixes the broken area instead of rewriting unrelated code.</p>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-shell pricing-section" id="pricing">
+      <div class="container">
+        <div class="section-heading centered reveal">
+          <span class="section-kicker">Offer</span>
+          <h2>Choose a plan that matches the break</h2>
+        </div>
+
+        <div class="pricing-grid">
+          <article class="pricing-card pricing-card-lite reveal">
+            <div class="beta-tag beta-tag-lite">Free</div>
+            <p class="caption">Limited benefits</p>
+            <div class="price">₹0 <small>free</small></div>
+            <ul class="pricing-list">
+              <li>Basic issue triage and app fit check</li>
+              <li>Short root-cause summary</li>
+              <li>Try Free AI Helper access</li>
+              <li>Limited guidance for one break</li>
+            </ul>
+            <div class="pricing-actions">
+              <a class="btn btn-secondary full-width" href="/dashboard/ai">Start Free</a>
+            </div>
+            <p class="caption">Best for first-time users who want a quick sense of what may be broken.</p>
+          </article>
+
+          <article class="pricing-card pricing-card-mid reveal">
+            <div class="beta-tag beta-tag-mid">Starter</div>
+            <p class="caption">₹999 - ₹1,500</p>
+            <div class="price">₹1,499 <small>starter</small></div>
+            <ul class="pricing-list">
+              <li>Structured diagnosis snapshot</li>
+              <li>Clear do-not-touch list</li>
+              <li>Better fix-forward guidance</li>
+              <li>Prompt pack for one issue path</li>
+            </ul>
+            <div class="pricing-actions">
+              <a class="btn btn-primary full-width" href="/payment.html?plan=starter">Choose Starter</a>
+            </div>
+            <p class="caption">A smaller paid tier for users who need a sharper diagnosis without the full premium package.</p>
+          </article>
+
+          <article class="pricing-card pricing-card-pro reveal">
+            <div class="beta-tag">Beta</div>
+            <p class="caption">Full diagnosis report</p>
+            <div class="price">₹7,530 <small>beta</small></div>
+            <ul class="pricing-list">
+              <li>Likely root cause</li>
+              <li>Confidence level</li>
+              <li>What not to touch</li>
+              <li>Rollback vs fix-forward recommendation</li>
+              <li>Safest first fix</li>
+              <li>Priority fix order</li>
+              <li>Exact AI repair prompts</li>
+              <li>Post-fix testing checklist</li>
+            </ul>
+            <div class="pricing-actions">
+              <a class="btn btn-primary full-width" href="/payment.html?plan=pro">Choose Premium</a>
+              <a class="btn btn-secondary full-width" href="/intake.html">Submit Details After Purchase</a>
+            </div>
+            <p class="caption">This is the full beta report path for more complex auth, database, or deployment issues.</p>
+          </article>
+        </div>
+
+        <div class="after-payment-flow reveal">
+          <h3>After payment</h3>
+          <ol>
+            <li>Razorpay confirms your payment.</li>
+            <li>Click the form button on the next-step page, or use “Submit Details After Purchase.”</li>
+            <li>Paste your Razorpay Payment ID / Order ID.</li>
+            <li>Submit your app details.</li>
+            <li>A draft diagnosis report is generated internally for review.</li>
+            <li>You receive the final written diagnosis report by email within 48 hours.</li>
+          </ol>
+          <p class="caption">If Razorpay does not redirect automatically after payment, return to this page and click “Submit Details After Purchase.”</p>
         </div>
       </div>
     </section>
@@ -413,61 +278,96 @@
           <span class="section-kicker">FAQ</span>
           <h2>FAQ</h2>
         </div>
-        <div class="faq-list reveal">
-          <div class="faq-item"><button class="faq-question" type="button" aria-expanded="false"><span>Is this automatic or manual?</span><span class="faq-icon"></span></button><div class="faq-answer"><p>The free scanner is automatic. Deep Diagnosis is a written report reviewed manually after intake.</p></div></div>
-          <div class="faq-item"><button class="faq-question" type="button" aria-expanded="false"><span>What is Safe First Move Scanner?</span><span class="faq-icon"></span></button><div class="faq-answer"><p>It is a diagnostic tool that maps prompt-again risk, likely break layer, no-touch zones, rollback direction, and whether you need Deep Diagnosis for exact repair prompts.</p></div></div>
-          <div class="faq-item"><button class="faq-question" type="button" aria-expanded="false"><span>Will you fix the bug for me?</span><span class="faq-icon"></span></button><div class="faq-answer"><p>No. VibeFix gives diagnosis, safe repair direction, and prompts. It is not done-for-you development.</p></div></div>
-          <div class="faq-item"><button class="faq-question" type="button" aria-expanded="false"><span>Is this for non-technical builders?</span><span class="faq-icon"></span></button><div class="faq-answer"><p>Yes. VibeFix uses plain English and protects builders from broad prompts that can break more things.</p></div></div>
-          <div class="faq-item"><button class="faq-question" type="button" aria-expanded="false"><span>Do I need to share my repo?</span><span class="faq-icon"></span></button><div class="faq-answer"><p>No for the free scanner. For paid diagnosis, a repo link is optional and only useful if you are comfortable sharing it.</p></div></div>
-          <div class="faq-item"><button class="faq-question" type="button" aria-expanded="false"><span>Should I share API keys?</span><span class="faq-icon"></span></button><div class="faq-answer"><p>No. Do not submit API keys, passwords, service role keys, private tokens, seed phrases, or admin credentials.</p></div></div>
-          <div class="faq-item"><button class="faq-question" type="button" aria-expanded="false"><span>What if scanner confidence is low?</span><span class="faq-icon"></span></button><div class="faq-answer"><p>Collect the missing evidence shown in the case file before prompting again: exact error, logs, last prompt, screenshots, or changed files.</p></div></div>
-          <div class="faq-item"><button class="faq-question" type="button" aria-expanded="false"><span>Why not just ask ChatGPT, Cursor, or Claude?</span><span class="faq-icon"></span></button><div class="faq-answer"><p>Use them, but first give them constraints. VibeFix helps define what not to touch, whether rollback is safer, and what evidence is missing.</p></div></div>
-          <div class="faq-item"><button class="faq-question" type="button" aria-expanded="false"><span>What if rollback is safer?</span><span class="faq-icon"></span></button><div class="faq-answer"><p>The scanner will say so. If rollback is safer, do not keep stacking fixes on top of a fragile broken state.</p></div></div>
-          <div class="faq-item"><button class="faq-question" type="button" aria-expanded="false"><span>What if I used multiple AI tools?</span><span class="faq-icon"></span></button><div class="faq-answer"><p>Use the scanner first. Add the last prompt or tool change in the advanced details only if it matters.</p></div></div>
-          <div class="faq-item"><button class="faq-question" type="button" aria-expanded="false"><span>What if app has real users/data?</span><span class="faq-icon"></span></button><div class="faq-answer"><p>Risk goes up. Avoid auth, database, payments, admin permissions, and production settings until evidence proves the failing layer.</p></div></div>
-          <div class="faq-item"><button class="faq-question" type="button" aria-expanded="false"><span>Is this a security audit?</span><span class="faq-icon"></span></button><div class="faq-answer"><p>No. VibeFix is not security testing, legal/compliance review, or 24/7 emergency support.</p></div></div>
-          <div class="faq-item"><button class="faq-question" type="button" aria-expanded="false"><span>What if you cannot find root cause?</span><span class="faq-icon"></span></button><div class="faq-answer"><p>If Deep Diagnosis cannot identify a likely root cause from submitted evidence, you get a refund.</p></div></div>
-        </div>
-      </div>
-    </section>
 
-    <section class="section-shell final-cta-section">
-      <div class="container centered">
-        <h2>Before you prompt again, know your no-touch zones.</h2>
-        <div class="hero-actions compact-actions">
-          <a class="btn btn-primary" href="#scanner">Run Free Scanner</a>
-          <a class="btn btn-secondary" href="/payment">Get Deep Diagnosis</a>
+        <div class="faq-list reveal">
+          <div class="faq-item">
+            <button class="faq-question" type="button" aria-expanded="false">
+              <span>Will you fix the bug for me?</span>
+              <span class="faq-icon" aria-hidden="true"></span>
+            </button>
+            <div class="faq-answer">
+              <p>No. This beta offer is a diagnosis report, not done-for-you development. You get the likely cause, safe fix path, and AI prompts.</p>
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-question" type="button" aria-expanded="false">
+              <span>Is this a security audit?</span>
+              <span class="faq-icon" aria-hidden="true"></span>
+            </button>
+            <div class="faq-answer">
+              <p>No. I may flag obvious risks, but this is not penetration testing or compliance review.</p>
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-question" type="button" aria-expanded="false">
+              <span>What do I need to submit?</span>
+              <span class="faq-icon" aria-hidden="true"></span>
+            </button>
+            <div class="faq-answer">
+              <p>App URL, what broke, when it last worked, last prompt/change, screenshots/error messages, and test login if needed.</p>
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-question" type="button" aria-expanded="false">
+              <span>What if the issue is too complex?</span>
+              <span class="faq-icon" aria-hidden="true"></span>
+            </button>
+            <div class="faq-answer">
+              <p>The report will say that clearly and recommend escalation instead of pretending certainty.</p>
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-question" type="button" aria-expanded="false">
+              <span>What happens after I pay?</span>
+              <span class="faq-icon" aria-hidden="true"></span>
+            </button>
+            <div class="faq-answer">
+              <p>After payment through Razorpay, open the VibeFix intake form, paste your Razorpay Payment ID / Order ID, and submit your app details. A diagnosis report draft is generated internally for review, and the final written report is delivered by email within 48 hours after form submission.</p>
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-question" type="button" aria-expanded="false">
+              <span>Why do I need to submit the intake form after payment?</span>
+              <span class="faq-icon" aria-hidden="true"></span>
+            </button>
+            <div class="faq-answer">
+              <p>Payment confirms the order. The intake form gives the technical context needed to prepare the diagnosis: what broke, what changed, the tool used, errors, screenshots, and what not to touch.</p>
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-question" type="button" aria-expanded="false">
+              <span>Is the report generated automatically?</span>
+              <span class="faq-icon" aria-hidden="true"></span>
+            </button>
+            <div class="faq-answer">
+              <p>A draft is generated automatically from your intake details, then reviewed before final delivery. This keeps the process fast while avoiding unsafe advice for auth, database, payment, security, or production issues.</p>
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-question" type="button" aria-expanded="false">
+              <span>How do I know this won't be generic advice that doesn't apply to my app?</span>
+              <span class="faq-icon" aria-hidden="true"></span>
+            </button>
+            <div class="faq-answer">
+              <p>Every report is written specifically for your app based on what you submit. The prompts include your actual component names and error messages. It is not a template.</p>
+            </div>
+          </div>
         </div>
       </div>
     </section>
   </main>
 
-  <div class="auth-modal" id="auth-modal" hidden>
-    <div class="auth-modal-backdrop" data-auth-close></div>
-    <section class="auth-dialog" role="dialog" aria-modal="true" aria-labelledby="auth-title">
-      <button class="auth-close" type="button" data-auth-close aria-label="Close sign in">&times;</button>
-      <h2 id="auth-title">Log in or sign up</h2>
-      <p>Use Google sign-in for now. Apple, phone, and email login stay hidden until they are fully tested.</p>
-
-      <div class="auth-provider-stack">
-        <a class="auth-provider-button" href="/auth/google">
-          <span class="provider-icon google-icon">G</span>
-          Continue with Google
-        </a>
-      </div>
-
-      <p class="auth-status" id="auth-status" role="status" aria-live="polite"></p>
-    </section>
-  </div>
-
-  <div class="mobile-sticky-cta" aria-label="Mobile quick action">
-    <span>App broken?</span>
-    <a href="#scanner">Run Free Scanner</a>
-  </div>
-
   <footer class="footer">
-    VibeFix &middot; Broken AI App Diagnosis &middot; Not 24/7 support &middot; Diagnosis for common AI-app break patterns
+    VibeFix · Not 24/7 support · Diagnosis for common AI-app break patterns
   </footer>
-  <script src="/site.js?v=premium-zinc-20260607"></script>
+
+  <script src="/site.js"></script>
 </body>
 </html>

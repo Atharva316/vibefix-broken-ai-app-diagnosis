@@ -1,0 +1,514 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>VibeFix | Sign Up</title>
+    <meta name="description" content="Create your VibeFix account with email or Google." />
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0a0a0a;
+        --card: #111111;
+        --border: #1f1f1f;
+        --input: #1a1a1a;
+        --input-border: #2a2a2a;
+        --text: #f1f5f9;
+        --muted: #94a3b8;
+        --accent: #22d3ee;
+        --accent-hover: #06b6d4;
+        --danger: #f87171;
+        --success: #4ade80;
+        --shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
+      }
+
+      * { box-sizing: border-box; }
+      html, body { height: 100%; }
+      body {
+        margin: 0;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: var(--text);
+        background:
+          radial-gradient(circle at top, rgba(34, 211, 238, 0.12), transparent 26%),
+          linear-gradient(180deg, #111111 0%, #0a0a0a 100%);
+      }
+
+      .shell {
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+      }
+
+      .card {
+        width: min(100%, 420px);
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        box-shadow: var(--shadow);
+        padding: 28px;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 10px;
+        border: 1px solid rgba(34, 211, 238, 0.22);
+        border-radius: 999px;
+        color: var(--accent);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        margin: 16px 0 8px;
+        font-size: 30px;
+        line-height: 1.05;
+      }
+
+      p {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.6;
+      }
+
+      .stack { display: grid; gap: 14px; margin-top: 22px; }
+
+      label {
+        display: grid;
+        gap: 8px;
+        font-size: 14px;
+        color: var(--text);
+        font-weight: 600;
+      }
+
+      input {
+        width: 100%;
+        padding: 12px;
+        border-radius: 8px;
+        border: 1px solid var(--input-border);
+        background: var(--input);
+        color: var(--text);
+        outline: none;
+        font: inherit;
+      }
+
+      input:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.12);
+      }
+
+      .button {
+        width: 100%;
+        border: 0;
+        border-radius: 8px;
+        padding: 12px 14px;
+        font: inherit;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.15s ease, transform 0.15s ease;
+      }
+
+      .button:active { transform: translateY(1px); }
+      .button:disabled {
+        cursor: not-allowed;
+        opacity: 0.58;
+      }
+
+      .button.primary {
+        background: var(--accent);
+        color: #000;
+      }
+
+      .button.primary:hover { background: var(--accent-hover); }
+
+      .button.google {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        background: var(--input);
+        color: var(--text);
+        border: 1px solid var(--input-border);
+      }
+
+      .button.google:hover { border-color: var(--accent); }
+
+      .google-icon {
+        width: 18px;
+        height: 18px;
+        flex: 0 0 auto;
+      }
+
+      .row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        margin-top: 8px;
+        font-size: 14px;
+      }
+
+      .row a {
+        color: var(--accent);
+        text-decoration: none;
+      }
+
+      .row a:hover { color: var(--accent-hover); }
+
+      .message {
+        min-height: 20px;
+        font-size: 14px;
+        color: var(--muted);
+      }
+
+      .message.error { color: var(--danger); }
+      .message.success { color: var(--success); }
+
+      .divider {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        gap: 12px;
+        align-items: center;
+        color: var(--muted);
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .divider::before,
+      .divider::after {
+        content: "";
+        height: 1px;
+        background: var(--border);
+      }
+
+      .rules {
+        display: grid;
+        gap: 10px;
+        padding: 14px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.02);
+      }
+
+      .rule {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .rule strong { color: var(--text); font-weight: 600; }
+      .tick {
+        width: 18px;
+        height: 18px;
+        border-radius: 999px;
+        display: inline-grid;
+        place-items: center;
+        flex: 0 0 auto;
+        border: 1px solid currentColor;
+        font-size: 12px;
+        margin-top: 1px;
+      }
+
+      .ok { color: var(--success); }
+      .bad { color: var(--danger); }
+
+      .footer {
+        margin-top: 18px;
+        color: var(--muted);
+        font-size: 14px;
+        text-align: center;
+      }
+
+      .footer a { color: var(--accent); text-decoration: none; }
+      .footer a:hover { color: var(--accent-hover); }
+
+      .actions {
+        display: grid;
+        gap: 10px;
+      }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  </head>
+  <body>
+    <main class="shell">
+      <section class="card">
+        <span class="eyebrow">VibeFix Access</span>
+        <h1>Create account</h1>
+        <p>Use email and password or continue with Google.</p>
+
+        <div class="stack">
+          <button class="button google" id="google-btn" type="button" aria-label="Sign up with Google">
+            <svg class="google-icon" viewBox="0 0 48 48" aria-hidden="true">
+              <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303C33.654 32.657 29.266 36 24 36c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.156 7.962 3.038l5.657-5.657C34.053 6.053 29.299 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.651-.389-3.917z"/>
+              <path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.655 15.108 18.967 12 24 12c3.059 0 5.842 1.156 7.962 3.038l5.657-5.657C34.053 6.053 29.299 4 24 4 16.318 4 9.656 8.337 6.306 14.691z"/>
+              <path fill="#4CAF50" d="M24 44c5.187 0 9.91-1.986 13.463-5.216l-6.23-5.268C29.206 35.091 26.771 36 24 36c-5.245 0-9.618-3.322-11.286-7.946l-6.52 5.025C9.504 39.556 16.227 44 24 44z"/>
+              <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303c-1.254 3.479-4.023 6.165-7.07 7.516l.002-.001 6.23 5.268C33.99 39.49 40 35 40 24c0-1.341-.138-2.651-.389-3.917z"/>
+            </svg>
+            Sign up with Google
+          </button>
+
+          <div class="divider">or</div>
+
+          <form id="signup-form" class="stack" novalidate>
+            <label>
+              Full Name
+              <input id="full-name" type="text" autocomplete="name" placeholder="Your full name" required />
+            </label>
+            <label>
+              Email
+              <input id="email" type="email" autocomplete="email" placeholder="you@example.com" required />
+            </label>
+            <label>
+              Password
+              <input id="password" type="password" autocomplete="new-password" placeholder="Create a password" required />
+            </label>
+            <label>
+              Confirm Password
+              <input id="confirm-password" type="password" autocomplete="new-password" placeholder="Confirm your password" required />
+            </label>
+
+            <div class="rules" aria-live="polite">
+              <div class="rule" id="rule-length"><span class="tick bad">×</span><span><strong>At least 8 characters</strong></span></div>
+              <div class="rule" id="rule-upper"><span class="tick bad">×</span><span><strong>At least one uppercase letter</strong></span></div>
+              <div class="rule" id="rule-lower"><span class="tick bad">×</span><span><strong>At least one lowercase letter</strong></span></div>
+              <div class="rule" id="rule-number"><span class="tick bad">×</span><span><strong>At least one number</strong></span></div>
+              <div class="rule" id="rule-special"><span class="tick bad">×</span><span><strong>At least one special character</strong></span></div>
+              <div class="rule" id="rule-match"><span class="tick bad">×</span><span><strong>Passwords match</strong></span></div>
+            </div>
+
+            <div class="actions">
+              <button class="button primary" type="submit">Create account</button>
+              <button class="button google" id="resend-btn" type="button" hidden>Resend confirmation email</button>
+            </div>
+          </form>
+
+          <div class="row">
+            <span>Already have an account?</span>
+            <a href="/login.html">Sign in</a>
+          </div>
+
+          <div id="message" class="message" aria-live="polite"></div>
+        </div>
+
+        <div class="footer">
+          We’ll only let you continue when the password is strong enough.
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const SUPABASE_URL = "https://fraufatburxkfynjbidq.supabase.co";
+      const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZyYXVmYXRidXJ4a2Z5bmpiaWRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1NTU3NTgsImV4cCI6MjA5NjEzMTc1OH0.OXbuf7O9vbyYLaTKFZA99Rw3_j_E4-LqcXyRH3heQB0";
+      const NEXT_PATH = new URLSearchParams(window.location.search).get("next") || "/dashboard/ai";
+      const REDIRECT_TO = `${window.location.origin}/auth/callback.html?next=${encodeURIComponent(NEXT_PATH)}`;
+      const SUPABASE = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        auth: { autoRefreshToken: true, persistSession: true, detectSessionInUrl: true, flowType: "pkce" }
+      });
+
+      const message = document.getElementById("message");
+      const fullNameInput = document.getElementById("full-name");
+      const emailInput = document.getElementById("email");
+      const passwordInput = document.getElementById("password");
+      const confirmPasswordInput = document.getElementById("confirm-password");
+      const signupForm = document.getElementById("signup-form");
+      const googleBtn = document.getElementById("google-btn");
+      const resendBtn = document.getElementById("resend-btn");
+      let googleOAuthEnabled = false;
+
+      const rules = {
+        length: document.getElementById("rule-length"),
+        upper: document.getElementById("rule-upper"),
+        lower: document.getElementById("rule-lower"),
+        number: document.getElementById("rule-number"),
+        special: document.getElementById("rule-special"),
+        match: document.getElementById("rule-match")
+      };
+
+      function setMessage(text, kind = "") {
+        message.textContent = text;
+        message.className = `message${kind ? ` ${kind}` : ""}`;
+      }
+
+      function showResendButton(show) {
+        if (!resendBtn) return;
+        resendBtn.hidden = !show;
+      }
+
+      function friendlyError(text) {
+        const value = String(text || "");
+        if (/user already exists/i.test(value)) return "An account with this email already exists. Log in instead.";
+        if (/password/i.test(value) && /weak|6|8|characters|length/i.test(value)) return "Password does not meet the requirements above.";
+        if (/weak password/i.test(value)) return "Password does not meet the requirements above.";
+        if (/unsupported provider|provider is not enabled/i.test(value)) {
+          return "Google sign-up is not enabled in Supabase yet. Use email sign-up or enable the Google provider.";
+        }
+        return "Signup failed. Please try again.";
+      }
+
+      function passwordState(password, confirmPassword) {
+        return {
+          length: password.length >= 8,
+          upper: /[A-Z]/.test(password),
+          lower: /[a-z]/.test(password),
+          number: /[0-9]/.test(password),
+          special: /[!@#$%^&*(),.?":{}|<>\-_/\\[\]`~+=;]/.test(password),
+          match: !!password && password === confirmPassword
+        };
+      }
+
+      function paintRule(element, ok) {
+        const icon = element.querySelector(".tick");
+        element.classList.toggle("ok", ok);
+        element.classList.toggle("bad", !ok);
+        icon.textContent = ok ? "✓" : "×";
+      }
+
+      function refreshRules() {
+        const state = passwordState(passwordInput.value, confirmPasswordInput.value);
+        paintRule(rules.length, state.length);
+        paintRule(rules.upper, state.upper);
+        paintRule(rules.lower, state.lower);
+        paintRule(rules.number, state.number);
+        paintRule(rules.special, state.special);
+        paintRule(rules.match, state.match);
+        return state;
+      }
+
+      async function exchangeSession(session) {
+        if (!session?.access_token) return false;
+        const response = await fetch("/api/auth/exchange", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ accessToken: session.access_token })
+        });
+        return response.ok;
+      }
+
+      fetch("/api/config", { cache: "no-store" })
+        .then((response) => response.ok ? response.json() : null)
+        .then((config) => {
+          googleOAuthEnabled = config?.googleOAuthEnabled !== false;
+          if (!googleOAuthEnabled && googleBtn) {
+            googleBtn.disabled = true;
+            googleBtn.title = "Google sign-up is not enabled in Supabase yet.";
+          }
+        })
+        .catch(() => {
+          if (googleBtn) {
+            googleBtn.disabled = true;
+            googleBtn.title = "Auth config could not be loaded.";
+          }
+        });
+
+      googleBtn.addEventListener("click", async () => {
+        if (!googleOAuthEnabled) {
+          setMessage("Google sign-up is not enabled in Supabase yet. Use email/password for now.", "error");
+          return;
+        }
+        setMessage("Redirecting to Google...");
+        const { error } = await SUPABASE.auth.signInWithOAuth({
+          provider: "google",
+          options: {
+            redirectTo: REDIRECT_TO,
+            scopes: "https://www.googleapis.com/auth/userinfo.email"
+          }
+        });
+        if (error) setMessage(friendlyError(error.message), "error");
+      });
+
+      resendBtn.addEventListener("click", async () => {
+        const email = emailInput.value.trim();
+        if (!email) {
+          setMessage("Enter your email first, then resend the confirmation email.", "error");
+          return;
+        }
+
+        setMessage("Sending confirmation email again...");
+        const { error } = await SUPABASE.auth.resend({
+          type: "signup",
+          email,
+          options: { emailRedirectTo: REDIRECT_TO }
+        });
+
+        if (error) {
+          setMessage(friendlyError(error.message), "error");
+          return;
+        }
+
+        setMessage("Confirmation email sent again. Check your inbox.", "success");
+      });
+
+      [passwordInput, confirmPasswordInput].forEach((field) => {
+        field.addEventListener("input", () => {
+          refreshRules();
+          setMessage("");
+        });
+      });
+
+      signupForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const fullName = fullNameInput.value.trim();
+        const email = emailInput.value.trim();
+        const password = passwordInput.value;
+        const confirmPassword = confirmPasswordInput.value;
+        const state = refreshRules();
+
+        if (!fullName || !email || !password || !confirmPassword) {
+          setMessage("Please fill in all fields.", "error");
+          return;
+        }
+
+        if (!state.length || !state.upper || !state.lower || !state.number || !state.special) {
+          setMessage("Password does not meet the requirements above.", "error");
+          return;
+        }
+
+        if (!state.match) {
+          setMessage("Passwords do not match.", "error");
+          return;
+        }
+
+        setMessage("Creating account...");
+        const { data, error } = await SUPABASE.auth.signUp({
+          email,
+          password,
+          options: { data: { full_name: fullName }, emailRedirectTo: REDIRECT_TO }
+        });
+
+        if (error) {
+          setMessage(friendlyError(error.message), "error");
+          return;
+        }
+
+        if (data?.session) {
+          await exchangeSession(data.session);
+          showResendButton(false);
+          setMessage("Account created and signed in.", "success");
+          window.location.href = NEXT_PATH;
+          return;
+        }
+
+        showResendButton(true);
+        setMessage("Account created! Check your email to confirm before logging in.", "success");
+        signupForm.reset();
+        refreshRules();
+      });
+
+      (async () => {
+        refreshRules();
+        const { data } = await SUPABASE.auth.getSession();
+        if (data.session) {
+          await exchangeSession(data.session);
+          window.location.href = NEXT_PATH;
+        }
+      })();
+    </script>
+  </body>
+</html>

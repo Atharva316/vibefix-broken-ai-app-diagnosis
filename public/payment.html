@@ -3,13 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>VibeFix Payment - Beta Diagnosis Report</title>
-  <meta name="description" content="Get the VibeFix Broken App Diagnosis report for &#8377;7,530 (~$90 USD) and submit your app details through the VibeFix intake form after payment." />
-  <meta property="og:title" content="VibeFix Payment - Beta Diagnosis Report" />
-  <meta property="og:description" content="Get the VibeFix Broken App Diagnosis report for &#8377;7,530 (~$90 USD)." />
-  <meta property="og:image" content="https://vibefix-broken-ai-app-diagnosis.atharvam144.workers.dev/og-image.svg" />
-  <meta property="og:url" content="https://vibefix-broken-ai-app-diagnosis.atharvam144.workers.dev/#pricing" />
-  <meta property="og:type" content="website" />
+  <title>VibeFix Payment - Test Checkout</title>
+  <meta name="description" content="Open the VibeFix Razorpay test checkout, then continue to the diagnosis intake form after payment." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
@@ -81,6 +76,29 @@
     .payment-warning strong {
       color: #F59E0B;
     }
+
+    .tier-strip {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .tier-chip {
+      padding: 12px 14px;
+      border: 1px solid #1E1E2E;
+      border-radius: 12px;
+      background: rgba(18, 18, 26, 0.74);
+      color: #94A3B8;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .tier-chip.active {
+      border-color: #7C3AED;
+      color: #F8FAFC;
+      box-shadow: 0 0 28px rgba(124, 58, 237, 0.16);
+    }
   </style>
 </head>
 <body>
@@ -91,14 +109,22 @@
       <a href="/#diagnose">What We Diagnose</a>
       <a href="/#faq">FAQ</a>
     </div>
+    <div class="auth-slot">
+      <a class="nav-auth-link" href="/login.html">Sign In</a>
+    </div>
   </nav>
 
   <main class="payment-shell">
     <section class="payment-card">
-      <span class="section-kicker">Secure payment</span>
-      <h1>VibeFix Beta Diagnosis Report</h1>
-      <p class="muted">Complete payment through Razorpay, then continue to the VibeFix intake form and submit your broken app details.</p>
-      <div class="payment-price">&#8377;7,530 <span>(~$90 USD) beta</span></div>
+      <span class="section-kicker">Temporary test payment</span>
+      <h1 id="plan-title">VibeFix Beta Diagnosis Test Checkout</h1>
+      <p class="muted" id="plan-summary">Use this page to complete the temporary ₹1 Razorpay test payment, then continue to the VibeFix intake form and submit your broken app details.</p>
+      <div class="tier-strip" aria-label="Selected plan preview">
+        <div class="tier-chip" data-plan="free">Free</div>
+        <div class="tier-chip" data-plan="starter">Starter</div>
+        <div class="tier-chip" data-plan="pro">Premium</div>
+      </div>
+      <div class="payment-price" id="plan-price">₹1 <span>test</span></div>
       <ul class="pricing-list">
         <li>Likely root cause in plain English</li>
         <li>What not to touch before repair</li>
@@ -110,14 +136,56 @@
         Razorpay checkout opens in a separate step. After payment, use the success page to open the VibeFix intake form and paste your Razorpay Payment ID / Order ID.
       </div>
       <div class="payment-note payment-warning">
-        <strong>If Razorpay does not redirect after payment</strong>, return to VibeFix and open the intake form manually. Paste your Razorpay Payment ID / Order ID from your receipt.
+        <strong>If Razorpay opens a blank page or shows only {}</strong>, return here and use the fallback button below. You can still submit the intake form and paste the payment details manually.
       </div>
       <div class="payment-actions">
-        <a class="btn btn-primary full-width" href="https://rzp.io/rzp/bM3R4oPl">Get Beta Diagnosis &mdash; &#8377;7,530 (~$90 USD)</a>
-        <a class="btn btn-secondary full-width" href="/intake.html">Already paid? Submit App Details</a>
+        <a class="btn btn-primary full-width" id="checkout-link" href="https://rzp.io/rzp/IJurCsfY" target="_blank" rel="noopener">Open ₹1 Razorpay Test Checkout</a>
+        <a class="btn btn-secondary full-width" href="/payment-success.html?source=manual_test">Razorpay blank? Continue to Intake</a>
       </div>
-      <p class="caption">If we can't identify a likely root cause, you get a full refund. No questions.</p>
+      <p class="caption">Temporary test mode: production pricing will be ₹7,530 after testing. Do not use this as the final production checkout.</p>
     </section>
   </main>
+  <script>
+    const plan = new URLSearchParams(window.location.search).get("plan") || "pro";
+    const plans = {
+      free: {
+        title: "VibeFix Free Preview",
+        summary: "A limited starting tier for quick triage, short guidance, and a feel for the product.",
+        price: "₹0",
+        checkout: "Continue Free",
+        note: "Best for users who want a fast preview before upgrading."
+      },
+      starter: {
+        title: "VibeFix Starter Checkout",
+        summary: "The middle tier for a guided diagnosis snapshot, a safer fix path, and focused prompts.",
+        price: "₹1,499",
+        checkout: "Open Starter Test Checkout",
+        note: "Designed for smaller paid issues that need a more structured diagnosis."
+      },
+      pro: {
+        title: "VibeFix Premium Beta Checkout",
+        summary: "The full report path for deeper issues, stronger recommendations, and a complete diagnosis package.",
+        price: "₹7,530",
+        checkout: "Open Premium Test Checkout",
+        note: "Best for auth, database, payment, and production issues."
+      }
+    };
+
+    const selected = plans[plan] || plans.pro;
+    document.getElementById("plan-title").textContent = selected.title;
+    document.getElementById("plan-summary").textContent = selected.summary;
+    document.getElementById("plan-price").innerHTML = `${selected.price} <span>${plan === "free" ? "free" : plan}</span>`;
+    const checkoutLink = document.getElementById("checkout-link");
+    checkoutLink.textContent = selected.checkout;
+    checkoutLink.href = plan === "free" ? "/dashboard/ai" : "https://rzp.io/rzp/IJurCsfY";
+    checkoutLink.target = plan === "free" ? "_self" : "_blank";
+    checkoutLink.rel = plan === "free" ? "" : "noopener";
+    document.querySelector(".caption").textContent = plan === "free"
+      ? `Selected plan: ${selected.note}`
+      : `Selected plan: ${selected.note} Temporary test mode still uses the ₹1 Razorpay test link while checkout is being verified.`;
+    document.querySelectorAll(".tier-chip").forEach((chip) => {
+      chip.classList.toggle("active", chip.dataset.plan === plan);
+    });
+  </script>
 </body>
 </html>

@@ -1,19 +1,17 @@
 const COOKIE_NAME = "vf_session";
 const STATE_COOKIE = "vf_oauth_state";
-const PKCE_COOKIE = "vf_pkce_verifier";
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 14;
 const GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
 const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
 const GOOGLE_USERINFO_URL = "https://openidconnect.googleapis.com/v1/userinfo";
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
 const ANTHROPIC_MODEL = "claude-sonnet-4-20250514";
-const ANTHROPIC_DIAGNOSE_MODEL = "claude-haiku-4-5-20251001";
 const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
 const RESEND_URL = "https://api.resend.com/emails";
 const WEB3FORMS_URL = "https://api.web3forms.com/submit";
 const WEB3FORMS_FALLBACK_ACCESS_KEY = "16c490f0-2048-4d65-930e-1e12eca9c6b1";
 const STATIC_ASSET_ORIGIN = "https://raw.githubusercontent.com/Atharva316/vibefix-broken-ai-app-diagnosis/main/public";
-const PAYMENT_URL = "https://rzp.io/rzp/bM3R4oPl";
+const PAYMENT_URL = "/payment.html";
 const REPORT_ID_PREFIX = "VF";
 const REQUIRED_INTAKE_FIELDS = [
   "payment_id",
@@ -43,25 +41,14 @@ export default {
     const url = new URL(request.url);
 
     try {
-      if (url.pathname === "/auth/google") return startGoogleAuth(request, env);
-      if (url.pathname === "/auth/apple") return startSupabaseProviderAuth(request, env, "apple");
-      if (url.pathname === "/auth/email" && request.method === "POST") return startEmailMagicLink(request, env);
-      if (url.pathname === "/auth/phone" && request.method === "POST") return startPhoneOtp(request, env);
-      if (url.pathname === "/auth/phone/verify" && request.method === "POST") return verifyPhoneOtp(request, env);
-      if (url.pathname === "/auth/callback") return finishSupabaseAuth(request, env);
+      if (url.pathname === "/api/config") return json(getClientConfig(env));
+      if (url.pathname === "/api/auth/exchange" && request.method === "POST") return exchangeSupabaseSession(request, env);
+      if (url.pathname === "/auth/google") return redirect(`/login.html${url.search || ""}`);
       if (url.pathname === "/auth/google/callback") return finishGoogleAuth(request, env);
-      if (url.pathname === "/auth/session" && request.method === "POST") return finishBrowserSupabaseSession(request, env);
       if (url.pathname === "/auth/signout") return signOut(request, env);
       if (url.pathname === "/api/me") return json(await getPublicUserState(request, env));
       if (url.pathname === "/api/ai" && request.method === "POST") return handleAi(request, env);
-      if (url.pathname === "/api/diagnose" && request.method === "POST") return handleDiagnose(request, env);
       if (url.pathname === "/api/generate-report") return handleGenerateReport(request, env);
-      if (url.pathname === "/api/report-counter") return handleReportCounter(env);
-      if (url.pathname === "/api/ai-helper-count") return handleAiHelperCount(env);
-      if (url.pathname === "/api/rollback-calculator" && request.method === "POST") return handleRollbackCalculator(request, env);
-      if (url.pathname === "/api/prompt-checker" && request.method === "POST") return handlePromptChecker(request, env);
-      if (url.pathname === "/api/safe-scan" && request.method === "POST") return handleSafeScan(request, env);
-      if (url.pathname === "/api/casefile-email" && request.method === "POST") return handleCasefileEmail(request, env);
       if (url.pathname.startsWith("/report/")) return renderStoredReport(request, env);
       if (url.pathname === "/pricing") return redirect(PAYMENT_URL);
       if (url.pathname === "/dashboard") return redirect("/dashboard/reports");
@@ -75,15 +62,11 @@ export default {
 };
 
 async function serveStaticAsset(request, env) {
-  const url = new URL(request.url);
-  const path = normalizeAssetPath(url.pathname);
-
-  if (env.ASSETS) {
-    return withStaticAssetHeaders(await env.ASSETS.fetch(request), path);
-  }
-
+  if (env.ASSETS) return env.ASSETS.fetch(request);
   if (!env.VIBEFIX_KV) return new Response("Not found", { status: 404 });
 
+  const url = new URL(request.url);
+  const path = normalizeAssetPath(url.pathname);
   const value = await env.VIBEFIX_KV.get(`asset:${path}`, { type: "arrayBuffer" });
 
   if (!value) return fetchGitHubAsset(path);
@@ -96,20 +79,6 @@ async function serveStaticAsset(request, env) {
   });
 }
 
-function withStaticAssetHeaders(response, path) {
-  if (!shouldFetchFreshAsset(path)) return response;
-
-  const headers = new Headers(response.headers);
-  headers.set("Content-Type", contentTypeFor(path));
-  headers.set("Cache-Control", "no-store, max-age=0");
-
-  return new Response(response.body, {
-    status: response.status,
-    statusText: response.statusText,
-    headers
-  });
-}
-
 async function fetchGitHubAsset(path) {
   const response = await fetch(`${STATIC_ASSET_ORIGIN}${path}`);
   if (!response.ok) return new Response("Not found", { status: 404 });
@@ -117,13 +86,9 @@ async function fetchGitHubAsset(path) {
   return new Response(response.body, {
     headers: {
       "Content-Type": contentTypeFor(path),
-      "Cache-Control": shouldFetchFreshAsset(path) ? "no-store" : "public, max-age=3600"
+      "Cache-Control": path === "/index.html" ? "public, max-age=60" : "public, max-age=3600"
     }
   });
-}
-
-function shouldFetchFreshAsset(path) {
-  return path.endsWith(".html") || path.endsWith(".css") || path.endsWith(".js");
 }
 
 function normalizeAssetPath(pathname) {
@@ -136,14 +101,11 @@ function contentTypeFor(path) {
   if (path.endsWith(".html")) return "text/html; charset=utf-8";
   if (path.endsWith(".css")) return "text/css; charset=utf-8";
   if (path.endsWith(".js")) return "application/javascript; charset=utf-8";
-  if (path.endsWith(".xml")) return "application/xml; charset=utf-8";
-  if (path.endsWith(".svg")) return "image/svg+xml; charset=utf-8";
   if (path.endsWith(".pdf")) return "application/pdf";
   return "application/octet-stream";
 }
 
 async function startGoogleAuth(request, env) {
-  if (isSupabaseAuthConfigured(env)) return startSupabaseGoogleAuth(request, env);
   if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET) return startGuestSession(request, env);
 
   const url = new URL(request.url);
@@ -164,122 +126,91 @@ async function startGoogleAuth(request, env) {
   });
 }
 
-async function startSupabaseGoogleAuth(request, env) {
-  return startSupabaseProviderAuth(request, env, "google");
+function getClientConfig(env) {
+  const googleOAuthEnabled = typeof env.SUPABASE_GOOGLE_ENABLED === "string"
+    ? env.SUPABASE_GOOGLE_ENABLED === "true"
+    : undefined;
+
+  return {
+    supabaseUrl: env.SUPABASE_URL || "",
+    supabaseAnonKey: env.SUPABASE_ANON_KEY || "",
+    loginPath: "/login",
+    googleOAuthEnabled
+  };
 }
 
-async function startSupabaseProviderAuth(request, env, provider) {
-  const url = new URL(request.url);
-  const next = safeNext(url.searchParams.get("next") || "/dashboard/ai");
+async function exchangeSupabaseSession(request, env) {
+  assertEnv(env, ["SUPABASE_URL", "SUPABASE_ANON_KEY"]);
+  assertKv(env);
 
-  if (!isSupabaseAuthConfigured(env)) {
-    if (provider === "google") return startGoogleAuth(request, env);
-    return authErrorPage(next, "Supabase auth is not configured for this deployment.");
-  }
-
-  const state = cryptoRandom();
-  const codeVerifier = pkceVerifier();
-  const codeChallenge = await pkceChallenge(codeVerifier);
-  const redirectTo = `${url.origin}/auth/callback?next=${encodeURIComponent(next)}&oauth_state=${state}`;
-  const authUrl = new URL(`${env.SUPABASE_URL}/auth/v1/authorize`);
-
-  authUrl.searchParams.set("provider", provider);
-  authUrl.searchParams.set("redirect_to", redirectTo);
-  authUrl.searchParams.set("response_type", "code");
-  authUrl.searchParams.set("code_challenge", codeChallenge);
-  authUrl.searchParams.set("code_challenge_method", "S256");
-
-  return redirect(authUrl.toString(), {
-    "Set-Cookie": [
-      cookie(STATE_COOKIE, state, { maxAge: 600 }),
-      cookie(PKCE_COOKIE, codeVerifier, { maxAge: 600 })
-    ]
-  });
-}
-
-async function startEmailMagicLink(request, env) {
-  if (!isSupabaseAuthConfigured(env)) return json({ error: "Supabase auth is not configured." }, 500);
-
-  const url = new URL(request.url);
-  const payload = await readJson(request);
-  const email = clean(payload.email || "").toLowerCase();
-  const next = safeNext(payload.next || "/dashboard/ai");
-
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return json({ error: "Enter a valid email address." }, 400);
-
-  const response = await fetch(`${env.SUPABASE_URL}/auth/v1/otp`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "apikey": env.SUPABASE_ANON_KEY
-    },
-    body: JSON.stringify({
-      email,
-      should_create_user: true,
-      email_redirect_to: `${url.origin}/auth/callback?next=${encodeURIComponent(next)}`
-    })
-  });
-
-  if (!response.ok) return json({ error: await supabaseErrorMessage(response, "Could not send magic link.") }, response.status);
-  return json({ ok: true, message: "Magic link sent. Check your email to finish signing in." });
-}
-
-async function startPhoneOtp(request, env) {
-  if (!isSupabaseAuthConfigured(env)) return json({ error: "Supabase auth is not configured." }, 500);
-
-  const payload = await readJson(request);
-  const phone = clean(payload.phone || "");
-
-  if (!/^\+[1-9]\d{7,14}$/.test(phone)) return json({ error: "Enter phone in international format, for example +919876543210." }, 400);
-
-  const response = await fetch(`${env.SUPABASE_URL}/auth/v1/otp`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "apikey": env.SUPABASE_ANON_KEY
-    },
-    body: JSON.stringify({
-      phone,
-      should_create_user: true
-    })
-  });
-
-  if (!response.ok) return json({ error: await supabaseErrorMessage(response, "Could not send phone OTP.") }, response.status);
-  return json({ ok: true, message: "OTP sent. Enter the code to finish signing in." });
-}
-
-async function verifyPhoneOtp(request, env) {
-  if (!isSupabaseAuthConfigured(env)) return json({ error: "Supabase auth is not configured." }, 500);
-
-  const payload = await readJson(request);
-  const phone = clean(payload.phone || "");
-  const token = clean(payload.token || "");
-  const next = safeNext(payload.next || "/dashboard/ai");
-
-  if (!phone || !token) return json({ error: "Phone number and OTP are required." }, 400);
-
-  const response = await fetch(`${env.SUPABASE_URL}/auth/v1/verify`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "apikey": env.SUPABASE_ANON_KEY
-    },
-    body: JSON.stringify({ phone, token, type: "sms" })
-  });
-
-  const tokenResponse = await response.json().catch(() => ({}));
-  if (!response.ok || !tokenResponse?.access_token) {
-    return json({ error: tokenResponse.error_description || tokenResponse.msg || tokenResponse.error || "OTP verification failed." }, response.status || 401);
-  }
-
+  let body = {};
   try {
-    const sessionResponse = await createSupabaseSessionResponse(tokenResponse, next, env);
-    const setCookie = sessionResponse.headers.get("Set-Cookie");
-    return json({ ok: true, next }, 200, setCookie ? { "Set-Cookie": setCookie } : {});
+    body = await request.json();
   } catch (error) {
-    console.error("Phone OTP session failed", error);
-    return json({ error: "Could not create session after OTP verification." }, 401);
+    return new Response(JSON.stringify({ success: false, error: "Invalid JSON body." }), {
+      status: 400,
+      headers: { "Content-Type": "application/json; charset=utf-8" }
+    });
   }
+
+  const accessToken = clean(body.accessToken || "");
+  if (!accessToken) {
+    return new Response(JSON.stringify({ success: false, error: "Missing access token." }), {
+      status: 400,
+      headers: { "Content-Type": "application/json; charset=utf-8" }
+    });
+  }
+
+  const supabaseUser = await getSupabaseUser(env, accessToken);
+  if (!supabaseUser) {
+    return new Response(JSON.stringify({ success: false, error: "Supabase session could not be verified." }), {
+      status: 401,
+      headers: { "Content-Type": "application/json; charset=utf-8" }
+    });
+  }
+
+  const userId = supabaseUser.id;
+  const user = {
+    googleId: userId,
+    email: supabaseUser.email || "",
+    name: supabaseUser.user_metadata?.full_name || supabaseUser.user_metadata?.name || supabaseUser.email || "VibeFix User",
+    avatar: supabaseUser.user_metadata?.avatar_url || supabaseUser.user_metadata?.picture || "",
+    created_at: supabaseUser.created_at || new Date().toISOString(),
+    diagnosis_count: Number((await env.VIBEFIX_KV.get(`diagnosis_count:${userId}`)) || "0"),
+    auth_provider: supabaseUser.app_metadata?.provider || "email"
+  };
+
+  await env.VIBEFIX_KV.put(`user:${userId}`, JSON.stringify(user));
+  const sessionId = cryptoRandom();
+  await env.VIBEFIX_KV.put(`session:${sessionId}`, JSON.stringify({
+    userId,
+    created_at: new Date().toISOString(),
+    source: "supabase"
+  }), { expirationTtl: SESSION_TTL_SECONDS });
+
+  const response = new Response(JSON.stringify({
+    success: true,
+    user
+  }), {
+    headers: {
+      "Content-Type": "application/json; charset=utf-8",
+      "Set-Cookie": cookie(COOKIE_NAME, sessionId, { maxAge: SESSION_TTL_SECONDS })
+    }
+  });
+
+  return response;
+}
+
+async function getSupabaseUser(env, accessToken) {
+  const response = await fetch(`${env.SUPABASE_URL}/auth/v1/user`, {
+    headers: {
+      apikey: env.SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${accessToken}`
+    }
+  });
+
+  if (!response.ok) return null;
+  return response.json();
 }
 
 async function startGuestSession(request, env) {
@@ -312,174 +243,6 @@ async function startGuestSession(request, env) {
   return redirect(next, {
     "Set-Cookie": cookie(COOKIE_NAME, sessionId, { maxAge: SESSION_TTL_SECONDS })
   });
-}
-
-async function finishSupabaseAuth(request, env) {
-  const url = new URL(request.url);
-  const next = safeNext(url.searchParams.get("next") || "/dashboard/ai");
-  const code = url.searchParams.get("code");
-  const oauthState = url.searchParams.get("oauth_state");
-  const expectedState = getCookie(request, STATE_COOKIE);
-  const codeVerifier = getCookie(request, PKCE_COOKIE);
-
-  if (!isSupabaseAuthConfigured(env)) {
-    return authErrorPage(next, "Supabase auth is not configured for this deployment.");
-  }
-
-  if (!code) {
-    return html(`<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Finishing sign in</title>
-  <link rel="stylesheet" href="/styles.css" />
-</head>
-<body>
-  <main class="payment-shell">
-    <section class="payment-card">
-      <span class="section-kicker">Sign in</span>
-      <h1>Finishing sign in...</h1>
-      <p class="muted">If this page does not continue automatically, use the button below.</p>
-      <a class="btn btn-primary full-width" href="/auth/google?next=${escapeAttr(next)}">Try Sign In Again</a>
-    </section>
-  </main>
-  <script>
-    (async () => {
-      const params = new URLSearchParams(window.location.hash.slice(1));
-      const access_token = params.get("access_token");
-      const refresh_token = params.get("refresh_token");
-      if (!access_token) return;
-      const response = await fetch("/auth/session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ access_token, refresh_token, next: ${JSON.stringify(next)} })
-      });
-      const data = await response.json().catch(() => ({}));
-      window.location.href = data.next || ${JSON.stringify(next)};
-    })();
-  </script>
-</body>
-</html>`);
-  }
-
-  if (!oauthState || !expectedState || oauthState !== expectedState) {
-    return authErrorPage(next, "Sign-in session expired. Please try signing in again.");
-  }
-
-  if (!codeVerifier) {
-    return authErrorPage(next, "Sign-in verifier is missing. Please start Google sign-in again.");
-  }
-
-  try {
-    const tokenResponse = await fetch(`${env.SUPABASE_URL}/auth/v1/token?grant_type=pkce`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "apikey": env.SUPABASE_ANON_KEY
-      },
-      body: JSON.stringify({ auth_code: code, code_verifier: codeVerifier })
-    });
-
-    const token = await tokenResponse.json();
-    if (token?.access_token) {
-      const response = await createSupabaseSessionResponse(token, next, env);
-      response.headers.append("Set-Cookie", cookie(STATE_COOKIE, "", { maxAge: 0 }));
-      response.headers.append("Set-Cookie", cookie(PKCE_COOKIE, "", { maxAge: 0 }));
-      return response;
-    }
-
-    console.error("Supabase code exchange failed", token);
-  } catch (error) {
-    console.error("Supabase code exchange failed", error);
-  }
-
-  return authErrorPage(next, "Google sign-in could not be completed. Please try again.");
-}
-
-async function finishBrowserSupabaseSession(request, env) {
-  if (!isSupabaseAuthConfigured(env)) return json({ error: "Supabase auth is not configured" }, 500);
-  let payload;
-  try {
-    payload = await request.json();
-  } catch (error) {
-    return json({ error: "Invalid JSON body" }, 400);
-  }
-  if (!payload.access_token) return json({ error: "Missing access token" }, 400);
-  const next = safeNext(payload.next || "/dashboard/ai");
-  try {
-    const response = await createSupabaseSessionResponse(payload, next, env);
-    const setCookie = response.headers.get("Set-Cookie");
-    return json({ next }, 200, setCookie ? { "Set-Cookie": setCookie } : {});
-  } catch (error) {
-    console.error("Supabase browser session failed", error);
-    return json({ error: "Could not create session" }, 401);
-  }
-}
-
-async function createSupabaseSessionResponse(token, next, env) {
-  assertKv(env);
-  const profileResponse = await fetch(`${env.SUPABASE_URL}/auth/v1/user`, {
-    headers: {
-      "apikey": env.SUPABASE_ANON_KEY,
-      "Authorization": `Bearer ${token.access_token}`
-    }
-  });
-
-  if (!profileResponse.ok) throw new Error("Could not read Supabase user");
-  const profile = await profileResponse.json();
-  const metadata = profile.user_metadata || {};
-  const userId = profile.id || profile.sub || profile.email;
-  const userKey = `user:${userId}`;
-  const existing = await env.VIBEFIX_KV.get(userKey, "json");
-  const user = {
-    googleId: userId,
-    email: profile.email || "",
-    name: metadata.full_name || metadata.name || profile.email || "User",
-    avatar: metadata.avatar_url || metadata.picture || "",
-    created_at: existing?.created_at || new Date().toISOString(),
-    diagnosis_count: existing?.diagnosis_count || 0,
-    provider: "supabase"
-  };
-
-  await env.VIBEFIX_KV.put(userKey, JSON.stringify(user));
-
-  const sessionId = cryptoRandom();
-  await env.VIBEFIX_KV.put(`session:${sessionId}`, JSON.stringify({
-    userId,
-    created_at: new Date().toISOString()
-  }), { expirationTtl: SESSION_TTL_SECONDS });
-
-  return redirect(next, {
-    "Set-Cookie": cookie(COOKIE_NAME, sessionId, { maxAge: SESSION_TTL_SECONDS })
-  });
-}
-
-function isSupabaseAuthConfigured(env) {
-  return Boolean(env.SUPABASE_URL && env.SUPABASE_ANON_KEY);
-}
-
-function authErrorPage(next, message) {
-  return html(`<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sign in failed</title>
-  <link rel="stylesheet" href="/styles.css" />
-</head>
-<body>
-  <main class="payment-shell">
-    <section class="payment-card">
-      <span class="section-kicker">Sign in</span>
-      <h1>Sign in could not be completed</h1>
-      <p class="muted">${escapeHtml(message)}</p>
-      <a class="btn btn-primary full-width" href="/auth/google?next=${escapeAttr(next)}">Try Google Sign In Again</a>
-      <a class="btn btn-secondary full-width" href="/">Back to VibeFix</a>
-    </section>
-  </main>
-</body>
-</html>`);
 }
 
 async function finishGoogleAuth(request, env) {
@@ -579,7 +342,6 @@ async function handleAi(request, env) {
   const breakTypes = Array.isArray(payload.breakTypes) ? payload.breakTypes.map(clean).join(", ") : "Other";
   const description = clean(payload.description || "");
   const image = payload.image || null;
-  const confidenceLevel = calculateConfidence(description, image);
 
   if (!description.trim()) return json({ error: "Describe what broke before generating prompts." }, 400);
 
@@ -599,14 +361,7 @@ async function handleAi(request, env) {
         }
 
         await env.VIBEFIX_KV.put(usageKey, String(usage + 1));
-        await saveAiHelperSession(env, {
-          builder_tool: tool,
-          break_type: breakTypes,
-          description,
-          generated_prompt: extractFixPrompt(fullText),
-          confidence_level: confidenceLevel
-        });
-        write("done", { text: fullText, remaining: Math.max(0, freeLimit - usage - 1), limit: freeLimit, confidence: confidenceLevel });
+        write("done", { text: fullText, remaining: Math.max(0, freeLimit - usage - 1), limit: freeLimit });
       } catch (error) {
         write("error", { message: "The AI helper could not generate a response. Try again with the error message pasted in." });
       } finally {
@@ -645,14 +400,10 @@ async function handleGenerateReport(request, env) {
     }
   }
 
-  const redactedPayload = redactSecretsDeep(payload);
-
   try {
-    const report = await generateDiagnosisReport(redactedPayload, env);
-    const reportRecord = await saveGeneratedReport(request, env, redactedPayload, report);
-    await saveIntakeSubmission(env, redactedPayload, reportRecord);
-    await saveCaseFile(env, redactedPayload, report.model);
-    await deliverOwnerReport(redactedPayload, report.renderedText, reportRecord, env);
+    const report = await generateDiagnosisReport(payload, env);
+    const reportRecord = await saveGeneratedReport(request, env, payload, report);
+    await deliverOwnerReport(payload, report.renderedText, reportRecord, env);
     return json({ success: true, reportId: reportRecord.id, reportUrl: reportRecord.reportUrl });
   } catch (error) {
     console.error(error);
@@ -660,407 +411,9 @@ async function handleGenerateReport(request, env) {
   }
 }
 
-async function handleReportCounter(env) {
-  const rows = await supabaseSelect(env, "report_counter", "id=eq.1&select=count,last_diagnosed_at");
-  const row = rows?.[0] || { count: 0, last_diagnosed_at: null };
-  return json({
-    count: Number(row.count || 0),
-    last_diagnosed_at: row.last_diagnosed_at || null
-  });
-}
-
-async function handleAiHelperCount(env) {
-  const count = await supabaseRpcCount(env, "get_ai_helper_sessions_count");
-  return json({ count });
-}
-
-async function handleRollbackCalculator(request, env) {
-  const payload = await request.json();
-  const answers = payload.answers || {};
-  const recommendation = calculateRollbackRecommendation(answers);
-
-  await supabaseInsert(env, "rollback_calculator_sessions", {
-    answers_json: answers,
-    recommendation: recommendation.type
-  });
-
-  return json(recommendation);
-}
-
-async function handlePromptChecker(request, env) {
-  let payload;
-  try {
-    payload = await request.json();
-  } catch (error) {
-    return json({ error: "Invalid JSON body" }, 400);
-  }
-  const originalPrompt = clean(redactSecrets(payload.prompt || ""));
-  if (!originalPrompt) return json({ error: "Paste a prompt before checking scope." }, 400);
-
-  const result = env.ANTHROPIC_API_KEY
-    ? await analyzePromptScopeWithAnthropic(originalPrompt, env)
-    : fallbackPromptScopeAnalysis(originalPrompt);
-
-  await supabaseInsert(env, "prompt_checker_sessions", {
-    original_prompt: originalPrompt,
-    risk_level: result.risk_level,
-    rewritten_prompt: result.rewritten_prompt
-  });
-
-  await supabaseInsert(env, "vibefix_prompt_checks", {
-    prompt_text: originalPrompt,
-    risk_level: result.risk_level,
-    risky_phrases: Array.isArray(result.accidental_touch_areas) ? result.accidental_touch_areas : [],
-    safe_rewrite: result.rewritten_prompt,
-    raw_payload: redactSecretsDeep({ payload, result })
-  });
-
-  return json(result);
-}
-
-async function handleDiagnose(request, env) {
-  const user = await requireUser(request, env, true);
-  if (!user) return json({ error: "Unauthorized" }, 401);
-  assertKv(env);
-
-  let payload;
-  try {
-    payload = await request.json();
-  } catch (error) {
-    return json({ error: "Invalid JSON body" }, 400);
-  }
-  const tool = clean(payload.tool || "Other");
-  const breakType = clean(payload.breakType || payload.breakTypes || "Other");
-  const description = clean(payload.description || "");
-  const freeLimit = Number(env.FREE_AI_LIMIT || 3);
-  const usageKey = `usage:${user.googleId}`;
-  const usage = Number(await env.VIBEFIX_KV.get(usageKey) || "0");
-
-  if (!description.trim()) return json({ error: "Describe what broke before generating prompts." }, 400);
-
-  if (usage >= freeLimit) {
-    return json({
-      gated: true,
-      limit: freeLimit,
-      remaining: 0,
-      result: `LIKELY CAUSE:
-You have used all ${freeLimit} free prompt generations.
-
-WHAT NOT TO TOUCH:
-- Do not keep trying to regenerate prompts for free in this session.
-- Do not rewrite the app blindly.
-- Do not change auth, database, payment, or environment settings without a diagnosis.
-
-PASTE THIS INTO YOUR TOOL:
-Your free VibeFix AI Helper limit is finished. Use the payment option below to continue with the full diagnosis report.
-
-CONFIDENCE: High
-REASON: The free usage limit for this session has been reached.`
-    });
-  }
-
-  const result = buildDiagnosisResult(tool, breakType, description, {
-    attemptCount: Number(payload.attemptCount || 1),
-    lastGeneratedPrompt: clean(payload.lastGeneratedPrompt || ""),
-    recentGeneratedPrompts: Array.isArray(payload.recentGeneratedPrompts)
-      ? payload.recentGeneratedPrompts.map((item) => clean(item)).slice(0, 5)
-      : []
-  });
-
-  await env.VIBEFIX_KV.put(usageKey, String(usage + 1));
-  await saveAiHelperSession(env, {
-    builder_tool: tool,
-    break_type: breakType,
-    description,
-    generated_prompt: extractFixPrompt(result),
-    confidence_level: calculateConfidence(description, null)
-  });
-  return json({ result, remaining: Math.max(0, freeLimit - usage - 1), limit: freeLimit });
-}
-
-async function handleSafeScan(request, env) {
-  let body;
-  try {
-    body = await request.json();
-  } catch (error) {
-    return json({ success: false, error: "Invalid JSON body" }, 400);
-  }
-
-  const payload = redactSecretsDeep(body.payload || {});
-  const result = redactSecretsDeep(body.result || {});
-  const stored = await supabaseInsert(env, "vibefix_scans", {
-    builder: clean(payload.builder || payload.build_tool || ""),
-    break_type: clean(payload.break_type || ""),
-    issue_location: clean(payload.issue_location || ""),
-    break_timing: clean(payload.break_timing || ""),
-    last_working_state: clean(payload.last_working_state || ""),
-    current_broken_behavior: clean(payload.current_broken_behavior || ""),
-    last_prompt: clean(payload.last_prompt || ""),
-    last_ai_tool: clean(payload.last_ai_tool || ""),
-    original_ai_tool: clean(payload.original_ai_tool || ""),
-    fix_attempts: clean(payload.fix_attempts || ""),
-    rollback_available: clean(payload.rollback_available || ""),
-    error_message: clean(payload.error_message || ""),
-    risk_score: Number(result.score || 0),
-    prompt_again_risk: clean(result.promptRisk || ""),
-    likely_break_layer: clean(result.layer || ""),
-    confidence_score: clean(result.confidence || ""),
-    no_touch_zones: Array.isArray(result.noTouchZones) ? result.noTouchZones.map(clean) : [],
-    safe_first_prompt: clean(result.safePrompt || ""),
-    missing_evidence: Array.isArray(result.missingEvidence) ? result.missingEvidence.map(clean) : [],
-    raw_payload: { payload, result }
-  });
-
-  return json({ success: true, stored });
-}
-
-async function handleCasefileEmail(request, env) {
-  assertKv(env);
-
-  let payload;
-  try {
-    payload = await request.json();
-  } catch (error) {
-    return json({ success: false, error: "Invalid JSON body" }, 400);
-  }
-
-  const email = clean(payload.email || "").toLowerCase();
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    return json({ success: false, error: "Enter a valid email address." }, 400);
-  }
-
-  const record = {
-    email,
-    source: "free_scanner_casefile",
-    created_at: new Date().toISOString(),
-    builder: clean(payload.builder || ""),
-    break_type: clean(payload.break_type || ""),
-    prompt_risk: clean(payload.prompt_risk || ""),
-    likely_layer: clean(payload.likely_layer || ""),
-    confidence: clean(payload.confidence || "")
-  };
-
-  const subscriberKey = `subscriber:${email}`;
-  const eventKey = `subscriber_event:${Date.now()}:${crypto.randomUUID()}`;
-  await env.VIBEFIX_KV.put(subscriberKey, JSON.stringify(record));
-  await env.VIBEFIX_KV.put(eventKey, JSON.stringify(record), { expirationTtl: 60 * 60 * 24 * 180 });
-
-  return json({ success: true });
-}
-
-async function saveIntakeSubmission(env, payload, reportRecord) {
-  await supabaseInsert(env, "vibefix_intakes", {
-    razorpay_payment_id: clean(payload.payment_id || payload.razorpay_payment_id || payload.razorpay_order_id || ""),
-    name: clean(payload.name || ""),
-    email: clean(payload.email || ""),
-    app_name: clean(payload.app_name || ""),
-    live_url: clean(payload.live_app_url || ""),
-    preview_url: clean(payload.preview_url || ""),
-    repo_url: clean(payload.repo_link || ""),
-    builder: clean(payload.build_tool || payload.original_builder || ""),
-    break_type: clean(payload.break_type || ""),
-    last_working_state: clean(payload.working_before || payload.last_working_state || ""),
-    current_broken_behavior: clean(payload.broken_now || payload.current_broken_behavior || ""),
-    last_prompt: clean(payload.last_change || payload.last_prompt || ""),
-    recent_prompts: splitLines(payload.recent_prompts),
-    last_ai_tool: clean(payload.last_ai_tool || ""),
-    original_ai_tool: clean(payload.original_builder || payload.original_ai_tool || ""),
-    fix_attempts: clean(payload.fix_attempt_count || payload.fix_attempts || ""),
-    error_message: clean(payload.error_message || ""),
-    evidence_links: clean(payload.evidence_links || ""),
-    issue_location: clean(payload.issue_location || ""),
-    rollback_available: clean(payload.rollback_available || ""),
-    no_touch_areas: clean(payload.do_not_touch || payload.no_touch_areas || ""),
-    test_login_available: clean(payload.test_login_available || ""),
-    raw_payload: { ...payload, report_id: reportRecord?.id || "", report_url: reportRecord?.reportUrl || "" }
-  });
-}
-
-async function saveCaseFile(env, payload, reportModel) {
-  await supabaseInsert(env, "vibefix_case_files", {
-    case_type: "deep_diagnosis",
-    risk_score: Number(reportModel?.confidencePercent || 0),
-    likely_break_layer: clean(payload.break_type || ""),
-    payload,
-    result: reportModel || {}
-  });
-}
-
-function calculateRollbackRecommendation(answers) {
-  let risk = 0;
-  if (answers.files_changed === "more than 10") risk += 3;
-  if (answers.files_changed === "3-10") risk += 1;
-  if (answers.auth_database === "yes") risk += 3;
-  if (answers.auth_database === "not sure") risk += 2;
-  if (answers.clean_version === "yes") risk -= 2;
-  if (answers.understand_change === "no") risk += 2;
-  if (answers.understand_change === "partially") risk += 1;
-  if (answers.time_spent === "over 1 hour") risk += 2;
-  if (answers.time_spent === "30-60 min") risk += 1;
-
-  if (risk >= 5) {
-    return {
-      type: "ROLLBACK",
-      explanation: "Rollback is safer because the last change likely touched too much or affected risky areas. Return to the last clean working version, then re-apply the intended change in a smaller scope. Avoid auth, database, environment, and production settings until the break boundary is clear."
-    };
-  }
-
-  if (risk <= 1) {
-    return {
-      type: "FIX FORWARD",
-      explanation: "Fix forward is reasonable because the affected area appears limited and understandable. Make the smallest targeted change, then test the old working flow and the new intended flow. Do not allow a broad refactor."
-    };
-  }
-
-  return {
-    type: "HYBRID",
-    explanation: "Use a hybrid path: preserve the current broken state for evidence, compare it against the last working version, then either rollback the risky part or fix forward only the isolated file/config. Do not keep prompting broadly while the cause is uncertain."
-  };
-}
-
-async function analyzePromptScopeWithAnthropic(prompt, env) {
-  const response = await fetch(ANTHROPIC_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": env.ANTHROPIC_API_KEY,
-      "anthropic-version": "2023-06-01"
-    },
-    body: JSON.stringify({
-      model: ANTHROPIC_MODEL,
-      max_tokens: 900,
-      stream: false,
-      system: "You analyze prompts for AI app builders. Return strict JSON only with keys risk_level, accidental_touch_areas, rewritten_prompt. Risk level must be Low, Medium, or High.",
-      messages: [{
-        role: "user",
-        content: `Analyze this prompt for accidental scope risk and rewrite it safely:\n\n${prompt}`
-      }]
-    })
-  });
-
-  if (!response.ok) return fallbackPromptScopeAnalysis(prompt);
-  const data = await response.json();
-  const text = data?.content?.map((part) => part.text || "").join("").trim() || "";
-
-  try {
-    const parsed = JSON.parse(text.replace(/^```json\s*/i, "").replace(/```$/i, ""));
-    return {
-      risk_level: clean(parsed.risk_level || "Medium"),
-      accidental_touch_areas: Array.isArray(parsed.accidental_touch_areas) ? parsed.accidental_touch_areas.map(clean) : [clean(parsed.accidental_touch_areas || "Unclear scope")],
-      rewritten_prompt: clean(parsed.rewritten_prompt || prompt)
-    };
-  } catch (error) {
-    return fallbackPromptScopeAnalysis(prompt);
-  }
-}
-
-function fallbackPromptScopeAnalysis(prompt) {
-  const broad = /\b(rewrite|refactor|entire|whole app|fix everything|all files|from scratch)\b/i.test(prompt);
-  return {
-    risk_level: broad ? "High" : "Medium",
-    accidental_touch_areas: broad
-      ? ["Unrelated components", "Auth/database configuration", "Existing working flows"]
-      : ["Nearby components", "Shared state", "Existing working flows"],
-    rewritten_prompt: `Do not rewrite the app. Do not refactor unrelated code. Do not change auth, database, payment, environment variables, or production settings unless clearly required.\n\nGoal:\n${prompt}\n\nFirst identify the smallest affected area. Then propose the smallest safe change only. List every file or setting you plan to touch before making changes. After the fix, give me a regression checklist for the old working flow and the broken flow.`
-  };
-}
-
-async function saveAiHelperSession(env, row) {
-  await supabaseInsert(env, "ai_helper_sessions", row);
-}
-
-async function supabaseSelect(env, table, query) {
-  if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) return [];
-  const response = await fetch(`${env.SUPABASE_URL.replace(/\/$/, "")}/rest/v1/${table}?${query}`, {
-    headers: supabaseHeaders(env)
-  });
-  if (!response.ok) return [];
-  return response.json();
-}
-
-async function supabaseRpcCount(env, fn) {
-  if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) return 0;
-  const response = await fetch(`${env.SUPABASE_URL.replace(/\/$/, "")}/rest/v1/rpc/${fn}`, {
-    method: "POST",
-    headers: {
-      ...supabaseHeaders(env),
-      "Content-Type": "application/json"
-    },
-    body: "{}"
-  });
-  if (!response.ok) return 0;
-  return Number(await response.json() || 0);
-}
-
-async function supabaseInsert(env, table, row) {
-  if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) return false;
-  try {
-    const response = await fetch(`${env.SUPABASE_URL.replace(/\/$/, "")}/rest/v1/${table}`, {
-      method: "POST",
-      headers: {
-        ...supabaseHeaders(env),
-        "Content-Type": "application/json",
-        Prefer: "return=minimal"
-      },
-      body: JSON.stringify(row)
-    });
-    return response.ok;
-  } catch (error) {
-    console.error(`Supabase insert failed for ${table}.`);
-    return false;
-  }
-}
-
-function supabaseHeaders(env) {
-  return {
-    apikey: env.SUPABASE_ANON_KEY,
-    Authorization: `Bearer ${env.SUPABASE_ANON_KEY}`
-  };
-}
-
-function calculateConfidence(description, image) {
-  const hasError = /(error|exception|failed|denied|unauthorized|timeout|stack|console|log)/i.test(description);
-  if (image && hasError && description.length > 120) return "High";
-  if (hasError || image || description.length > 80) return "Medium";
-  return "Low";
-}
-
-function extractFixPrompt(text) {
-  const marker = "FIX PROMPT FOR";
-  const upper = text.toUpperCase();
-  const index = upper.indexOf(marker);
-  return index === -1 ? text.slice(0, 4000) : text.slice(index).slice(0, 4000);
-}
-
 function hasSubmittedValue(value) {
   if (Array.isArray(value)) return value.length > 0;
   return value !== undefined && value !== null && String(value).trim() !== "";
-}
-
-function splitLines(value) {
-  return String(value || "")
-    .split(/\n+/)
-    .map((line) => clean(line))
-    .filter(Boolean)
-    .slice(0, 8);
-}
-
-function redactSecretsDeep(value) {
-  if (Array.isArray(value)) return value.map(redactSecretsDeep);
-  if (value && typeof value === "object") {
-    return Object.fromEntries(Object.entries(value).map(([key, entry]) => [key, redactSecretsDeep(entry)]));
-  }
-  if (typeof value === "string") return redactSecrets(value);
-  return value;
-}
-
-function redactSecrets(value) {
-  return String(value)
-    .replace(/(api[_-]?key|service[_-]?role|secret|password|token|bearer)\s*[:=]\s*["']?[^"'\s,;]+/gi, "$1=[REDACTED]")
-    .replace(/\bsk-[a-zA-Z0-9_-]{12,}\b/g, "[REDACTED_OPENAI_KEY]")
-    .replace(/-----BEGIN [^-]+PRIVATE KEY-----[\s\S]*?-----END [^-]+PRIVATE KEY-----/g, "[REDACTED_PRIVATE_KEY]")
-    .replace(/\bBearer\s+[a-zA-Z0-9._-]{12,}\b/gi, "Bearer [REDACTED]")
-    .replace(/\b(seed phrase|private token|database password|service role key)\b\s*[:=]?\s*[^,\n]+/gi, "$1 [REDACTED]");
 }
 
 async function deliverOwnerReport(payload, reportText, reportRecord, env) {
@@ -1530,7 +883,7 @@ function getIssueProfile(breakType) {
         "Run the same feature in an incognito session to avoid cached state masking issues.",
         "Write down what the last change was and why it caused the regression.",
         "Redeploy cleanly after verification instead of stacking hot fixes.",
-        "Watch the updated component closely after release."
+        "Watch the updated component for 48 hours after release."
       ],
       nextRisk: () => "The next likely break is another flow that depends on the same updated component or shared state, because the original issue came from a regression introduced by a recent change."
     },
@@ -1590,7 +943,7 @@ function getIssueProfile(breakType) {
         "Retest password reset or magic-link flow if your app uses it.",
         "Confirm protected pages still redirect correctly after login.",
         "Document the callback or session setting that caused the failure.",
-        "Monitor auth-related errors after release."
+        "Monitor auth-related errors for the next 48 hours."
       ],
       nextRisk: () => "If the auth root cause is only patched at the symptom level, the next failure will likely be session persistence, protected-route access, or onboarding for new users."
     },
@@ -1710,7 +1063,7 @@ function getIssueProfile(breakType) {
         "Confirm the success page receives and preserves the expected payment identifiers.",
         "Verify the paid user sees the next intended state immediately after checkout.",
         "Document which payment callback or redirect assumption was wrong.",
-        "Watch the checkout flow closely after release."
+        "Watch the checkout flow closely for 48 hours."
       ],
       nextRisk: () => "If the root cause is ignored, the next failure is usually duplicate charges, missing paid access, or a mismatch between payment success and what the app unlocks afterward."
     },
@@ -1770,7 +1123,7 @@ function getIssueProfile(breakType) {
         "Retest the original bug plus one adjacent flow after every change.",
         "Save the last working version before sending the next repair prompt.",
         "Document which prompt caused the biggest regression.",
-        "Use smaller, file-specific prompts after release."
+        "Use smaller, file-specific prompts for the next 48 hours."
       ],
       nextRisk: () => "If the repair loop continues, the next break will probably be an unrelated but working part of the app that the AI touched while trying to fix the original issue."
     },
@@ -2266,17 +1619,6 @@ async function streamAnthropic({ env, tool, breakTypes, description, image, writ
 }
 
 function renderDashboardShell(user, active, content) {
-  const isGuest = user.is_guest || user.email === "public@vibefix.local" || user.email === "guest@vibefix.local";
-  const displayName = isGuest ? "Guest" : user.name;
-  const displayEmail = isGuest ? `<a href="/auth/google">Sign in for full access</a>` : `<span>${escapeHtml(user.email)}</span>`;
-  const avatarMarkup = isGuest
-    ? `<div class="user-avatar-placeholder">
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-          <circle cx="10" cy="7" r="4" fill="#7C3AED"/>
-          <path d="M2 17c0-4.4 3.6-8 8-8s8 3.6 8 8" stroke="#7C3AED" stroke-width="1.5" stroke-linecap="round"/>
-        </svg>
-      </div>`
-    : `<img src="${escapeAttr(user.avatar)}" alt="" />`;
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -2298,10 +1640,10 @@ function renderDashboardShell(user, active, content) {
       ${dashLink("/dashboard/account", "Account", active)}
     </nav>
     <div class="sidebar-user">
-      ${avatarMarkup}
+      <img src="${escapeAttr(user.avatar)}" alt="" />
       <div>
-        <strong>${escapeHtml(displayName)}</strong>
-        ${displayEmail}
+        <strong>${escapeHtml(user.name)}</strong>
+        <span>${escapeHtml(user.email)}</span>
       </div>
     </div>
   </aside>
@@ -2326,7 +1668,7 @@ function renderReportsPage(user, reports, env) {
     <div class="empty-state">
       <h3>No reports yet.</h3>
       <p>Get your first diagnosis →</p>
-      <a class="btn btn-primary" href="${escapeAttr(checkout)}">Get Beta Diagnosis &mdash; &#8377;7,530 (~$90 USD)</a>
+      <a class="btn btn-primary" href="${escapeAttr(checkout)}">Get Beta Diagnosis — ₹1 Test</a>
     </div>
   `;
 
@@ -2345,7 +1687,7 @@ function renderAccountPage(user) {
     <section class="dashboard-header">
       <p class="section-kicker">Account</p>
       <h1>Account</h1>
-      <p>Your VibeFix report count.</p>
+      <p>Your Google account and VibeFix report count.</p>
     </section>
     <section class="account-card">
       <img src="${escapeAttr(user.avatar)}" alt="" />
@@ -2361,7 +1703,7 @@ function renderAccountPage(user) {
         <label>Reports purchased</label>
         <strong>${Number(user.diagnosis_count || 0)}</strong>
       </div>
-      <a class="btn btn-secondary" href="/">Back to VibeFix</a>
+      <a class="btn btn-secondary" href="/auth/signout">Sign out</a>
     </section>
   `);
 }
@@ -2373,7 +1715,6 @@ function renderAiPage(user, env) {
       <p class="section-kicker">AI Helper</p>
       <h1>AI Fix Helper</h1>
       <p>Get structured fix prompts for broken AI-built apps. You get 3 free uses total.</p>
-      <p class="usage-counter" id="founders-helped">0 founders helped so far</p>
     </section>
     <section class="ai-layout">
       <form class="ai-form" id="ai-form">
@@ -2391,7 +1732,6 @@ function renderAiPage(user, env) {
       </form>
       <aside class="output-panel" id="output-panel">
         <div class="usage-counter" id="usage-counter">3 of 3 free uses remaining</div>
-        <div class="confidence-badge" id="confidence-badge">Confidence: Waiting</div>
         <div class="typing" id="typing" hidden>Generating fix prompts...</div>
         <div class="output-section">
           <h3>Likely cause</h3>
@@ -2408,7 +1748,7 @@ function renderAiPage(user, env) {
         </div>
         <div class="upgrade-gate" id="upgrade-gate" hidden>
           <p>You have used all 3 free prompt generations. Get the full VibeFix diagnosis report to continue.</p>
-          <a class="btn btn-primary" href="${escapeAttr(upgradeUrl)}">Get Beta Diagnosis &mdash; &#8377;7,530 (~$90 USD)</a>
+          <a class="btn btn-primary" href="${escapeAttr(upgradeUrl)}">Get Beta Diagnosis — ₹1 Test</a>
         </div>
       </aside>
     </section>
@@ -2460,7 +1800,7 @@ async function requireUser(request, env, api = false) {
   if (user) return user;
   if (api) return null;
   const url = new URL(request.url);
-  return redirect(`/auth/google?next=${encodeURIComponent(url.pathname)}`);
+  return redirect(`/login.html?next=${encodeURIComponent(url.pathname)}`);
 }
 
 async function getReports(env, userId) {
@@ -2488,287 +1828,6 @@ Break type:
 ${breakTypes}
 
 First diagnose the smallest likely failing area. Then explain what not to touch. Make the smallest safe fix only, and give me a regression checklist to confirm the fix worked.`;
-}
-
-function buildDiagnosisResult(tool, breakType, description, context = {}) {
-  const normalizedTool = normalizePromptKey(tool);
-  const normalizedBreak = normalizePromptKey(breakType);
-  const toolProfile = toolProfiles[normalizedTool] || toolProfiles.other;
-  const breakProfile = breakProfiles[normalizedBreak] || breakProfiles.other;
-  const prompt = buildDiagnosisPrompt(tool, breakType, description, context);
-  const isVague = description.trim().length < 35;
-  const confidence = isVague ? "Medium" : "High";
-
-  return `LIKELY CAUSE:
-${breakProfile.likely(toolProfile.label, description)}
-
-WHAT NOT TO TOUCH:
-${[
-    "Do not rewrite the whole app.",
-    "Do not refactor unrelated files.",
-    "Do not change UI unless the selected break type requires UI.",
-    ...breakProfile.noTouch
-  ].map((item) => `- ${item}`).join("\n")}
-
-PASTE THIS INTO YOUR TOOL:
-${prompt}
-
-CONFIDENCE: ${confidence}
-REASON: This prompt is generated from the selected tool, selected break type, user description, and current attempt style.`;
-}
-
-function buildDiagnosisPrompt(tool, breakType, description, context = {}) {
-  const toolProfile = toolProfiles[normalizePromptKey(tool)] || toolProfiles.other;
-  const breakProfile = breakProfiles[normalizePromptKey(breakType)] || breakProfiles.other;
-  let style = chooseAttemptStyle(description, context.attemptCount || 1);
-  if (breakProfile === breakProfiles.fixBreakLoop) style = attemptStyles.forensic;
-  let prompt = composePrompt(toolProfile, breakProfile, tool, breakType, description, style);
-
-  const recent = [context.lastGeneratedPrompt, ...(context.recentGeneratedPrompts || [])].filter(Boolean);
-  if (recent.some((previous) => promptSimilarity(prompt, previous) > 0.82)) {
-    style = style.id === "first" ? attemptStyles.escalation : attemptStyles.forensic;
-    prompt = composePrompt(toolProfile, breakProfile, tool, breakType, description, style);
-  }
-
-  if (recent.some((previous) => promptSimilarity(prompt, previous) > 0.82)) {
-    prompt = `${prompt}
-
-Escalation note:
-This is a new recovery attempt. Do not repeat the previous fix. Explain why the earlier attempt likely failed before making any change.`;
-  }
-
-  return prompt;
-}
-
-function composePrompt(toolProfile, breakProfile, tool, breakType, description, style) {
-  const diagnosticSteps = [...style.diagnosticPrefix, ...toolProfile.inspect, ...breakProfile.diagnostics];
-  const fixInstructions = [...style.fixPrefix, ...breakProfile.fixes, ...toolProfile.fixRules];
-  const validation = [...breakProfile.validation, ...toolProfile.validation];
-  const vagueNote = description.trim().length < 35
-    ? "\n\nMissing evidence note:\nThe issue description is vague. Before editing, inspect logs, console errors, failing requests, recent diffs, and exact files/routes connected to this break. If evidence is missing, ask for it instead of guessing."
-    : "";
-
-  return `${toolProfile.heading}
-${style.opening}
-
-Mode: ${toolProfile.mode}
-Task: ${breakProfile.task}
-
-Context:
-- User selected tool: ${tool}
-- Break type: ${breakType}
-- What broke: ${description}
-
-Hard constraints:
-- Do not rewrite the whole app.
-- Do not refactor unrelated files.
-- Do not change UI unless the selected break type requires UI.
-- Make the smallest safe fix.
-- Explain the likely root cause before editing.
-- After fixing, give a regression checklist.
-
-Diagnostic steps:
-${numbered(diagnosticSteps)}
-
-Fix instructions:
-${numbered(fixInstructions)}
-
-Validation:
-${validation.map((item) => `- ${item}`).join("\n")}
-
-Expected response:
-- Root cause found
-- Files inspected
-- Files changed
-- Exact fix made
-- How to test
-- What not to touch next${vagueNote}`;
-}
-
-const attemptStyles = {
-  first: {
-    id: "first",
-    opening: "First-pass focused diagnosis. Diagnose the selected failure path before editing.",
-    diagnosticPrefix: ["Reproduce the exact failing flow once before changing code.", "Identify the smallest area that can explain the symptom."],
-    fixPrefix: ["Make one focused patch only.", "If the root cause is unclear, stop and ask for the missing log/error instead of guessing."]
-  },
-  escalation: {
-    id: "escalation",
-    opening: "Previous prompt or fix did not work. Stop patching blindly and isolate why the earlier attempt failed.",
-    diagnosticPrefix: ["Summarize the previous failed assumption before editing.", "Inspect logs, recent diffs, and the exact failing request/route.", "Form one root-cause hypothesis and explain why it is more likely than the previous fix."],
-    fixPrefix: ["Make one different minimal patch, not a reworded repeat of the last fix.", "Explain why this patch is different from the failed attempt."]
-  },
-  forensic: {
-    id: "forensic",
-    opening: "Forensic recovery mode. No code changes until the architecture, recent changes, environment, and failing path are inspected.",
-    diagnosticPrefix: ["List the last relevant changes or diffs before the bug appeared.", "Trace the failing flow across component, API route, auth/data layer, environment, and deployment boundary.", "Create a no-code diagnosis summary first.", "If the tool supports rollback or restore points, identify the safest restore point before patching."],
-    fixPrefix: ["Apply only one patch after the diagnosis summary.", "Run the narrowest regression checks after the patch.", "If confidence is low, do not edit; ask for exact logs or screenshots."]
-  }
-};
-
-const toolProfiles = {
-  lovable: {
-    label: "Lovable",
-    heading: "LOVABLE\nLovable, use Plan mode first. Diagnose before editing.",
-    mode: "Plan",
-    inspect: ["Use Plan mode first; do not immediately rewrite the app.", "Inspect preview behavior, browser console errors, and the last Lovable prompt/change.", "If Supabase is involved, check Supabase Auth, RLS policies, integration state, and environment variables."],
-    fixRules: ["Use the smallest Lovable edit possible.", "If auth or database must be touched, state why before editing.", "Target one failing flow instead of broad app cleanup."],
-    validation: ["Verify in Lovable preview.", "Confirm the exact broken flow works after the change."]
-  },
-  bolt: {
-    label: "Bolt",
-    heading: "BOLT\nBOLT: Do not rewrite the app. Diagnose first, then make the smallest safe patch.",
-    mode: "Plan",
-    inspect: ["Use Plan mode or Discussion mode before Build mode.", "Do not use broad Attempt Fix behavior without evidence.", "Inspect env vars, Secrets, database connection, deployment config, package/build errors, and logs when relevant."],
-    fixRules: ["Make one focused Bolt patch.", "Do not regenerate unrelated screens/components.", "Explain exactly which files were changed and why."],
-    validation: ["Test in Bolt preview.", "Retest the exact broken flow after the patch."]
-  },
-  cursor: {
-    label: "Cursor",
-    heading: "CURSOR\nCursor, inspect the relevant files first. Do not guess.",
-    mode: "Review",
-    inspect: ["Search the repo for the failing route/component/function.", "Inspect recent diffs before editing.", "Identify exact files and functions involved.", "Run tests, build, lint, or the narrowest available check if possible."],
-    fixRules: ["Patch only after diagnosis.", "Keep the diff small.", "Do not edit unrelated files."],
-    validation: ["Run or describe the narrowest regression test.", "Give a changed-files summary."]
-  },
-  replit: {
-    label: "Replit",
-    heading: "REPLIT\nReplit Agent, diagnose in Preview first, then fix.",
-    mode: "Agent",
-    inspect: ["Check Preview first; if Preview is broken, do not start with production.", "Check Replit Secrets, Console/Shell logs, run/build commands, port/host binding, and deployment settings.", "Check database state and production deployment logs when relevant."],
-    fixRules: ["Make one minimal Replit-safe fix.", "Test in browser after changes.", "If a dashboard/secret setting is needed, tell me exactly what to change."],
-    validation: ["Verify Preview after the fix.", "If production is involved, verify deployment behavior separately."]
-  },
-  v0: {
-    label: "v0",
-    heading: "v0\nv0, inspect the app structure and make a minimal production-safe fix.",
-    mode: "Fix",
-    inspect: ["Check whether the failure is in a client component, server component, route handler, server action, or environment variable.", "Check Vercel preview vs production behavior when relevant.", "Inspect Next.js/Vercel build, runtime, and deployment logs."],
-    fixRules: ["Do not regenerate unrelated UI components.", "Make a production-safe patch.", "Explain required Vercel settings or env vars."],
-    validation: ["Validate the affected Next.js route/component.", "Include Vercel redeploy checklist if deployment is involved."]
-  },
-  claudeCode: {
-    label: "Claude Code",
-    heading: "CLAUDE CODE\nClaude Code, think through the codebase before editing.",
-    mode: "Agent",
-    inspect: ["Run git status and inspect recent changes before editing.", "Use repo search to find exact failing files/functions.", "Make a plan before patching.", "Run tests/build/lint after the patch if available."],
-    fixRules: ["Do not apply multiple speculative fixes.", "Keep a clear changed-files summary.", "Stop and ask for logs if evidence is missing."],
-    validation: ["Run available checks.", "Explain regression risk and verification steps."]
-  },
-  other: {
-    label: "AI coding agent",
-    heading: "AI CODING AGENT\nIdentify the stack first, then diagnose before editing.",
-    mode: "Diagnose",
-    inspect: ["Identify the framework, hosting platform, auth/data/payment provider, and failing surface first.", "Inspect logs, console errors, recent changes, and exact failing files/routes."],
-    fixRules: ["Make the smallest safe fix after diagnosis.", "Do not guess across unknown stack boundaries."],
-    validation: ["Verify the broken flow.", "Provide a regression checklist."]
-  }
-};
-
-toolProfiles.windsurf = toolProfiles.cursor;
-
-const breakProfiles = {
-  authBroke: {
-    task: "Auth flow diagnosis and minimal auth fix",
-    likely: () => "The selected break type points to auth provider configuration, callback/redirect URLs, session persistence, cookies, route guards, token refresh, or missing auth environment variables.",
-    noTouch: ["Do not touch database schema unless profile creation is proven to be the auth failure.", "Do not rewrite route guards or middleware broadly."],
-    diagnostics: ["Reproduce the failed signup/login/logout/session restore/protected route/callback step.", "Inspect browser console and network auth calls.", "Inspect server logs for callback, session, cookie, or token errors.", "Verify redirect/callback URLs match preview and production domains.", "Check auth provider env vars/secrets.", "If a profile row is created after signup, test that separately from auth itself."],
-    fixes: ["Fix only auth-related code/config.", "Preserve existing UI.", "If env/provider dashboard changes are required, list exact variable or redirect URL."],
-    validation: ["Test signup.", "Test login.", "Test logout.", "Test refresh/session restore.", "Test protected route access."]
-  },
-  databaseNotLoading: {
-    task: "Database/data loading diagnosis and minimal data fix",
-    likely: () => "The selected break type points to a failing query, wrong database URL, missing env vars, schema/migration mismatch, RLS/permissions, empty seed data, or preview/production database mismatch.",
-    noTouch: ["Do not rebuild or rename the database blindly.", "Do not change auth unless the query failure is caused by missing session/user ID."],
-    diagnostics: ["Identify which screen, component, API route, table, query, or view is failing.", "Check browser network response and server logs for the exact failed request.", "Check database env vars/secrets.", "Check schema, table names, column names, migrations, and seed data.", "If Supabase is used, check RLS policies and whether logged-in or anon roles can read the data.", "Check whether the app is hiding the real error behind an empty state."],
-    fixes: ["Fix the exact failing query/request/config.", "Add safe error handling only after the root cause is fixed.", "Do not rename tables/columns unless code is clearly using the wrong name."],
-    validation: ["Verify data loads in preview.", "Verify data loads in production if relevant.", "Confirm empty/error states still behave correctly."]
-  },
-  previewVsProduction: {
-    task: "Preview vs production mismatch diagnosis",
-    likely: () => "The selected break type points to missing production env vars, build-time/runtime differences, API base URL mismatch, domain/callback mismatch, server/client rendering differences, CORS, or deployment config.",
-    noTouch: ["Do not change working preview behavior unless the same code path is proven wrong.", "Do not hardcode production URLs as a shortcut."],
-    diagnostics: ["Compare Preview behavior against the production URL behavior.", "Check production logs and build/deployment logs.", "Verify every required env var exists in production scope.", "Check absolute URLs, API base URLs, redirects, auth callbacks, and CORS.", "Check if production uses different data/config than preview."],
-    fixes: ["Fix only the production-specific config/code path.", "Document any dashboard setting that must be changed.", "Redeploy only after config/code is corrected."],
-    validation: ["Retest Preview.", "Retest production URL.", "Confirm auth/API/data paths use the correct domain."]
-  },
-  fixBreakLoop: {
-    task: "Fix-break loop forensic recovery",
-    likely: () => "The selected break type points to repeated broad fixes, stale AI assumptions, cascading edits, and patches on top of patches without root-cause isolation.",
-    noTouch: ["Do not apply another broad fix.", "Do not stack multiple speculative patches.", "Do not touch auth, database, payment, env, or deployment settings without direct evidence."],
-    diagnostics: ["Stop making fixes immediately.", "Summarize the last 3 attempted fixes from chat/history/diff if available.", "Identify what changed before the bug first appeared.", "Inspect recent diffs or changed files.", "Choose one smallest root-cause hypothesis.", "If unsure, ask for exact logs instead of guessing."],
-    fixes: ["Make one patch only.", "Explain why this patch is different from the failed attempts.", "Use rollback/restore guidance if the tool supports it and the recent changes are too tangled."],
-    validation: ["Run the old broken flow.", "Run any flow touched by recent fixes.", "Confirm no new regression was introduced."]
-  },
-  deployFailed: {
-    task: "Deployment failure classification and minimal deploy fix",
-    likely: () => "The selected break type points to install/build/runtime failure, missing dependency, TypeScript or lint error, missing env vars/secrets, unsupported runtime, port/host config, package mismatch, or output directory config.",
-    noTouch: ["Do not change UI or product behavior to fix a deploy error.", "Do not change hosting config randomly."],
-    diagnostics: ["Read the exact deploy/build error first.", "Classify the failure as install, build, runtime, env, or hosting config.", "Identify the file, package, command, variable, or host setting causing it.", "Check build command, output directory, runtime, port/host, and package versions."],
-    fixes: ["Fix only the failing deploy cause.", "Run local build or equivalent before final answer.", "List exact env var/hosting setting if required."],
-    validation: ["Run build/typecheck/lint if available.", "Confirm the next deploy checklist."]
-  },
-  stripeBroke: {
-    task: "Stripe/payment flow diagnosis",
-    likely: () => "The selected break type points to checkout session creation, publishable/secret key mismatch, webhook secret, price ID, success/cancel URL, test/live mode mismatch, webhook event handling, or raw body signature handling.",
-    noTouch: ["Never expose secret keys.", "Do not touch unrelated billing UI unless the proven failure is visual.", "Do not switch test/live mode without confirmation."],
-    diagnostics: ["Classify failure as checkout creation, redirect, payment completion, webhook, or access unlock.", "Verify payment env vars/secrets.", "Verify price ID, product ID, and test/live mode.", "Verify success/cancel URLs for preview and production.", "Verify webhook endpoint, event handling, and signature/raw body handling."],
-    fixes: ["Fix only the payment path that is failing.", "If dashboard settings are required, list exact Stripe/deployment settings.", "Preserve existing pricing/UI unless directly broken."],
-    validation: ["Run safe test checkout.", "Verify success page.", "Verify webhook/access unlock if used."]
-  },
-  featureBrokeOldFeature: {
-    task: "Regression diagnosis: new feature broke old feature",
-    likely: () => "The selected break type points to a recent change affecting shared state, shared component, route conflict, API contract, props/interface, CSS/layout side effect, or dependency regression.",
-    noTouch: ["Do not remove the new feature unless it is impossible to preserve.", "Do not refactor unrelated files.", "Do not change styling unless the regression is visual."],
-    diagnostics: ["Identify the old feature that broke.", "Identify the new feature/change that preceded it.", "Inspect recent diff and files touched by the new change.", "Find shared component, state, route, API, or dependency used by both old and new feature.", "Explain the regression root cause in plain English."],
-    fixes: ["Restore the old feature while preserving the new feature if possible.", "Patch the shared contract or compatibility layer only.", "Avoid rollback unless the new change is clearly wrong."],
-    validation: ["Test the restored old feature.", "Test the new feature still works.", "Give a regression checklist for both flows."]
-  },
-  other: {
-    task: "Unknown break classification and minimal fix",
-    likely: () => "The selected break type is unknown, so the first job is classification: auth, database, deploy, preview/production, payment, UI, state, routing, dependency, or unknown.",
-    noTouch: ["Do not guess across unknown systems.", "Do not make broad app-wide changes."],
-    diagnostics: ["Classify the bug category first.", "Inspect logs/files related to that category.", "Check browser console, network tab, server logs, and recent changes.", "Identify the smallest likely root cause."],
-    fixes: ["Make the smallest safe fix after classification.", "If evidence is missing, ask for the exact log/error first."],
-    validation: ["Verify the classified broken flow.", "Confirm no related flow regressed."]
-  }
-};
-
-function chooseAttemptStyle(description, attemptCount) {
-  if (/(not working|still broken|need better prompt|same issue|again|didn'?t work|doesn'?t work|failed again|no change)/i.test(description)) {
-    return attemptCount >= 3 ? attemptStyles.forensic : attemptStyles.escalation;
-  }
-  if (attemptCount >= 3) return attemptStyles.forensic;
-  if (attemptCount === 2) return attemptStyles.escalation;
-  return attemptStyles.first;
-}
-
-function numbered(items) {
-  return items.map((item, index) => `${index + 1}. ${item}`).join("\n");
-}
-
-function normalizePromptKey(value) {
-  const normalized = String(value || "").toLowerCase().replace(/[^a-z0-9]+/g, "");
-  const aliases = {
-    claude: "claudeCode",
-    claudecode: "claudeCode",
-    authbroke: "authBroke",
-    databasenotloading: "databaseNotLoading",
-    previewvsproduction: "previewVsProduction",
-    fixbreakloop: "fixBreakLoop",
-    deployfailed: "deployFailed",
-    stripebroke: "stripeBroke",
-    featurebrokeoldfeature: "featureBrokeOldFeature"
-  };
-  return aliases[normalized] || normalized || "other";
-}
-
-function promptSimilarity(a, b) {
-  const aTokens = new Set(String(a).toLowerCase().replace(/[^a-z0-9]+/g, " ").split(/\s+/).filter((token) => token.length > 3));
-  const bTokens = new Set(String(b).toLowerCase().replace(/[^a-z0-9]+/g, " ").split(/\s+/).filter((token) => token.length > 3));
-  if (!aTokens.size || !bTokens.size) return 0;
-  const overlap = [...aTokens].filter((token) => bTokens.has(token)).length;
-  return overlap / Math.max(aTokens.size, bTokens.size);
 }
 
 function streamGate(limit) {
@@ -2805,24 +1864,11 @@ function assertKv(env) {
   if (!env.VIBEFIX_KV) throw new Error("Missing VIBEFIX_KV binding");
 }
 
-function json(data, status = 200, extraHeaders = {}) {
+function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { "Content-Type": "application/json", "Cache-Control": "no-store", ...extraHeaders }
+    headers: { "Content-Type": "application/json", "Cache-Control": "no-store" }
   });
-}
-
-async function readJson(request) {
-  try {
-    return await request.json();
-  } catch (error) {
-    return {};
-  }
-}
-
-async function supabaseErrorMessage(response, fallback) {
-  const payload = await response.json().catch(() => ({}));
-  return payload.error_description || payload.msg || payload.error || payload.message || fallback;
 }
 
 function html(content) {
@@ -2858,26 +1904,6 @@ function cryptoRandom() {
   const bytes = new Uint8Array(32);
   crypto.getRandomValues(bytes);
   return [...bytes].map((byte) => byte.toString(16).padStart(2, "0")).join("");
-}
-
-function pkceVerifier() {
-  const bytes = new Uint8Array(64);
-  crypto.getRandomValues(bytes);
-  return base64UrlEncode(bytes);
-}
-
-async function pkceChallenge(verifier) {
-  const data = new TextEncoder().encode(verifier);
-  const digest = await crypto.subtle.digest("SHA-256", data);
-  return base64UrlEncode(new Uint8Array(digest));
-}
-
-function base64UrlEncode(bytes) {
-  let binary = "";
-  bytes.forEach((byte) => {
-    binary += String.fromCharCode(byte);
-  });
-  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
 function safeNext(next) {
